@@ -40,7 +40,7 @@ now.
 import TickeTing from '@ticketingevents/ticketing-sdk';
 
 const ticketing = new TickeTing({
-  api_key: "API_KEY"
+  apiKey: "API_KEY"
 });
 
 //Retrieve a collection of supported regions
@@ -66,7 +66,7 @@ TickeTing class with the <code>sandbox</code> argument set to <code>true</code>.
 
 ```javascript
 const ticketing = new TickeTing({
-  api_key: "SANDBOX_API_KEY",
+  apiKey: "SANDBOX_API_KEY",
   sandbox: true
 });
 ```

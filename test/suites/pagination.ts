@@ -1,4 +1,24 @@
+import { TickeTing, Region, PageAccessError } from '../../src'
+import { PaginatedCollection } from  '../../src/util'
+
+//Setup SDK for testing
+let ticketing: TickeTing = new TickeTing({
+  apiKey: "07b2f3b08810a4296ee19fc59dff48b0",
+  sandbox: true
+})
+
+//Setup chai for assertions
+let chai = require("chai")
+let chaiAsPromised = require("chai-as-promised")
+
+chai.use(chaiAsPromised)
+let assert = chai.assert
+
 suite("Pagination", function(){
+  let regionData: {[key: string]: string} = {}
+  let testRegions: Array<Region> = []
+  let paginatedCollection: PaginatedCollection<Region>|null = null
+
   setup(async function(){
     regionData = {
       name: "Pagination Region ",

@@ -8,8 +8,11 @@ export class TickeTing{
   // Define public services
   public regions: RegionService;
 
-  constructor(apiKey: string, sandbox: boolean = false){
-    this.__apiAdapter = new APIAdapter(apiKey, sandbox)
+  constructor(config: {apiKey: string, sandbox: boolean}){
+    this.__apiAdapter = new APIAdapter(
+      config.apiKey,
+      config.sandbox?config.sandbox:false
+    )
 
     this.regions = new RegionService(this.__apiAdapter)
   }

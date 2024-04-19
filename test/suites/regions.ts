@@ -1,3 +1,16 @@
+//Setup SDK for testing
+let ticketing: TickeTing = new TickeTing({
+  apiKey: "07b2f3b08810a4296ee19fc59dff48b0",
+  sandbox: true
+})
+
+//Setup chai for assertions
+let chai = require("chai")
+let chaiAsPromised = require("chai-as-promised")
+
+chai.use(chaiAsPromised)
+let assert = chai.assert
+
 suite("Regions", function(){
   setup(function(){
     regionData = {
@@ -46,7 +59,6 @@ suite("Regions", function(){
 
   suite('List all regions', function () {
     test('Should return a collection of Region resources', async function () {
-      console.log(ticketing.regions.list())
       let regions = await ticketing.regions.list()
       for(let region of regions){
         assert.typeOf(region, "Region", "One or more returned resources is not a Region")

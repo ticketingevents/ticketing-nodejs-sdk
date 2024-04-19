@@ -1,5 +1,6 @@
-import axios from 'axios'
+import axios, { AxiosResponse } from 'axios'
 import { constants } from './constants'
+import { TickeTingError, UnauthorisedError } from '../errors'
 
 export class APIAdapter{
   private __requester;
@@ -7,8 +8,8 @@ export class APIAdapter{
   constructor(apiKey: string, sandbox: boolean){
     this.__requester = axios.create({
       baseURL: sandbox?
-          "https//qa.ticketingevents.com/v3/":
-          "https//api.ticketingevents.com/v3/",
+          "https://qa.ticketingevents.com/v3/":
+          "https://api.ticketingevents.com/v3/",
       headers:{
         "X-API-Key": apiKey,
         "X-Client-Version": constants.CLIENT_VERSION
@@ -21,10 +22,20 @@ export class APIAdapter{
     url: string,
     params: {[key: string]: string|number} = {},
     headers: {[key: string]: string} = {}
-  ): Promise<{[key: string]: string|number}>{
-    return this.__requester.get(url, {
-      headers: params,
-      params: params
+  ): Promise<AxiosResponse>{
+    return new Promise((resolve, reject) => {
+      this.__requester.get(url, {
+        headers: params,
+        params: params
+      }).then(response => {
+        resolve(response)
+      }).catch(error => {
+        if(error.response.status == 401){
+          reject(new UnauthorisedError(error.status, error.response.data.error))
+        }else{
+          reject(new TickeTingError(error.status, error.response.data.error))
+        }
+      })
     })
   }
 }
