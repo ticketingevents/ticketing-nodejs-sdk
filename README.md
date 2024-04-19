@@ -113,8 +113,8 @@ you can filter collections based on selected criteria to narrow down the resourc
 
 The criteria you can filter by will be dependent on the collection you are working with. If
 you filter a collection based on unsupported criteria, an <code>UnsupportedCriteriaError</code>
-will be thrown. Read the documentation for the collection you are working with to see its
-supported criteria.
+will be thrown when you attempt to resolve the collection. Read the documentation for the
+collection you are working with to see its supported criteria.
 
 To filter a collection, call its <code>filter</code> method with an object containing your
 desired criteria.
@@ -143,7 +143,7 @@ ticketing.regions.list()
 Every collection supports a special <code>id</code> filter that allows a specific resource to be retrieved
 from the collection. If the <code>id</code> filter is specified, all other filters are disregarded. If a
 resource with the given <code>id</code> exists, it is returned. Otherwise a <code>ResourceNotFoundError</code>
-is thrown.
+is thrown when you attempt to resolve the collection.
 
 ```javascript
 //Search for a specific region based on its ID
@@ -167,63 +167,62 @@ Even after filtering a collection, there may still be a large number of matching
 returned. Returning a large number of resources in a single request, particularly for complex
 resources, can lead to large response payloads and long response times, which can slow down your application.
 
-To help mitigate against these performance issues, collections support pagination, granting access
-to a subset of the resources in the collection at a time. To paginate a collection, call its
-<code>paginate</code> method, specifying your desired <code>pageLength</code>.
+To help mitigate against these performance issues, collections do not return return all matching resources when
+resolved, instead returning a subset, or page, at a time. Collections are paginated based on the 
+<code>pageLength</code> specified when they are created. Collections default to a <code>pageLength</code> of
+25 if a custom value is not specified.
 
 ```javascript
-  let paginatedCollection = ticketing.regions.list()
-    .paginate(10) //pageLength of 10 resources. Defaults to 25 if no pageLength is specified.
+  let collection = ticketing.regions.list(10) //Will return 10 resources at a time when resolved
 ```
-Once you have paginated a collection you can use its access methods to page through its
-resources as desired.
+You can use a collection's pagination access methods to page back and forth through its resources as desired.
 
 ```javascript
   //Retrieve the first page of the collection
-  paginatedCollection.first()
-    .then(page => {
+  collection.first()
+    .then(resources => {
       //Do something with the page of resources
     })
 
   //Retrieve the last page of the collection
-  paginatedCollection.last()
-    .then(page => {
+  collection.last()
+    .then(resources => {
       //Do something with the page of resources
     })
 
   //Retrieve the next page of the collection
-  paginatedCollection.next()
-    .then(page => {
+  collection.next()
+    .then(resources => {
       //Do something with the page of resources
     })
 
   //Retrieve the previous page of the collection
-  paginatedCollection.previous()
-    .then(page => {
+  collection.previous()
+    .then(resources => {
       //Do something with the page of resources
     })
 
   //Retrieve a specific page from the collection
-  paginatedCollection.goto(3)
-    .then(page => {
+  collection.goto(3)
+    .then(resources => {
       //Do something with the page of resources
     })
 ```
 
 Depending on the specified <code>pageLength</code> and number of resources in the collection,
-a call to one of the above methods may reference a non-existant page. If a pagination method call
-references a non-existant page a <code>PageAccessError</code> will be thrown.
+a call to one of the above methods may cause the collection to reference a non-existant page.
+If a collection ends up internally referencing a non-existant page, a <code>PageAccessError</code>
+will be thrown when the collection is resolved.
 
 ```javascript
-  let paginatedCollection = ticketing.regions.list()
-    .paginate(10)
+  let collection = ticketing.regions.list(10)
     .last()
-    .next() // This call to next() will throw an error as we are already on the last page
+    .next() // This call to next() will cause the collection to reference a non-existant page
     .then(regions => {
       //Do something with the matching region resource(s)
     })
     .catch(error => {
-      if(error instanceof PageAccessError){
+      if(error instanceof PageAccessError){ //A PageAccessError is thrown when we attempt to resolve the collection
         //Handle non-existant page error
       }else{
         //Handle other errors
@@ -231,26 +230,26 @@ references a non-existant page a <code>PageAccessError</code> will be thrown.
     })
 ```
 
-Paginated collections also offer several test properties and methods to determine the current pointer
-location. This can help you avoid page access errors.
+Collections also offer several test properties and methods to determine the current page reference. This can help you
+avoid page access errors.
 
 ```javascript
   //Return the current page number
-  console.log(paginatedCollection.current)
+  console.log(collection.current)
 
   //Return the number of available pages in the collection
-  console.log(paginatedCollection.pages)
+  console.log(await collection.pages)
 
   //Test whether there are any more pages after the current one
-  console.log(paginatedCollection.hasNext())
+  console.log(await collection.hasNext())
 
   //Test whether there are any more pages before the current one
-  console.log(paginatedCollection.hasPrevious())
+  console.log(await collection.hasPrevious())
 ```
 
 ### Stacking operations
 
-When working with collections you are likely to want to perform filter, sort and paginate operations in a
+When working with collections you are likely to want to perform filter, sort and pagination operations in a
 single statement. Collections support operation stacking to achieve this.
 
 ```javascript
@@ -259,9 +258,8 @@ let criteria = {
   //Filter criteria
 }
 
-ticketing.regions.list()
+ticketing.regions.list(10)
   .filter(criteria)
-  .paginate(10)
   .first()
   .next()
   .then(regions => {
