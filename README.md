@@ -138,28 +138,6 @@ ticketing.regions.list()
     }
   })
 ```
-#### The ID Filter
-
-Every collection supports a special <code>id</code> filter that allows a specific resource to be retrieved
-from the collection. If the <code>id</code> filter is specified, all other filters are disregarded. If a
-resource with the given <code>id</code> exists, it is returned. Otherwise a <code>ResourceNotFoundError</code>
-is thrown when you attempt to resolve the collection.
-
-```javascript
-//Search for a specific region based on its ID
-ticketing.regions.list()
-  .filter({id: "19290238432215"})
-  .then(region => {
-    //Do something with the region resource
-  })
-  .catch(error => {
-    if(error instanceof ResourceNotFoundError){
-      //Handle resource not found error
-    }else{
-      //Handle other errors
-    }
-  })
-```
 
 ### Pagination
 
@@ -235,7 +213,7 @@ avoid page access errors.
 
 ```javascript
   //Return the current page number
-  console.log(collection.current)
+  console.log(await collection.current)
 
   //Return the number of available pages in the collection
   console.log(await collection.pages)
@@ -359,9 +337,8 @@ the TickeTing platform (requires administrative access).
 [API Reference](https://ticketing.redoc.ly/tag/Region-Management#operation/retrieve_region)
 
 ```javascript
-  //Search for a specific region using the special 'id' filter
-  ticketing.regions.list()
-    .filter({id: "19290238432215"})
+  //Retrieve a specific region using its ID
+  ticketing.regions.find(19290238432215)
     .then(region => {
       //Do something with the region resource
     })
@@ -380,8 +357,8 @@ the TickeTing platform (requires administrative access).
 [API Reference](https://ticketing.redoc.ly/tag/Region-Management#operation/update_region)
 
 ```javascript
-  //Search for a specific region using the special 'id' filter
-  region = await ticketing.regions.list().filter({id: "19290238432215"})
+  //Retrieve a specific region using its ID
+  region = await ticketing.regions.find(19290238432215)
 
   //Make changes to the resource
   region.name = "New Name"
@@ -411,8 +388,8 @@ the TickeTing platform (requires administrative access).
 [API Reference](https://ticketing.redoc.ly/tag/Region-Management#operation/remove_region)
 
 ```javascript
-  //Search for a specific region using the special 'id' filter
-  region = await ticketing.regions.list().filter({id: "19290238432215"})
+  //Retrieve a specific region using its ID
+  region = await ticketing.regions.find(19290238432215)
 
   //Delete the region
   region.delete().then(deleted => {

@@ -1,3 +1,6 @@
 export { TickeTingError } from './TickeTingError'
-export { UnauthorisedError } from './UnauthorisedError'
+export { BadDataError } from './BadDataError'
 export { PageAccessError } from './PageAccessError'
+export { ResourceExistsError } from './ResourceExistsError'
+export { ResourceNotFoundError } from './ResourceNotFoundError'
+export { UnauthorisedError } from './UnauthorisedError'

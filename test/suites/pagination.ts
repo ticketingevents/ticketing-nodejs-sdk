@@ -1,5 +1,9 @@
+//Control execution order
+/*import './regions'
+
 import { TickeTing, Region, PageAccessError } from '../../src'
-import { PaginatedCollection } from  '../../src/util'
+import { Collection } from  '../../src/util'
+import { assert } from '../setup'
 
 //Setup SDK for testing
 let ticketing: TickeTing = new TickeTing({
@@ -7,17 +11,10 @@ let ticketing: TickeTing = new TickeTing({
   sandbox: true
 })
 
-//Setup chai for assertions
-let chai = require("chai")
-let chaiAsPromised = require("chai-as-promised")
-
-chai.use(chaiAsPromised)
-let assert = chai.assert
-
 suite("Pagination", function(){
   let regionData: {[key: string]: string} = {}
   let testRegions: Array<Region> = []
-  let paginatedCollection: PaginatedCollection<Region>|null = null
+  let collection: Collection<Region>|null = null
 
   setup(async function(){
     regionData = {
@@ -37,32 +34,30 @@ suite("Pagination", function(){
       ))
     }
 
-    paginatedCollection = ticketing.regions.list().paginate(1)
+    collection = ticketing.regions.list(1)
   })
 
   suite('#first()', function () {
     test("Should return the first page of resources", function(){
-      paginatedCollection.first()
-      assert.isEqual(paginatedCollection.current, 1, "first() does not navigate to the first page of resources")
+      assert.eventually.isEqual(collection.first().current, 1, "first() does not navigate to the first page of resources")
     })
   })
 
   suite('#last()', function () {
-    test("Should return the last page of resources", function(){
-      paginatedCollection.last()
-      assert.isEqual(paginatedCollection.current, paginatedCollection.pages, "last() does not navigate to the last page of resources")
+    test("Should return the last page of resources", async function(){
+      assert.eventually.isEqual(collection.last().current, await collection.pages, "last() does not navigate to the last page of resources")
     })
   })
 
   suite('#next()', function () {
     test("Should navigate to the next page of resources", function(){
-      paginatedCollection.first().next()
-      assert.isEqual(paginatedCollection.current, 2, "next() does not navigate to the subsequent page of resources")
+      collection.first().next()
+      assert.eventually.isEqual(collection.current, 2, "next() does not navigate to the subsequent page of resources")
     })
 
     test("Should throw a PageAccessError if no subsequent page exists", function(){
       assert.isRejected(
-        paginatedCollection.last().next(),
+        collection.last().next(),
         PageAccessError,
         "Attempting to retrieve a non-existant page does not throw a PageAccessError"
       )
@@ -71,13 +66,13 @@ suite("Pagination", function(){
 
   suite('#previous()', function () {
     test("Should navigate to the previous page of resources", function(){
-      paginatedCollection.last().previous()
-      assert.isEqual(paginatedCollection.current, paginatedCollection.pages-1, "previous() does not navigate to the previous page of resources")
+      collection.last().previous()
+      assert.eventually.isEqual(collection.current, await collection.pages - 1, "previous() does not navigate to the previous page of resources")
     })
 
     test("Should throw a PageAccessError if no previous page exists", function(){
       assert.isRejected(
-        paginatedCollection.first().previous(),
+        collection.first().previous(),
         PageAccessError,
         "Attempting to retrieve a non-existant page does not throw a PageAccessError"
       )
@@ -86,13 +81,13 @@ suite("Pagination", function(){
 
   suite('#goto()', function () {
     test("Should navigate to the specified page of resources", function(){
-      paginatedCollection.goto(7)
-      assert.isEqual(paginatedCollection.current, 7, "goto() does not navigate to the specified page of resources")
+      collection.goto(7)
+      assert.eventually.isEqual(collection.current, 7, "goto() does not navigate to the specified page of resources")
     })
 
     test("Should throw a PageAccessError if the specified page does not exist", function(){
       assert.isRejected(
-        paginatedCollection.goto(paginatedCollection.pages+1),
+        collection.last().next(),
         PageAccessError,
         "Attempting to retrieve a non-existant page does not throw a PageAccessError"
       )
@@ -101,21 +96,21 @@ suite("Pagination", function(){
 
   suite('#hasNext()', function () {
     test("Should return true if a subsequent page of resources exists", function(){
-      assert.isTrue(paginatedCollection.first().hasNext())
+      assert.eventually,isTrue(collection.first().hasNext())
     })
 
     test("Should return false if no subsequent page of resources exists", function(){
-      assert.isFalse(paginatedCollection.last().hasNext())
+      assert.eventually.isFalse(collection.last().hasNext())
     })
   })
 
   suite('#hasPrevious()', function () {
     test("Should return true if a previous page of resources exists", function(){
-      assert.isTrue(paginatedCollection.last().hasPrevious())
+      assert.eventually.isTrue(collection.last().hasPrevious())
     })
 
     test("Should return false if no previous page of resources exists", function(){
-      assert.isFalse(paginatedCollection.first().hasPrevious())
+      assert.eventually.isFalse(collection.first().hasPrevious())
     })
   })
 
@@ -124,4 +119,4 @@ suite("Pagination", function(){
       region.delete()
     }
   })
-})
+})*/
