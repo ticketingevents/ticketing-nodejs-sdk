@@ -32,11 +32,9 @@ export class Collection<T> extends Promise<Array<T>>{
 
   filter(criteria: {[key: string]: string|number}): Collection<T>{
     return this.__copy((resolve, reject)=>{
-      this.then(result => {
+      this.pages.then(result => {
         this.__onFilter(criteria)
         this.__executor(resolve, reject)
-      }).catch(error => {
-        reject(error)
       })
     })
   }

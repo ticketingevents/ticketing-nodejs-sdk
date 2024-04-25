@@ -1,5 +1,8 @@
 import { APIAdapter, Collection } from '../util'
-import { BadDataError, ResourceExistsError, ResourceNotFoundError, PageAccessError } from '../errors'
+import { 
+  BadDataError, ResourceExistsError, ResourceNotFoundError, 
+  PageAccessError, UnsupportedCriteriaError
+} from '../errors'
 
 export class BaseService<RequestType, ResponseType>{
   private __adapter: APIAdapter
@@ -7,10 +10,16 @@ export class BaseService<RequestType, ResponseType>{
   private __modelClass: any
 
   private __listCollection: Collection<ResponseType>
+  private __listFilters: Array<string>
   private __listCriteria: {[key: string]: string|number}
   private __listResult: {entries: Array<ResponseType>, page: number, records: number, total: number}
 
-  constructor(apiAdapter: APIAdapter, baseUrl: string, modelClass: any){
+  constructor(
+    apiAdapter: APIAdapter,
+    baseUrl: string,
+    modelClass: any,
+    supportedFilters: Array<string> = []
+  ){
     this.__adapter = apiAdapter
     this.__baseUrl = baseUrl
     this.__modelClass = modelClass
@@ -19,6 +28,7 @@ export class BaseService<RequestType, ResponseType>{
       (resolve, reject) => {}
     )
 
+    this.__listFilters = ['page','records'].concat(supportedFilters)
     this.__listCriteria = {}
     this.__listResult = {entries: [], page: 0, records: 0, total: 0}
   }
@@ -26,6 +36,9 @@ export class BaseService<RequestType, ResponseType>{
   public create(data: RequestType): Promise<ResponseType>{
     return new Promise<ResponseType>((resolve, reject) => {
       this.__adapter.post(this.__baseUrl, data).then(response => {
+        //Increment resource list total
+        this.__listResult.total += 1
+
         resolve(new this.__modelClass(response.data, this.__adapter))
       }).catch(error => {
         if(error.code == 400){
@@ -41,7 +54,6 @@ export class BaseService<RequestType, ResponseType>{
 
   public list(pageLength: number = 25): Collection<ResponseType>{
     this.__listCriteria.records = pageLength  
-    this.__listCriteria.page = 1
     this.__listCollection = new Collection<ResponseType>(this.__listQuery.bind(this))
 
     this.__listCollection.onCurrent(() => {
@@ -53,7 +65,7 @@ export class BaseService<RequestType, ResponseType>{
     })
 
     this.__listCollection.onFilter((criteria: {[key: string]: string}) => {
-      for(let criterion in Object.keys(criteria)){
+      for(let criterion in criteria){
         if(!(criterion in this.__listCriteria)){
           this.__listCriteria[criterion] = criteria[criterion]
         }
@@ -86,9 +98,29 @@ export class BaseService<RequestType, ResponseType>{
   }
 
   private __listQuery(resolve, reject){
+    //Validate list criteria before sending query
+    let criteriaError = null
+
     if(Number(this.__listCriteria.page) < 1){
+      criteriaError = new PageAccessError(404, "Please specify a positive integer page number")
+    }
+
+    let unsupportedFilters = []
+    for(let field in this.__listCriteria){
+      if(this.__listFilters.indexOf(field) < 0){
+        unsupportedFilters.push(field)
+      }
+    }
+
+    if(unsupportedFilters.length > 0){
+      criteriaError = new UnsupportedCriteriaError(400, `The collection does not support the following filters: ${unsupportedFilters.join(", ")}.`)
+    }
+
+   if(criteriaError){
+      //Reset list criteria
       this.__listCriteria = {records: this.__listCriteria.records}
-      reject(new PageAccessError(404, "Please specify a positive integer page number"))
+
+      reject(criteriaError)
     }
 
     this.__adapter.get(

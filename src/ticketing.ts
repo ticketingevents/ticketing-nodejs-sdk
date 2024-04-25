@@ -1,5 +1,5 @@
 import { APIAdapter } from './util/APIAdapter'
-import { RegionService } from './service/RegionService'
+import { RegionService } from './service'
 
 export class TickeTing{
   // Define private members

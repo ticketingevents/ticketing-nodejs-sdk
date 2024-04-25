@@ -36,11 +36,14 @@ suite("Filters", function(){
     this.collection = ticketing.regions.list(1)
   })
 
-  suiteTeardown(function(){
+  suiteTeardown(async function(){
     //Remove test resources
+    let deletions = []
     for(let region of this.testRegions){
-      region.delete()
+      deletions.push(region.delete())
     }
+
+    await Promise.all(deletions)
   })
 
   setup(async function(){
@@ -51,7 +54,7 @@ suite("Filters", function(){
   suite('#filter()', function () {
     test("Should throw a UnsupportedCriteriaError if the collection does not support the specified filter", function(){
       return expect(this.collection.filter({"unsupported": true}))
-        .to.eventually.be.rejectedWith("The collection does not support the following filters: unsupported")
+        .to.eventually.be.rejectedWith("The collection does not support the following filters: unsupported.")
         .and.be.an.instanceOf(UnsupportedCriteriaError)
     })
   })

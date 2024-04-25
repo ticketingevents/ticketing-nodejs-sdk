@@ -1,6 +1,6 @@
 export interface Base{
-  public id: string | number
+  id: string | number
   
-  public save(): Promise<boolean>
-  public delete(): Promise<boolean>
+  save(): Promise<boolean>
+  delete(): Promise<boolean>
 }

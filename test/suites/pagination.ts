@@ -36,11 +36,14 @@ suite("Pagination", function(){
     this.collection = ticketing.regions.list(1)
   })
 
-  suiteTeardown(function(){
+  suiteTeardown(async function(){
     //Remove test resources
+    let deletions = []
     for(let region of this.testRegions){
-      region.delete()
+      deletions.push(region.delete())
     }
+
+    await Promise.all(deletions)
   })
 
   setup(async function(){
