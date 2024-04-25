@@ -1,0 +1,43 @@
+version: 2.1
+
+orbs:
+  slack: circleci/slack@4.13.2
+
+jobs:
+  publish:
+    docker:
+      - image: node:stable
+    steps:
+      - checkout
+      - run:
+          name: Install build dependencies
+          command: npm install
+      - run:
+          name: Run unit tests
+          command: npm test
+      - run:
+          name: Build distribution files
+          command: npm run build
+      - run:
+          name: Authenticate to NPM
+          command: npm set //registry.npmjs.org/:_authToken=$NPM_TOKEN
+      - run:
+          name: Publish package to NPM
+          command: npm publish --access=public
+      - slack/notify:
+          event: fail
+          channel: C03UFNPMF09
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          template: success_tagged_deploy_1
+
+workflows:
+  publish_sdk:
+    jobs:
+      - publish:
+          context:
+            - Build Secrets 
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
