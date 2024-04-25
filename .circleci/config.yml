@@ -6,7 +6,7 @@ orbs:
 jobs:
   publish:
     docker:
-      - image: node:stable
+      - image: node:18
     steps:
       - checkout
       - run:
