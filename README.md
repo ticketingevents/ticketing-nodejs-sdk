@@ -77,7 +77,7 @@ const ticketing = new TickeTing({
   * [Filters](#filters)
     * [The ID Filter](#the-id-filter)
   * [Pagination](#pagination)
-  * [Stacking operations](#stacking-operations)
+  * [Chaining operations](#chaining-operations)
 - [Error handling](#error-handling)
 - [Regions](#regions)
   * [List all regions](#list-all-regions)
@@ -225,10 +225,10 @@ avoid page access errors.
   console.log(await collection.hasPrevious())
 ```
 
-### Stacking operations
+### Chaining operations
 
 When working with collections you are likely to want to perform filter, sort and pagination operations in a
-single statement. Collections support operation stacking to achieve this.
+single statement. Collections support operation chaining to achieve this.
 
 ```javascript
 //Filter collection based on criteria

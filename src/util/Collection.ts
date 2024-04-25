@@ -1,7 +1,7 @@
 export class Collection<T> extends Promise<Array<T>>{
-  private __current: number = 1
-  private __pages: number = 0
   private __executor: Function
+  private __onCurrent: Function = () => {}
+  private __onPages: Function = () => {}
   private __onFilter: Function = (criteria) => {}
   private __onPageChange: Function = (page) => {}
 
@@ -13,7 +13,9 @@ export class Collection<T> extends Promise<Array<T>>{
   get current(): Promise<number>{
     return new Promise((resolve, reject) => {
       this.then(result => {
-        resolve(this.__current)
+        resolve(this.__onCurrent())
+      }).catch(error => {
+        resolve(this.__onCurrent())
       })
     })
   }
@@ -21,42 +23,67 @@ export class Collection<T> extends Promise<Array<T>>{
   get pages(): Promise<number>{
     return new Promise((resolve, reject) => {
       this.then(result => {
-        resolve(this.__pages)
+        resolve(this.__onPages())
+      }).catch(error => {
+        resolve(this.__onPages())
       })
     })
   }
 
-  set pages(pages: number){
-    this.__pages = pages
-  }
-
   filter(criteria: {[key: string]: string|number}): Collection<T>{
-    this.__onFilter(criteria)
-
-    return new Collection<T>(this.__executor)
+    return this.__copy((resolve, reject)=>{
+      this.then(result => {
+        this.__onFilter(criteria)
+        this.__executor(resolve, reject)
+      }).catch(error => {
+        reject(error)
+      })
+    })
   }
 
   next(): Collection<T>{
-    return this.goto(this.__current+1)
+    return this.__copy((resolve, reject)=>{
+      this.current.then(current => {
+        this.__goto(current+1)
+        this.__executor(resolve, reject)
+      })
+    })
   }
 
   previous(): Collection<T>{
-    return this.goto(this.__current-1)
+    return this.__copy((resolve, reject)=>{
+      this.current.then(current => {
+        this.__goto(current-1)
+        this.__executor(resolve, reject)
+      })
+    })
   }
 
   first(): Collection<T>{
-    return this.goto(1)
+    return this.__copy((resolve, reject)=>{
+      this.pages.then(pages => {
+        this.__goto(1)
+        this.__executor(resolve, reject)
+      })
+    })
   }
 
-  async last(): Promise<Collection<T>>{
-    return this.goto(await this.pages)
+  last(): Collection<T>{
+    return this.__copy((resolve, reject)=>{
+      this.pages.then(pages => {
+        this.__goto(pages)
+        this.__executor(resolve, reject)
+      })
+    })
   }
 
   goto(page: number): Collection<T>{
-    this.__current = page
-    this.__onPageChange(page)
-
-    return new Collection<T>(this.__executor)
+    return this.__copy((resolve, reject)=>{
+      this.pages.then(pages => {
+        this.__goto(page)
+        this.__executor(resolve, reject)
+      })
+    })
   }
 
   async hasNext(): Promise<boolean>{
@@ -67,11 +94,32 @@ export class Collection<T> extends Promise<Array<T>>{
     return await this.current > 1
   }
 
+  onCurrent(callback: Function){
+    this.__onCurrent = callback
+  }
+
+  onPages(callback: Function){
+    this.__onPages = callback
+  }
+
   onFilter(callback: Function){
     this.__onFilter = callback
   }
 
   onPageChange(callback: Function){
     this.__onPageChange = callback
+  }
+
+  private __copy(executor): Collection<T>{
+    let collection = new Collection<T>(executor)
+    collection.onCurrent(this.__onCurrent)
+    collection.onPages(this.__onPages)
+    collection.onFilter(this.__onFilter)
+    collection.onPageChange(this.__onPageChange)
+    return collection
+  }
+
+  private __goto(page: number){
+    this.__onPageChange(page)
   }
 }

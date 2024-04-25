@@ -1,122 +1,127 @@
 //Control execution order
-/*import './regions'
+import './filters'
 
 import { TickeTing, Region, PageAccessError } from '../../src'
 import { Collection } from  '../../src/util'
-import { assert } from '../setup'
-
-//Setup SDK for testing
-let ticketing: TickeTing = new TickeTing({
-  apiKey: "07b2f3b08810a4296ee19fc59dff48b0",
-  sandbox: true
-})
+import { expect } from '../setup'
 
 suite("Pagination", function(){
-  let regionData: {[key: string]: string} = {}
-  let testRegions: Array<Region> = []
-  let collection: Collection<Region>|null = null
+  //Set hook timeout
+  this.timeout(20000)
 
-  setup(async function(){
-    regionData = {
-      name: "Pagination Region ",
+  suiteSetup(async function(){
+    //Setup SDK for testing
+    let ticketing: TickeTing = new TickeTing({
+      apiKey: "07b2f3b08810a4296ee19fc59dff48b0",
+      sandbox: true
+    })
+
+    //Initialise test data for suite
+    let regionData = {
+      name: "Test Region ",
       country: "Antigua and Barbuda"
     }
 
-    testRegions = []
-
-    //Create multiple resources to test pagination
+    this.testRegions = []
     for(let i=1; i <= 5; i++){
-      testRegions.push(
+      this.testRegions.push(
         await ticketing.regions.create({
-          name: regionData.name+i,
+          name: regionData.name+Math.floor(Math.random() * 999999),
           country: regionData.country
         }
       ))
     }
 
-    collection = ticketing.regions.list(1)
+    // Initialise collection handle for testing
+    this.collection = ticketing.regions.list(1)
+  })
+
+  suiteTeardown(function(){
+    //Remove test resources
+    for(let region of this.testRegions){
+      region.delete()
+    }
+  })
+
+  setup(async function(){
+    //Set test timeouts
+    this.timeout(5000)
   })
 
   suite('#first()', function () {
     test("Should return the first page of resources", function(){
-      assert.eventually.isEqual(collection.first().current, 1, "first() does not navigate to the first page of resources")
+      return expect(this.collection.first().current)
+        .to.eventually.equal(1)
     })
   })
 
   suite('#last()', function () {
     test("Should return the last page of resources", async function(){
-      assert.eventually.isEqual(collection.last().current, await collection.pages, "last() does not navigate to the last page of resources")
+      return expect(this.collection.last().current)
+        .to.eventually.equal(await this.collection.pages)
     })
   })
 
   suite('#next()', function () {
     test("Should navigate to the next page of resources", function(){
-      collection.first().next()
-      assert.eventually.isEqual(collection.current, 2, "next() does not navigate to the subsequent page of resources")
+      return expect(this.collection.first().next().current)
+        .to.eventually.equal(2)
     })
 
     test("Should throw a PageAccessError if no subsequent page exists", function(){
-      assert.isRejected(
-        collection.last().next(),
-        PageAccessError,
-        "Attempting to retrieve a non-existant page does not throw a PageAccessError"
-      )
+      return expect(this.collection.last().next())
+        .to.eventually.be.rejectedWith("The specified page does not exist for the given records per page")
+        .and.be.an.instanceof(PageAccessError)
     })
   })
 
   suite('#previous()', function () {
-    test("Should navigate to the previous page of resources", function(){
-      collection.last().previous()
-      assert.eventually.isEqual(collection.current, await collection.pages - 1, "previous() does not navigate to the previous page of resources")
+    test("Should navigate to the previous page of resources", async function(){
+      return expect(this.collection.last().previous().current)
+        .to.eventually.equal(await this.collection.last().previous().pages - 1)
     })
 
     test("Should throw a PageAccessError if no previous page exists", function(){
-      assert.isRejected(
-        collection.first().previous(),
-        PageAccessError,
-        "Attempting to retrieve a non-existant page does not throw a PageAccessError"
-      )
+      return expect(this.collection.first().previous())
+        .to.eventually.be.rejectedWith("Please specify a positive integer page number")
+        .and.be.an.instanceof(PageAccessError)
     })
   })
 
   suite('#goto()', function () {
     test("Should navigate to the specified page of resources", function(){
-      collection.goto(7)
-      assert.eventually.isEqual(collection.current, 7, "goto() does not navigate to the specified page of resources")
+      return expect(this.collection.goto(3).current)
+        .to.eventually.equal(3)
     })
 
-    test("Should throw a PageAccessError if the specified page does not exist", function(){
-      assert.isRejected(
-        collection.last().next(),
-        PageAccessError,
-        "Attempting to retrieve a non-existant page does not throw a PageAccessError"
-      )
+    test("Should throw a PageAccessError if the specified page does not exist", async function(){
+      return expect(this.collection.last().next())
+        .to.eventually.be.rejectedWith("The specified page does not exist for the given records per page")
+        .and.be.an.instanceof(PageAccessError)
     })
   })
 
   suite('#hasNext()', function () {
     test("Should return true if a subsequent page of resources exists", function(){
-      assert.eventually,isTrue(collection.first().hasNext())
+      return expect(this.collection.first().hasNext())
+        .to.eventually.be.true
     })
 
     test("Should return false if no subsequent page of resources exists", function(){
-      assert.eventually.isFalse(collection.last().hasNext())
+      return expect(this.collection.last().hasNext())
+        .to.eventually.be.false
     })
   })
 
   suite('#hasPrevious()', function () {
     test("Should return true if a previous page of resources exists", function(){
-      assert.eventually.isTrue(collection.last().hasPrevious())
+      return expect(this.collection.last().hasPrevious())
+        .to.eventually.be.true
     })
 
     test("Should return false if no previous page of resources exists", function(){
-      assert.eventually.isFalse(collection.first().hasPrevious())
+      return expect(this.collection.first().hasPrevious())
+        .to.eventually.be.false
     })
   })
-
-  teardown(function(){
-    for(let region of testRegions){
-      region.delete()
-    }
-  })
-})*/
+})

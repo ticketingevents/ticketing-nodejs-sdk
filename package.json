@@ -12,12 +12,13 @@
     "@types/mocha": "^10.0.6",
     "chai": "^4.4.1",
     "chai-as-promised": "^7.1.1",
+    "chai-things": "^0.2.0",
     "mocha": "^10.4.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
   },
   "scripts": {
-    "test": "mocha --ui tdd --reporter spec --require ts-node/register test/suites/*.ts"
+    "test": "mocha --ui tdd --reporter spec --require ts-node/register --require test/fixtures/fixtures.ts test/suites/*.ts"
   },
   "dependencies": {
     "axios": "^1.6.8"
