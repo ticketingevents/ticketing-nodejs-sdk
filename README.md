@@ -11,7 +11,7 @@
     <br />
 
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE.md)
-![NPM Version](https://img.shields.io/npm/v/@ticketingevents/ticketing-sdk)
+![NPM Version](https://img.shields.io/npm/v/@ticketing/ticketing-nodejs-sdk)
 
   </sup>
   <br />
