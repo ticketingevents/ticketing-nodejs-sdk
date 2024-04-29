@@ -1,5 +1,5 @@
 import { APIAdapter } from './util/APIAdapter'
-import { RegionService } from './service'
+import { RegionService, PresetService } from './service'
 
 export class TickeTing{
   // Define private members
@@ -7,6 +7,7 @@ export class TickeTing{
 
   // Define public services
   public regions: RegionService;
+  public presets: PresetService;
 
   constructor(config: {apiKey: string, sandbox: boolean}){
     this.__apiAdapter = new APIAdapter(
@@ -15,5 +16,6 @@ export class TickeTing{
     )
 
     this.regions = new RegionService(this.__apiAdapter)
+    this.presets = new PresetService(this.__apiAdapter)
   }
 }

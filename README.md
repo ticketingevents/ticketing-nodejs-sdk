@@ -85,6 +85,8 @@ const ticketing = new TickeTing({
   * [Fetch a region](#fetch-a-region)
   * [Update a region](#update-a-region)
   * [Delete a region](#delete-a-region)
+- [Presets](#presets)
+  * [Retrieve a list of countries](#retrieve-a-list-of-countries)
 
 ## Collections
 
@@ -286,8 +288,8 @@ Each TickeTing Error instance has a unique type, and provides an error message, 
 
 ## Regions
 
-This section documents the operations for managing regions supported by
-the TickeTing platform (requires administrative access).
+Operations for managing regions supported by the TickeTing platform
+(requires administrative access).
 
 ### List all regions
 
@@ -407,4 +409,25 @@ the TickeTing platform (requires administrative access).
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
   })
+```
+
+## Presets
+
+Retrieve lists of pre-defined values for use in creating events, hosts, venues and
+other TickeTing resources. NB: Unlike collections returned by the list() function,
+preset collections cannot be filtered, sorted or paginated.
+
+### Retrieve a list of countries
+
+[API Reference](https://ticketing.redoc.ly/tag/Default-Values#operation/retrieve_countries)
+
+```javascript
+  ticketing.presets.countries()
+    .then(countries => {
+      //Do something with the list of countries
+    })
+    .catch(error => {
+      //Handle errors
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    })
 ```

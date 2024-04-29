@@ -1,15 +1,15 @@
 //Control execution order
-import './regions'
+import './presets'
 
 import { TickeTing, UnsupportedCriteriaError } from '../../src'
 import { Collection } from  '../../src/util'
 import { expect } from '../setup'
 
-suite("Filters", function(){
+describe("Filters", function(){
   //Set hook timeout
   this.timeout(20000)
 
-  suiteSetup(async function(){
+  before(async function(){
     //Setup SDK for testing
     let ticketing: TickeTing = new TickeTing({
       apiKey: "07b2f3b08810a4296ee19fc59dff48b0",
@@ -36,7 +36,7 @@ suite("Filters", function(){
     this.collection = ticketing.regions.list(1)
   })
 
-  suiteTeardown(async function(){
+  after(async function(){
     //Remove test resources
     let deletions = []
     for(let region of this.testRegions){
@@ -46,13 +46,13 @@ suite("Filters", function(){
     await Promise.all(deletions)
   })
 
-  setup(async function(){
+  beforeEach(function(){
     //Set test timeouts
     this.timeout(5000)
   })
 
-  suite('#filter()', function () {
-    test("Should throw a UnsupportedCriteriaError if the collection does not support the specified filter", function(){
+  describe('#filter()', function () {
+    it("Should throw a UnsupportedCriteriaError if the collection does not support the specified filter", function(){
       return expect(this.collection.filter({"unsupported": true}))
         .to.eventually.be.rejectedWith("The collection does not support the following filters: unsupported.")
         .and.be.an.instanceOf(UnsupportedCriteriaError)
