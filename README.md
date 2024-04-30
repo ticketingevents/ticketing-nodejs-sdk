@@ -71,6 +71,28 @@ const ticketing = new TickeTing({
 });
 ```
 
+# Integrating with Angular
+
+The TickeTing SDK can be converted into an Angular Service for easy injection into your
+components, without having to repeatedly reinitialise the TickeTing instance. To use the SDK
+as an Angular service simply adapt the code snippet below as appropriate.
+
+```javascript
+import { Injectable } from '@angular/core';
+import { TickeTing } from '@ticketing/ticketing-nodejs-sdk'
+
+@Injectable({
+  providedIn: 'root'
+})
+export class TickeTingService extends TickeTing{
+  constructor() {
+    super({
+      apiKey: "API_KEY"
+    })
+  }
+}
+```
+
 # Usage
 
 - [Collections](#collections)
