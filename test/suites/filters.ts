@@ -6,6 +6,7 @@ import { Collection } from  '../../src/util'
 import { expect } from '../setup'
 
 describe("Filters", function(){
+
   //Set hook timeout
   this.timeout(20000)
 

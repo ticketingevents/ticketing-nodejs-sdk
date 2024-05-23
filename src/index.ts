@@ -1,6 +1,6 @@
 export { TickeTing } from './ticketing'
-export { Region } from './interface'
+export { Region, Venue } from './interface'
 export {
-  BadDataError, PageAccessError, ResourceExistsError, ResourceNotFoundError,
-  UnauthorisedError, UnsupportedCriteriaError
+  BadDataError, PageAccessError, ResourceExistsError, ResourceIndelibleError,
+  ResourceNotFoundError, UnauthorisedError, UnsupportedCriteriaError
 } from './errors'

@@ -1,6 +1,6 @@
 import { APIAdapter } from '../util'
 import { Base } from '../interface/Base'
-import { BadDataError, ResourceExistsError } from '../errors'
+import { BadDataError, ResourceExistsError, ResourceIndelibleError } from '../errors'
 
 export class BaseModel implements Base{
   private __self: string
@@ -25,7 +25,7 @@ export class BaseModel implements Base{
       }).catch(error => {
         if(error.code == 400){
           error = new BadDataError(error.code, error.message)
-        }else if(error.code = 409){
+        }else if(error.code == 409){
           error = new ResourceExistsError(error.code, error.message)
         }
 
@@ -41,6 +41,10 @@ export class BaseModel implements Base{
       ).then(response => {
         resolve(true)
       }).catch(error => {
+        if(error.code == 409){
+          error = new ResourceIndelibleError(error.code, error.message)
+        }
+
         reject(error)
       })
     })

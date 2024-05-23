@@ -1,4 +1,4 @@
-import { TickeTing, Region, BadDataError, PageAccessError,  ResourceExistsError, ResourceNotFoundError } from '../../src'
+import { TickeTing, Region, BadDataError,  ResourceExistsError, ResourceNotFoundError, ResourceIndelibleError } from '../../src'
 import { RegionModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
 import { expect } from '../setup'
@@ -7,6 +7,7 @@ import { expect } from '../setup'
 let testRegion = null
 
 describe("Regions", function(){
+
   //Set timeout for tests in suite
   this.timeout(10000)
 
@@ -30,9 +31,19 @@ describe("Regions", function(){
       "name": "Test Region "+Math.floor(Math.random() * 999999),
       "country": "New Country"
     })
+
+    //A venue to test region cannot be deleted
+    this.testVenue = await this.ticketing.venues.create({
+      name: "Test Venue "+Math.floor(Math.random() * 999999),
+      region: this.secondRegion.id,
+      longitude: -70.99214,
+      latitude: 43.75518,
+      address: "Miami Beach, Miami, Florida"
+    })
   })
 
-  after(function(){
+  after(async function(){
+    await this.testVenue.delete()
     this.secondRegion.delete()
   })
 
@@ -147,6 +158,12 @@ describe("Regions", function(){
       return expect(this.ticketing.regions.find(testRegion.id))
         .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
+    })
+
+    it('Should throw a ResourceIndelibleError when attached to a venue', function () {
+      return expect(this.secondRegion.delete())
+        .to.eventually.be.rejectedWith("A region cannot be deleted if it has venues attached")
+        .and.be.an.instanceOf(ResourceIndelibleError)
     })
   })
 })

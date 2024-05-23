@@ -107,6 +107,12 @@ export class TickeTingService extends TickeTing{
   * [Fetch a region](#fetch-a-region)
   * [Update a region](#update-a-region)
   * [Delete a region](#delete-a-region)
+- [Venues](#venues)
+  * [List event venues](#list-event-venues)
+  * [Create an event venue](#create-an-event-venue)
+  * [Fetch a venue](#fetch-a-venue)
+  * [Update a venue](#update-a-venue)
+  * [Delete an event venue](#delete-an-event-venue)
 - [Presets](#presets)
   * [Retrieve a list of countries](#retrieve-a-list-of-countries)
 
@@ -144,15 +150,15 @@ To filter a collection, call its <code>filter</code> method with an object conta
 desired criteria.
 
 ```javascript
-//Filter region collection based on given criteria
+//Filter venue collection based on given criteria
 let criteria = {
-  //Some criteria
+  region: 19290238432215
 }
 
-ticketing.regions.list()
+ticketing.venues.list()
   .filter(criteria)
-  .then(regions => {
-    //Do something with the matching region resource(s)
+  .then(venues => {
+    //Do something with the matching venue resource(s)
   })
   .catch(error => {
     if(error instanceof UnsupportedCriteriaError){
@@ -427,6 +433,133 @@ Operations for managing regions supported by the TickeTing platform
     if(error instanceof ResourceIndelibleError){
       //The region cannot be deleted as it is in use
       console.log(error.message)
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+## Venues
+
+Operations for managing the venues at which event can be staged 
+(requires administrative access).
+
+### List event venues
+
+[API Reference](https://ticketing.redoc.ly/tag/Venue-Management#operation/list_venues)
+
+```javascript
+  ticketing.venues.list()
+    // Supported filters with examples
+    .filter({region: 19290238432215})
+    .then(venues => {
+      //Do something with the collection of venues
+    })
+    .catch(error => {
+      //Handle errors
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    })
+```
+
+### Create an event venue
+
+[API Reference](https://ticketing.redoc.ly/tag/Venue-Management#operation/create_venue)
+
+```javascript
+  let venueData = {
+    "name": "Vought Tower", //Required
+    "region": "19290238432215", //Required
+    "longitude": -73.99214, //Required
+    "latitude": 40.75518, //Required
+    "address": "7th Ave, Manhattan, New York" //Required
+  }
+
+  ticketing.venues.create(venueData)
+    .then(venue => {
+      //Do something with the created venue resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log(error.message)
+      }else if(error instanceof ResourceExistsError){
+        console.log("A region with the given name already exists.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch a venue
+
+[API Reference](https://ticketing.redoc.ly/tag/Venue-Management#operation/retrieve_venue)
+
+```javascript
+  //Retrieve a specific venue using its ID
+  ticketing.venues.find(16878146473429)
+    .then(venue => {
+      //Do something with the venue resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no venue with the given ID")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Update a venue
+
+[API Reference](https://ticketing.redoc.ly/tag/Venue-Management#operation/update_venue)
+
+```javascript
+  //Retrieve a specific venue using its ID
+  venue = await ticketing.venues.find(16878146473429)
+
+  //Make changes to the resource
+  venue.name = "New Name"
+  venue.address = "#1 High St., St. John's"
+
+  //Save changes
+  venue.save().then(saved => {
+    if(saved){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log(error.message)
+    }else if(error instanceof ResourceExistsError){
+      console.log("A region with the given name already exists.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Delete an event venue
+
+[API Reference](https://ticketing.redoc.ly/tag/Venue-Management#operation/delete_venue)
+
+```javascript
+  //Retrieve a specific venue using its ID
+  venue = await ticketing.venues.find(16878146473429)
+
+  //Delete the venue
+  venue.delete().then(deleted => {
+    if(deleted){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof ResourceIndelibleError){
+      console.log("The venue is currently hosting, or has staged, one or more events.")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
