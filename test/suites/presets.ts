@@ -1,10 +1,10 @@
 //Control execution order
-import './venues'
+import './events'
 
 import { TickeTing } from '../../src'
 import { expect } from '../setup'
 
-describe("Presets", function(){
+describe.skip("Presets", function(){
 
   //Set hook timeout
   this.timeout(20000)

@@ -1,6 +1,7 @@
 export { TickeTingError } from './TickeTingError'
 export { BadDataError } from './BadDataError'
 export { PageAccessError } from './PageAccessError'
+export { PermissionError } from './PermissionError'
 export { ResourceExistsError } from './ResourceExistsError'
 export { ResourceIndelibleError } from './ResourceIndelibleError'
 export { ResourceNotFoundError } from './ResourceNotFoundError'

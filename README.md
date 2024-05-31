@@ -43,10 +43,10 @@ const ticketing = new TickeTing({
   apiKey: "API_KEY"
 });
 
-//Retrieve a collection of supported regions
-ticketing.regions.list()
-  .then(regions => {
-    //Do something with the of region resources
+//Retrieve a collection of published events
+ticketing.events.published.list()
+  .then(events => {
+    //Do something with the of event resources
   })
   .catch(error => {
     //Handle an error if necessary
@@ -98,6 +98,7 @@ export class TickeTingService extends TickeTing{
 - [Collections](#collections)
   * [Filters](#filters)
     * [The ID Filter](#the-id-filter)
+  * [Sorting](#sorting)
   * [Pagination](#pagination)
   * [Chaining operations](#chaining-operations)
 - [Error handling](#error-handling)
@@ -113,6 +114,14 @@ export class TickeTingService extends TickeTing{
   * [Fetch a venue](#fetch-a-venue)
   * [Update a venue](#update-a-venue)
   * [Delete an event venue](#delete-an-event-venue)
+- [Events](#events)
+  * [List published events](#list-published-events)
+  * [List all events](#list-all-events)
+  * [Register an event](#register-an-event)
+  * [Fetch an event](#fetch-an-event)
+  * [Update an event](#update-an-event)
+  * [Delete an event](#delete-an-event)
+  * [Submit an event for review](#submit-an-event-for-review)
 - [Presets](#presets)
   * [Retrieve a list of countries](#retrieve-a-list-of-countries)
 
@@ -150,19 +159,52 @@ To filter a collection, call its <code>filter</code> method with an object conta
 desired criteria.
 
 ```javascript
-//Filter venue collection based on given criteria
+//Filter event collection based on given criteria
 let criteria = {
-  region: 19290238432215
+  region: 19290238432215,
+  title: "Dawn of the Seven Premier"
 }
 
-ticketing.venues.list()
+ticketing.events.published.list()
   .filter(criteria)
-  .then(venues => {
-    //Do something with the matching venue resource(s)
+  .then(events => {
+    //Do something with the matching event resource(s)
   })
   .catch(error => {
     if(error instanceof UnsupportedCriteriaError){
       //Handle unsupported criteria error
+    }else{
+      //Handle other errors
+    }
+  })
+```
+
+### Sorting
+
+For very large collections, sorting client-side can incur significant overhead and make
+pagination challenging. To aid in this, collections can be pre-sorted so that results are
+returned in a preferred order based on one of the resource's fields. 
+
+The fields you can sort by will be dependent on the collection you are working with. If
+you sort a collection based on an unsupported field, an <code>UnsupportedSortError</code>
+will be thrown when you attempt to resolve the collection. Read the documentation for the
+collection you are working with to see its supported sort fields.
+
+To sort a collection, call its <code>sort</code> method. This function accepts two arguments,
+a string representing the resource field by which to sort the collection, and a boolean specifying
+whether to return the results in ascending or descending order (this parameter is optional, and
+results are sorted in ascending order by default).
+
+```javascript
+//Sort event collection in descending order of popularity
+ticketing.events.published.list()
+  .sort("popularity", false)
+  .then(events => {
+    //Do something with the matching event resource(s)
+  })
+  .catch(error => {
+    if(error instanceof UnsupportedSortError){
+      //Handle unsupported sort field error
     }else{
       //Handle other errors
     }
@@ -181,7 +223,7 @@ resolved, instead returning a subset, or page, at a time. Collections are pagina
 25 if a custom value is not specified.
 
 ```javascript
-  let collection = ticketing.regions.list(10) //Will return 10 resources at a time when resolved
+  let collection = ticketing.venues.list(10) //Will return 10 resources at a time when resolved
 ```
 You can use a collection's pagination access methods to page back and forth through its resources as desired.
 
@@ -223,11 +265,11 @@ If a collection ends up internally referencing a non-existant page, a <code>Page
 will be thrown when the collection is resolved.
 
 ```javascript
-  let collection = ticketing.regions.list(10)
+  let collection = ticketing.venues.list(10)
     .last()
     .next() // This call to next() will cause the collection to reference a non-existant page
-    .then(regions => {
-      //Do something with the matching region resource(s)
+    .then(venues => {
+      //Do something with the matching venue resource(s)
     })
     .catch(error => {
       if(error instanceof PageAccessError){ //A PageAccessError is thrown when we attempt to resolve the collection
@@ -263,15 +305,15 @@ single statement. Collections support operation chaining to achieve this.
 ```javascript
 //Filter collection based on criteria
 let criteria = {
-  //Filter criteria
+  region: 19290238432215
 }
 
-ticketing.regions.list(10)
+ticketing.venues.list(10)
   .filter(criteria)
   .first()
   .next()
-  .then(regions => {
-    //Do something with the page of matching region resource(s)
+  .then(venues => {
+    //Do something with the page of matching venue resource(s)
   })
   .catch(error => {
     if(error instanceof UnsupportedCriteriaError){
@@ -457,7 +499,13 @@ Operations for managing the venues at which event can be staged
     })
     .catch(error => {
       //Handle errors
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
     })
 ```
 
@@ -466,9 +514,11 @@ Operations for managing the venues at which event can be staged
 [API Reference](https://ticketing.redoc.ly/tag/Venue-Management#operation/create_venue)
 
 ```javascript
+  let region = await ticketing.regions.find(19290238432215)
+
   let venueData = {
     "name": "Vought Tower", //Required
-    "region": "19290238432215", //Required
+    "region": region, //Required
     "longitude": -73.99214, //Required
     "latitude": 40.75518, //Required
     "address": "7th Ave, Manhattan, New York" //Required
@@ -560,6 +610,244 @@ Operations for managing the venues at which event can be staged
     //Handle errors
     if(error instanceof ResourceIndelibleError){
       console.log("The venue is currently hosting, or has staged, one or more events.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+
+## Events
+
+Operations for working with events in the TickeTing system.
+
+### List published events
+
+[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/list_published_events)
+
+```javascript
+  ticketing.events.published.list()
+    // Supported filters with examples
+    .filter({
+      region: 19290238432215,
+      title: "Dawn of the Seven Premier"
+    })
+    // Supported sort fields
+    .sort(
+      "alphabetical", //One of "alphabetical" "published" "popularity" "start"
+      true //Set true for ascending sort (default), or false for descending order
+    )
+    .then(events => {
+      //Do something with the collection of events
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof UnsupportedSortError){
+        //Handle unsupported sort field error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+
+    // List upcoming events (earliest event first)
+    ticketing.events.published.list().sort("start").then(upcoming=>{})
+
+    // List popular events (most popular first)
+    ticketing.events.published.list().sort("popularity", false).then(popular=>{})
+
+    // List new events (newest first)
+    ticketing.events.published.list().sort("published", false).then(newest=>{})
+```
+
+### List all events (Admin Only)
+
+[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/list_events)
+
+```javascript
+  ticketing.events.list()
+    // Supported filters with examples
+    .filter({
+      region: 19290238432215,
+      host: 16951985851389,
+      title: "Dawn of the Seven Premier",
+      status: "Scheduled",
+      active: true,
+      public: false,
+      section: 16993964783416
+    })
+    // Supported sort fields
+    .sort(
+      "published", //One of "alphabetical" "published" "popularity" "start"
+      false //Set true for ascending sort (default), or false for descending order
+    )
+    .then(events => {
+      //Do something with the collection of events
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof UnsupportedSortError){
+        //Handle unsupported sort field error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Register an event
+
+[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/register_event)
+
+```javascript
+  let venue = await ticketing.venues.find(16878146473429)
+
+  let eventData = {
+    "host": "16951985851389", //Required
+    "title": "Dawn of the Seven Premier", //Required
+    "description": "World Premier of the long ....", //Required
+    "type": "Standard", //Required
+    "public": true, //Required
+    "category": "/categories/16878141745207", //Required
+    "subcategory": "Premier", //Required
+    "venue": venue, //Required
+    "start": "2024-06-07T20:00",
+    "end": "2024-06-07T23:00",
+    "disclaimer": "Attend at your own risk",
+    "tags": ["homelander", "queen maeve", "the deep", "A-Train"],
+    "banner": "data:image/png;base64,iVBORw0KGgoAAAA...",
+    "thumbnail": "data:image/png;base64,iVBORw0KGgoA..."
+  }
+
+  ticketing.events.create(eventData)
+    .then(event => {
+      //Do something with the created event resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log(error.message)
+      }else if(error instanceof ResourceNotFoundError){
+        console.log("The specified event host does not exist.")
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to manage events on behalf of this host.")
+      }else if(error instanceof ResourceExistsError){
+        console.log("An event with the given name already exists.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch an event
+
+[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/retrieve_event)
+
+```javascript
+  //Retrieve a specific event using its ID
+  ticketing.events.find(16993717817996)
+    .then(event => {
+      //Do something with the event resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no event with the given ID")
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to access this unlisted event.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Update an event
+
+[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/update_event)
+
+```javascript
+  //Retrieve a specific event using its ID
+  event = await ticketing.events.find(16993717817996)
+
+  //Make changes to the resource
+  event.public = false
+  event.end = "2025-09-07T23:00"
+
+  //Save changes
+  event.save().then(saved => {
+    if(saved){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log(error.message)
+    }else if(error instanceof PermissionError){
+        console.log("You are not authorised to manage events on behalf of this host.")
+    }else if(error instanceof ResourceExistsError){
+      console.log("An event with the given name already exists.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Delete an event
+
+[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/delete_event)
+
+```javascript
+  //Retrieve a specific event using its ID
+  event = await ticketing.events.find(16993717817996)
+
+  //Delete the event
+  event.delete().then(deleted => {
+    if(deleted){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof PermissionError){
+      console.log("You are not authorised to manage events on behalf of this host.")
+    }else if(error instanceof ResourceIndelibleError){
+      console.log("The event has active sections which must be deleted first.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Submit an event for review
+
+[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/submit_event)
+
+```javascript
+  //Retrieve a specific event using its ID
+  event = await ticketing.events.find(16993717817996)
+
+  //Delete the event
+  event.submit().then(submitted => {
+    if(submitted){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof PermissionError){
+      console.log("You are not authorised to manage events on behalf of this host.")
+    }else if(error instanceof InvalidStateError){
+      console.log("The event has already been submitted or cancelled.")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }

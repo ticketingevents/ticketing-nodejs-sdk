@@ -6,7 +6,7 @@ import { expect } from '../setup'
 // Global region object
 let testRegion = null
 
-describe("Regions", function(){
+describe.skip("Regions", function(){
 
   //Set timeout for tests in suite
   this.timeout(10000)

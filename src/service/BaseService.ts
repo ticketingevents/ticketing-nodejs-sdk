@@ -43,7 +43,7 @@ export class BaseService<RequestType, ResponseType>{
       }).catch(error => {
         if(error.code == 400){
           error = new BadDataError(error.code, error.message)
-        }else if(error.code = 409){
+        }else if(error.code == 409){
           error = new ResourceExistsError(error.code, error.message)
         }
 

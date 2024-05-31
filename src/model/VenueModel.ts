@@ -2,10 +2,12 @@ import { APIAdapter } from '../util'
 import { BaseModel } from './BaseModel'
 import { Venue } from '../interface/Venue'
 import { VenueData } from '../interface/data/VenueData'
+import { Region } from '../interface/Region'
+import { RegionModel } from './RegionModel'
 
 export class VenueModel extends BaseModel implements Venue{
   public name: string
-  public region: string
+  public region: Region
   public longitude: number
   public latitude: number
   public address: string
@@ -15,7 +17,7 @@ export class VenueModel extends BaseModel implements Venue{
     super(venue.self, adapter)
 
     this.name = venue.name
-    this.region = /([A-Za-z0-9\-]+)$/.exec(venue.region)[1]
+    this.region = new RegionModel({self: venue.region}, adapter),
     this.longitude = venue.longitude
     this.latitude = venue.latitude
     this.address = venue.address

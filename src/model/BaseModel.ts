@@ -15,6 +15,10 @@ export class BaseModel implements Base{
     return /([A-Za-z0-9\-]+)$/.exec(this.__self)[1]
   }
 
+  get uri(): string{
+    return this.__self
+  }
+
   save(): Promise<boolean>{
     return new Promise((resolve, reject) => {
       this.__apiAdapter.put(
