@@ -1,6 +1,7 @@
 import { Venue } from '../Venue'
 
 export interface EventData{
+  host?: string
   title: string
   description: string
   type: string

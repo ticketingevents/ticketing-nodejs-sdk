@@ -14,7 +14,7 @@ export class APIAdapter{
         "X-API-Key": apiKey,
         "X-Client-Version": constants.CLIENT_VERSION
       },
-      timeout: 5000
+      timeout: 10000
     })
   }
 

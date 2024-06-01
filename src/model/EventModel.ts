@@ -1,4 +1,5 @@
 import { APIAdapter } from '../util'
+import { InvalidStateError } from '../errors'
 import { BaseModel } from './BaseModel'
 import { Event } from '../interface/Event'
 import { EventData } from '../interface/data/EventData'
@@ -11,7 +12,7 @@ export class EventModel extends BaseModel implements Event{
   public status: string
   public type: string
   public public: boolean
-  public category: string
+  public category: {[key: string]: string}
   public subcategory: string
   public start: string
   public end: string
@@ -65,17 +66,34 @@ export class EventModel extends BaseModel implements Event{
     this.__thumbnailData = thumbnailData
   }
 
+  submit(): Promise<boolean>{
+    return new Promise((resolve, reject) => {
+      this._apiAdapter.post(
+        `${this._self}/submissions`,
+        {}
+      ).then(response => {
+        resolve(true)
+      }).catch(error => {
+        if(error.code == 409){
+          error = new InvalidStateError(error.code,"The event has already been submitted or cancelled.")
+        }
+
+        reject(error)
+      })
+    })
+  }
+
   serialise(): EventData{
     let data: EventData = {
       title: this.title,
       description: this.description,
       type: this.type,
       public: this.public,
-      category: this.category,
+      category: this.category.self,
       subcategory: this.subcategory,
       start: this.start,
       end: this.end,
-      venue: this.venue,
+      venue: this.venue.uri,
       disclaimer: this.disclaimer,
       tags: this.tags
     }

@@ -4,12 +4,18 @@ import { BadDataError, PermissionError } from '../errors'
 import { APIAdapter } from '../util'
 import { EventData, Event } from '../interface'
 import { EventModel, VenueModel } from '../model'
+import { UnsupportedOperationError } from '../errors'
 
 export class EventService extends BaseService<EventData, Event>{
+  public published: PublishedEventService
+
   constructor(apiAdapter: APIAdapter){
-    super(apiAdapter, "/events", EventModel, [
-      "region", "host", "title", "status", "active", "public", "section"
-    ])
+    super(apiAdapter, "/events", EventModel,
+      ["region", "host", "title", "status", "active", "public", "section"],
+      ["alphabetical","published","popularity","start"]
+    )
+
+    this.published = new PublishedEventService(apiAdapter)
   }
 
   create(data: EventData): Promise<Event>{
@@ -20,8 +26,8 @@ export class EventService extends BaseService<EventData, Event>{
 
       let payload: EventData = JSON.parse(JSON.stringify(data))
       payload.venue = (data.venue as VenueModel).uri
-      super.create(payload).then(response => {
-        resolve(response)
+      super.create(payload).then(event => {
+        resolve(event)
       }).catch(error => {
         if(error.code == 403){
           error = new PermissionError(error.code, error.message)
@@ -29,6 +35,41 @@ export class EventService extends BaseService<EventData, Event>{
 
         reject(error)
       })
+    })
+  }
+
+  find(id: number|string): Promise<Event>{
+    return new Promise<Event>((resolve, reject) => {
+      super.find(id).then(event => {
+        resolve(event)
+      }).catch(error => {
+        if(error.code == 403){
+          error = new PermissionError(error.code, "You are not authorised to access this unlisted event.")
+        }
+
+        reject(error)
+      })
+    })
+  }
+}
+
+class PublishedEventService extends BaseService<EventData, Event>{
+  constructor(apiAdapter: APIAdapter){
+    super(apiAdapter, "/published-events", EventModel,
+      ["region", "title"],
+      ["alphabetical","published","popularity","start"]
+    )
+  }
+
+  create(data: EventData): Promise<Event>{
+    return new Promise<Event>((resolve, reject) => {
+      reject(new UnsupportedOperationError(0, "Operation not supported"))
+    })
+  }
+
+  find(id: number|string): Promise<Event>{
+    return new Promise<Event>((resolve, reject) => {
+      reject(new UnsupportedOperationError(0, "Operation not supported"))
     })
   }
 }

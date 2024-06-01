@@ -1,7 +1,7 @@
 import { APIAdapter, Collection } from '../util'
 import { 
   BadDataError, ResourceExistsError, ResourceNotFoundError, 
-  PageAccessError, UnsupportedCriteriaError
+  PageAccessError, UnsupportedCriteriaError, UnsupportedSortError
 } from '../errors'
 
 export class BaseService<RequestType, ResponseType>{
@@ -11,6 +11,7 @@ export class BaseService<RequestType, ResponseType>{
 
   private __listCollection: Collection<ResponseType>
   private __listFilters: Array<string>
+  private __listSortFields: Array<string>
   private __listCriteria: {[key: string]: string|number}
   private __listResult: {entries: Array<ResponseType>, page: number, records: number, total: number}
 
@@ -18,7 +19,8 @@ export class BaseService<RequestType, ResponseType>{
     apiAdapter: APIAdapter,
     baseUrl: string,
     modelClass: any,
-    supportedFilters: Array<string> = []
+    supportedFilters: Array<string> = [],
+    supportedSortFields: Array<string> = []
   ){
     this.__adapter = apiAdapter
     this.__baseUrl = baseUrl
@@ -28,7 +30,8 @@ export class BaseService<RequestType, ResponseType>{
       (resolve, reject) => {}
     )
 
-    this.__listFilters = ['page','records'].concat(supportedFilters)
+    this.__listFilters = ['page','records','sort','order'].concat(supportedFilters)
+    this.__listSortFields = supportedSortFields
     this.__listCriteria = {}
     this.__listResult = {entries: [], page: 0, records: 0, total: 0}
   }
@@ -70,6 +73,11 @@ export class BaseService<RequestType, ResponseType>{
           this.__listCriteria[criterion] = criteria[criterion]
         }
       }
+    })
+
+    this.__listCollection.onSort((field: string, order: string) => {
+      this.__listCriteria.sort = field
+      this.__listCriteria.order = order
     })
 
     this.__listCollection.onPageChange((page: number) => {
@@ -114,6 +122,13 @@ export class BaseService<RequestType, ResponseType>{
 
     if(unsupportedFilters.length > 0){
       criteriaError = new UnsupportedCriteriaError(400, `The collection does not support the following filters: ${unsupportedFilters.join(", ")}.`)
+    }
+
+    if(this.__listCriteria.sort && this.__listSortFields.indexOf(this.__listCriteria.sort as string) < 0){
+      reject(new UnsupportedSortError(
+        400,
+        `The collection cannot be sorted by ${this.__listCriteria.sort}.`
+      ))
     }
 
    if(criteriaError){

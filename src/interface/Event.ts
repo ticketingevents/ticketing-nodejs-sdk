@@ -6,7 +6,7 @@ export interface Event extends Base{
   description: string
   type: string
   public: boolean
-  category: string
+  category: {[key: string]: string}
   subcategory: string
   start: string
   end: string

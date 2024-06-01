@@ -3,6 +3,7 @@ export class Collection<T> extends Promise<Array<T>>{
   private __onCurrent: Function = () => {}
   private __onPages: Function = () => {}
   private __onFilter: Function = (criteria) => {}
+  private __onSort: Function = (field, order) => {}
   private __onPageChange: Function = (page) => {}
 
   constructor(executor){
@@ -34,6 +35,15 @@ export class Collection<T> extends Promise<Array<T>>{
     return this.__copy((resolve, reject)=>{
       this.pages.then(result => {
         this.__onFilter(criteria)
+        this.__executor(resolve, reject)
+      })
+    })
+  }
+
+  sort(field: string, ascending: boolean = true): Collection<T>{
+    return this.__copy((resolve, reject)=>{
+      this.pages.then(result => {
+        this.__onSort(field, ascending?"asc":"desc")
         this.__executor(resolve, reject)
       })
     })
@@ -104,6 +114,10 @@ export class Collection<T> extends Promise<Array<T>>{
     this.__onFilter = callback
   }
 
+  onSort(callback: Function){
+    this.__onSort = callback
+  }
+
   onPageChange(callback: Function){
     this.__onPageChange = callback
   }
@@ -113,6 +127,7 @@ export class Collection<T> extends Promise<Array<T>>{
     collection.onCurrent(this.__onCurrent)
     collection.onPages(this.__onPages)
     collection.onFilter(this.__onFilter)
+    collection.onSort(this.__onSort)
     collection.onPageChange(this.__onPageChange)
     return collection
   }

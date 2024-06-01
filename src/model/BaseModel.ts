@@ -3,26 +3,26 @@ import { Base } from '../interface/Base'
 import { BadDataError, ResourceExistsError, ResourceIndelibleError } from '../errors'
 
 export class BaseModel implements Base{
-  private __self: string
-  private __apiAdapter: APIAdapter
+  protected _self: string
+  protected _apiAdapter: APIAdapter
 
   constructor(self: string, adapter: APIAdapter){
-    this.__self = self
-    this.__apiAdapter = adapter
+    this._self = self
+    this._apiAdapter = adapter
   }
 
   get id(): string{
-    return /([A-Za-z0-9\-]+)$/.exec(this.__self)[1]
+    return /([A-Za-z0-9\-]+)$/.exec(this._self)[1]
   }
 
   get uri(): string{
-    return this.__self
+    return this._self
   }
 
   save(): Promise<boolean>{
     return new Promise((resolve, reject) => {
-      this.__apiAdapter.put(
-        this.__self,
+      this._apiAdapter.put(
+        this._self,
         this.serialise()
       ).then(response => {
         resolve(true)
@@ -40,8 +40,8 @@ export class BaseModel implements Base{
 
   delete(): Promise<boolean>{
     return new Promise((resolve, reject) => {
-      this.__apiAdapter.delete(
-        this.__self
+      this._apiAdapter.delete(
+        this._self
       ).then(response => {
         resolve(true)
       }).catch(error => {

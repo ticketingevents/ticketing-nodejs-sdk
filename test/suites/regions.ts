@@ -6,7 +6,7 @@ import { expect } from '../setup'
 // Global region object
 let testRegion = null
 
-describe.skip("Regions", function(){
+describe("Regions", function(){
 
   //Set timeout for tests in suite
   this.timeout(10000)
@@ -35,7 +35,7 @@ describe.skip("Regions", function(){
     //A venue to test region cannot be deleted
     this.testVenue = await this.ticketing.venues.create({
       name: "Test Venue "+Math.floor(Math.random() * 999999),
-      region: this.secondRegion.id,
+      region: this.secondRegion,
       longitude: -70.99214,
       latitude: 43.75518,
       address: "Miami Beach, Miami, Florida"
@@ -44,7 +44,7 @@ describe.skip("Regions", function(){
 
   after(async function(){
     await this.testVenue.delete()
-    this.secondRegion.delete()
+    await this.secondRegion.delete()
   })
 
   describe('Add new region', function () {

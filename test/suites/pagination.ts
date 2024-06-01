@@ -1,14 +1,14 @@
 //Control execution order
-import './filters'
+import './sorting'
 
 import { TickeTing, Region, PageAccessError } from '../../src'
 import { Collection } from  '../../src/util'
 import { expect } from '../setup'
 
-describe.skip("Pagination", function(){
+describe("Pagination", function(){
 
   //Set hook timeout
-  this.timeout(20000)
+  this.timeout(25000)
 
   before(async function(){
     //Setup SDK for testing

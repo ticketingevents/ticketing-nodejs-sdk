@@ -2,12 +2,11 @@ import { APIAdapter } from '../util'
 import { BaseModel } from './BaseModel'
 import { Venue } from '../interface/Venue'
 import { VenueData } from '../interface/data/VenueData'
-import { Region } from '../interface/Region'
 import { RegionModel } from './RegionModel'
 
 export class VenueModel extends BaseModel implements Venue{
   public name: string
-  public region: Region
+  public region: RegionModel
   public longitude: number
   public latitude: number
   public address: string
@@ -27,7 +26,7 @@ export class VenueModel extends BaseModel implements Venue{
   serialise(): VenueData{
     return {
       name: this.name,
-      region: this.region,
+      region: this.region.id,
       longitude: this.longitude,
       latitude: this.latitude,
       address: this.address
