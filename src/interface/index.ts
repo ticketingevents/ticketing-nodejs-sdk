@@ -1,3 +1,5 @@
+export { Account } from './Account'
+export { AccountData } from './data/AccountData'
 export { Region } from './Region'
 export { RegionData } from './data/RegionData'
 export { Venue } from './Venue'

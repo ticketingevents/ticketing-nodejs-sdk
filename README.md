@@ -102,6 +102,14 @@ export class TickeTingService extends TickeTing{
   * [Pagination](#pagination)
   * [Chaining operations](#chaining-operations)
 - [Error handling](#error-handling)
+- [Accounts](#accounts)
+  * [List all accounts](#list-all-accounts)
+  * [Register an account](#register-an-account)
+  * [Fetch an account](#fetch-an-account)
+  * [Update an account](#update-an-account)
+  * [Delete an account](#delete-an-account)
+  * [Fetch account preferences](#fetch-account-preferences)
+  * [Update account preferences](#update-account-preferences)
 - [Regions](#regions)
   * [List all regions](#list-all-regions)
   * [Add new region](#add-new-region)
@@ -354,6 +362,208 @@ Each TickeTing Error instance has a unique type, and provides an error message, 
         console.log(`${typeof error} (${error.code}): ${error.message}`)
       }
     })
+```
+
+## Accounts
+
+Operations for registering and managing TickeTing user accounts and their
+preferences.
+
+### List all accounts
+
+[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/list_accounts)
+
+```javascript
+  ticketing.accounts.list()
+    // Supported filters with examples
+    .filter({
+      number: "MO-6A39EE8D",
+      email: "marvin.milk@usmc.gov",
+      username: "mothers.milk"
+    })
+    .then(accounts => {
+      //Do something with the collection of accounts
+    })
+    .catch(error => {
+      //Handle errors
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    })
+```
+
+### Register an account
+
+[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/create_account)
+
+```javascript
+  let accountData = {
+    "username": "mothers.milk", //Required
+    "password": "WuT4NGcl4n", //Required
+    "email": "marvin.milk@usmc.gov", //Required
+    "firstName": "Marvin",
+    "lastName": "Milk",
+    "title": "Mr",
+    "dateOfBirth": "1974-09-14",
+    "phone": "+1 (268) 555 0123",
+    "country": "Antigua and Barbuda",
+    "firstAddressLine": "Jennings New Extension",
+    "secondAddressLine": "",
+    "city": "Jennings",
+    "state": "Saint Mary's"
+  }
+
+  ticketing.accounts.create(accountData)
+    .then(account => {
+      //Do something with the new account resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log(error.message)
+      }else if(error instanceof ResourceExistsError){
+        console.log("A user identified by the given username or email address already exists.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch an account
+
+[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/retrieve_account)
+
+```javascript
+  //Retrieve a specific account using its account number
+  ticketing.accounts.find("MO-6A39EE8D")
+    .then(account => {
+      //Do something with the account resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no account with the given number")
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to access or modify this account.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Update an account
+
+[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/update_account)
+
+```javascript
+  //Retrieve a specific account using its account number
+  account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  //Make changes to the resource
+  account.title = "Dr."
+  account.firstAddressLine = "New Name"
+
+  //Save changes
+  account.save().then(saved => {
+    if(saved){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log(error.message)
+    }else if(error instanceof PermissionError){
+      console.log("You are not authorised to access or modify this account.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Delete an account
+
+[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/delete_account)
+
+```javascript
+  //Retrieve a specific account using its account number
+  account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  //Delete the account
+  account.delete().then(deleted => {
+    if(deleted){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof ResourceIndelibleError){
+      //The account cannot be deleted as it holds active tickets
+      console.log(error.message)
+    }else if(error instanceof PermissionError){
+      console.log("You are not authorised to access or modify this account.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Fetch account preferences
+
+[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/retrieve_account_preferences)
+
+```javascript
+  //Retrieve a specific account using its account number
+  account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  //Retrieve a specific account using its account number
+  ticketing.accounts.preferences
+    .then(preferences => {
+      //Do something with the account preferences resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no account with the given number")
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to access this account.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Update account preferences
+
+[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/update_account_preferences)
+
+```javascript
+  //Retrieve a specific account using its account number
+  account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  //Retrieve the account preferences
+  preferences = await account.preferences
+
+  //Make changes to the preferences
+  preferences.region = 19290238432215 //Required
+
+  //Save changes
+  preferences.save().then(saved => {
+    if(saved){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log(error.message)
+    }else if(error instanceof PermissionError){
+      console.log("You are not authorised to access or modify this account.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
 ```
 
 ## Regions

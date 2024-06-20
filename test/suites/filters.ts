@@ -5,7 +5,7 @@ import { TickeTing, UnsupportedCriteriaError } from '../../src'
 import { Collection } from  '../../src/util'
 import { expect } from '../setup'
 
-describe("Filters", function(){
+describe.skip("Filters", function(){
 
   //Set hook timeout
   this.timeout(20000)

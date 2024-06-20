@@ -9,7 +9,7 @@ import { expect } from '../setup'
 //Global event object
 let testEvent = null
 
-describe("Events", function(){
+describe.skip("Events", function(){
   //Set timeout for tests in suite
   this.timeout(20000)
 

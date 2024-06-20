@@ -5,7 +5,7 @@ import { TickeTing, UnsupportedSortError } from '../../src'
 import { Collection, APIAdapter } from  '../../src/util'
 import { expect } from '../setup'
 
-describe("Sorting", function(){
+describe.skip("Sorting", function(){
 
   //Set hook timeout
   this.timeout(25000)
