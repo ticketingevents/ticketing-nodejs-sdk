@@ -5,7 +5,7 @@ import { TickeTing, UnsupportedSortError } from '../../src'
 import { Collection, APIAdapter } from  '../../src/util'
 import { expect } from '../setup'
 
-describe.skip("Sorting", function(){
+describe("Sorting", function(){
 
   //Set hook timeout
   this.timeout(25000)
@@ -40,7 +40,7 @@ describe.skip("Sorting", function(){
     //Create an event venue
     this.region = await ticketing.regions.create({
       "name": "Region "+Math.floor(Math.random() * 999999),
-      "country": "New Country"
+      "country": "Antigua and Barbuda"
     })
 
     this.venue = await ticketing.venues.create({

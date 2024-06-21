@@ -9,7 +9,7 @@ import { expect } from '../setup'
 //Global venue object
 let testVenue = null
 
-describe.skip("Venues", function(){
+describe("Venues", function(){
   //Set timeout for tests in suite
   this.timeout(20000)
 
@@ -28,7 +28,7 @@ describe.skip("Venues", function(){
     //Create a region for use in venue creation
     this.venueRegion = await this.ticketing.regions.create({
       "name": "Venue Region "+Math.floor(Math.random() * 999999),
-      "country": "New Country"
+      "country": "Antigua and Barbuda"
     })
 
     //Initialise test data for suite

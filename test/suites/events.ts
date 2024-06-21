@@ -9,7 +9,7 @@ import { expect } from '../setup'
 //Global event object
 let testEvent = null
 
-describe.skip("Events", function(){
+describe("Events", function(){
   //Set timeout for tests in suite
   this.timeout(20000)
 
@@ -43,7 +43,7 @@ describe.skip("Events", function(){
     //Create an event venue
     this.region = await this.ticketing.regions.create({
       "name": "Region "+Math.floor(Math.random() * 999999),
-      "country": "New Country"
+      "country": "Antigua and Barbuda"
     })
 
     this.venue = await this.ticketing.venues.create({
@@ -158,7 +158,7 @@ describe.skip("Events", function(){
 
     it('Should throw a PermissionError when not a host administrator', function () {
       let unauthorised_sdk = new TickeTing({
-        apiKey: "e5367bc1de7dd8efbfa1338752f60c83",
+        apiKey: "413c7e517b63822c3037ead7679c780e",
         sandbox: true
       })
 
@@ -247,7 +247,7 @@ describe.skip("Events", function(){
 
     it('Should contain the newly created event as its last resource', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.events.list(1).last().then(events => {
+        this.ticketing.events.list(1).sort("published").last().then(events => {
           expect(events[0]).to.be.an.instanceof(EventModel)
           expect(events[0].description).to.equal(this.testEventData.description)
           expect(events[0].type).to.equal(this.testEventData.type)
@@ -410,7 +410,7 @@ describe.skip("Events", function(){
 
     it('Should throw a PermissionError when accessed with another user', function () {
       let unauthorised_sdk = new TickeTing({
-        apiKey: "e5367bc1de7dd8efbfa1338752f60c83",
+        apiKey: "413c7e517b63822c3037ead7679c780e",
         sandbox: true
       })
 

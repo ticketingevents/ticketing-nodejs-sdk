@@ -545,7 +545,8 @@ preferences.
   preferences = await account.preferences
 
   //Make changes to the preferences
-  preferences.region = 19290238432215 //Required
+  let preferredRegion = await ticketing.regions.find(19290238432215)
+  preferences.region = preferredRegion //Required
 
   //Save changes
   preferences.save().then(saved => {

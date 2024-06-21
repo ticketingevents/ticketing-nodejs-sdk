@@ -2,6 +2,9 @@ import { APIAdapter } from '../util'
 import { BaseModel } from './BaseModel'
 import { Account } from '../interface/Account'
 import { AccountData } from '../interface/data/AccountData'
+import { AccountPreferences } from '../interface/AccountPreferences'
+import { AccountPreferencesModel } from './AccountPreferencesModel'
+
 
 export class AccountModel extends BaseModel implements Account{
   public number: string
@@ -44,6 +47,16 @@ export class AccountModel extends BaseModel implements Account{
     this.state = account.state
 
     this.__preferences = account.preferences
+  }
+
+  get preferences(): Promise<AccountPreferences>{
+    return new Promise<AccountPreferences>((resolve, reject)=>{
+      this._apiAdapter.get(this.__preferences).then(preferences => {
+        resolve(new AccountPreferencesModel(this.__preferences, preferences.data, this._apiAdapter))
+      }).catch(error => {
+        reject(error)
+      })
+    })
   }
 
   serialise(): AccountData{

@@ -4,7 +4,7 @@ import './events'
 import { TickeTing } from '../../src'
 import { expect } from '../setup'
 
-describe.skip("Presets", function(){
+describe("Presets", function(){
 
   //Set hook timeout
   this.timeout(20000)

@@ -1,5 +1,7 @@
 export { Account } from './Account'
 export { AccountData } from './data/AccountData'
+export { AccountPreferences } from './AccountPreferences'
+export { AccountPreferencesData } from './data/AccountPreferencesData'
 export { Region } from './Region'
 export { RegionData } from './data/RegionData'
 export { Venue } from './Venue'

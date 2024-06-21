@@ -5,7 +5,7 @@ import { TickeTing, Region, PageAccessError } from '../../src'
 import { Collection } from  '../../src/util'
 import { expect } from '../setup'
 
-describe.skip("Pagination", function(){
+describe("Pagination", function(){
 
   //Set hook timeout
   this.timeout(25000)

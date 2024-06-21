@@ -9,7 +9,7 @@ import { expect } from '../setup'
 // Global region object
 let testRegion = null
 
-describe.skip("Regions", function(){
+describe("Regions", function(){
 
   //Set timeout for tests in suite
   this.timeout(10000)
@@ -32,7 +32,7 @@ describe.skip("Regions", function(){
     //A region to test duplication
     this.secondRegion = await this.ticketing.regions.create({
       "name": "Test Region "+Math.floor(Math.random() * 999999),
-      "country": "New Country"
+      "country": "Antigua and Barbuda"
     })
 
     //A venue to test region cannot be deleted
