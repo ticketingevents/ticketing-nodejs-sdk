@@ -1,4 +1,5 @@
 import { Base } from './Base'
+import { Category } from './Category'
 import { Venue } from './Venue'
 
 export interface Event extends Base{
@@ -6,7 +7,7 @@ export interface Event extends Base{
   description: string
   type: string
   public: boolean
-  category: {[key: string]: string}
+  category: Category
   subcategory: string
   start: string
   end: string

@@ -1,4 +1,5 @@
 export { AccountService } from './AccountService'
+export { CategoryService } from './CategoryService'
 export { EventService } from './EventService'
 export { PresetService } from './PresetService'
 export { RegionService } from './RegionService'

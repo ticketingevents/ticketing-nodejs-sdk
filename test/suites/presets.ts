@@ -7,7 +7,7 @@ import { expect } from '../setup'
 describe("Presets", function(){
 
   //Set hook timeout
-  this.timeout(20000)
+  this.timeout(10000)
 
   before(function(){
     //Setup SDK for testing
@@ -15,11 +15,6 @@ describe("Presets", function(){
       apiKey: "07b2f3b08810a4296ee19fc59dff48b0",
       sandbox: true
     })
-  })
-
-  beforeEach(async function(){
-    //Set test timeouts
-    this.timeout(5000)
   })
 
   describe('Retrieve a list of countries', function () {

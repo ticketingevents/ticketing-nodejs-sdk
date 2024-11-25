@@ -8,7 +8,7 @@ import { expect } from '../setup'
 describe("Pagination", function(){
 
   //Set hook timeout
-  this.timeout(25000)
+  this.timeout(10000)
 
   before(async function(){
     //Setup SDK for testing
@@ -45,11 +45,6 @@ describe("Pagination", function(){
     }
 
     await Promise.all(deletions)
-  })
-
-  beforeEach(async function(){
-    //Set test timeouts
-    this.timeout(5000)
   })
 
   describe('#first()', function () {

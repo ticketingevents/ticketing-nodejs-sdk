@@ -8,7 +8,7 @@ import { expect } from '../setup'
 describe("Sorting", function(){
 
   //Set hook timeout
-  this.timeout(25000)
+  this.timeout(10000)
 
   before(async function(){
     //Setup SDK for testing
@@ -32,10 +32,10 @@ describe("Sorting", function(){
     )[1]
 
     //Create an event category
-    this.category = (await this.__adapter.post("/categories", {
+    this.category = await ticketing.categories.create({
       name: "Event Category "+Math.floor(Math.random() * 999999),
       subcategories: ["Event Subcategory"]
-    })).data
+    })
 
     //Create an event venue
     this.region = await ticketing.regions.create({
@@ -61,7 +61,7 @@ describe("Sorting", function(){
           description: "Event Description",
           type: "Standard",
           public: true,
-          category: this.category.self,
+          category: this.category.uri,
           subcategory: "Event Subcategory",
           venue: this.venue
         }
@@ -81,16 +81,11 @@ describe("Sorting", function(){
 
     await Promise.all(deletions)
 
-    this.__adapter.delete(this.category.self).then(response => {})
+    this.category.delete().then(response => {})
     this.__adapter.delete(`/hosts/${this.host}`).then(response => {})
     this.venue.delete().then(result => {
       this.region.delete().then(response => {})
     })
-  })
-
-  beforeEach(function(){
-    //Set test timeouts
-    this.timeout(5000)
   })
 
   describe('#sort()', function () {

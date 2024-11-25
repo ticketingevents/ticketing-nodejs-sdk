@@ -1,5 +1,12 @@
 import { APIAdapter } from './util/APIAdapter'
-import { AccountService, EventService, PresetService, RegionService, VenueService } from './service'
+import {
+  AccountService,
+  CategoryService,
+  EventService,
+  PresetService,
+  RegionService,
+  VenueService
+} from './service'
 
 export class TickeTing{
   // Define private members
@@ -7,6 +14,7 @@ export class TickeTing{
 
   // Define public services
   public accounts: AccountService;
+  public categories: CategoryService;
   public events: EventService;
   public presets: PresetService;
   public regions: RegionService;
@@ -19,6 +27,7 @@ export class TickeTing{
     )
 
     this.accounts = new AccountService(this.__apiAdapter)
+    this.categories = new CategoryService(this.__apiAdapter)
     this.events = new EventService(this.__apiAdapter)
     this.presets = new PresetService(this.__apiAdapter)
     this.regions = new RegionService(this.__apiAdapter)

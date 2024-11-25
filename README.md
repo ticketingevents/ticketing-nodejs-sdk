@@ -110,6 +110,20 @@ export class TickeTingService extends TickeTing{
   * [Delete an account](#delete-an-account)
   * [Fetch account preferences](#fetch-account-preferences)
   * [Update account preferences](#update-account-preferences)
+- [Events](#events)
+  * [List published events](#list-published-events)
+  * [List all events](#list-all-events)
+  * [Register an event](#register-an-event)
+  * [Fetch an event](#fetch-an-event)
+  * [Update an event](#update-an-event)
+  * [Delete an event](#delete-an-event)
+  * [Submit an event for review](#submit-an-event-for-review)
+- [Categories](#categories)
+  * [List event categories](#list-event-categories)
+  * [Add new category](#add-new-category)
+  * [Fetch a category](#fetch-a-category)
+  * [Update a category](#update-a-category)
+  * [Delete a category](#delete-a-category)
 - [Regions](#regions)
   * [List all regions](#list-all-regions)
   * [Add new region](#add-new-region)
@@ -122,14 +136,6 @@ export class TickeTingService extends TickeTing{
   * [Fetch a venue](#fetch-a-venue)
   * [Update a venue](#update-a-venue)
   * [Delete an event venue](#delete-an-event-venue)
-- [Events](#events)
-  * [List published events](#list-published-events)
-  * [List all events](#list-all-events)
-  * [Register an event](#register-an-event)
-  * [Fetch an event](#fetch-an-event)
-  * [Update an event](#update-an-event)
-  * [Delete an event](#delete-an-event)
-  * [Submit an event for review](#submit-an-event-for-review)
 - [Presets](#presets)
   * [Retrieve a list of countries](#retrieve-a-list-of-countries)
 
@@ -567,6 +573,369 @@ preferences.
   })
 ```
 
+
+## Events
+
+Operations for working with events in the TickeTing system.
+
+### List published events
+
+[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/list_published_events)
+
+```javascript
+  ticketing.events.published.list()
+    // Supported filters with examples
+    .filter({
+      region: 19290238432215,
+      title: "Dawn of the Seven Premier"
+    })
+    // Supported sort fields
+    .sort(
+      "alphabetical", //One of "alphabetical" "published" "popularity" "start"
+      true //Set true for ascending sort (default), or false for descending order
+    )
+    .then(events => {
+      //Do something with the collection of events
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof UnsupportedSortError){
+        //Handle unsupported sort field error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+
+    // List upcoming events (earliest event first)
+    ticketing.events.published.list().sort("start").then(upcoming=>{})
+
+    // List popular events (most popular first)
+    ticketing.events.published.list().sort("popularity", false).then(popular=>{})
+
+    // List new events (newest first)
+    ticketing.events.published.list().sort("published", false).then(newest=>{})
+```
+
+### List all events (Admin Only)
+
+[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/list_events)
+
+```javascript
+  ticketing.events.list()
+    // Supported filters with examples
+    .filter({
+      region: 19290238432215,
+      host: 16951985851389,
+      title: "Dawn of the Seven Premier",
+      status: "Scheduled",
+      active: true,
+      public: false,
+      section: 16993964783416
+    })
+    // Supported sort fields
+    .sort(
+      "published", //One of "alphabetical" "published" "popularity" "start"
+      false //Set true for ascending sort (default), or false for descending order
+    )
+    .then(events => {
+      //Do something with the collection of events
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof UnsupportedSortError){
+        //Handle unsupported sort field error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Register an event
+
+[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/register_event)
+
+```javascript
+  let venue = await ticketing.venues.find(16878146473429)
+
+  let eventData = {
+    "host": "16951985851389", //Required
+    "title": "Dawn of the Seven Premier", //Required
+    "description": "World Premier of the long ....", //Required
+    "type": "Standard", //Required
+    "public": true, //Required
+    "category": "/categories/16878141745207", //Required
+    "subcategory": "Premier", //Required
+    "venue": venue, //Required
+    "start": "2024-06-07T20:00",
+    "end": "2024-06-07T23:00",
+    "disclaimer": "Attend at your own risk",
+    "tags": ["homelander", "queen maeve", "the deep", "A-Train"],
+    "banner": "data:image/png;base64,iVBORw0KGgoAAAA...",
+    "thumbnail": "data:image/png;base64,iVBORw0KGgoA..."
+  }
+
+  ticketing.events.create(eventData)
+    .then(event => {
+      //Do something with the created event resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log(error.message)
+      }else if(error instanceof ResourceNotFoundError){
+        console.log("The specified event host does not exist.")
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to manage events on behalf of this host.")
+      }else if(error instanceof ResourceExistsError){
+        console.log("An event with the given name already exists.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch an event
+
+[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/retrieve_event)
+
+```javascript
+  //Retrieve a specific event using its ID
+  ticketing.events.find(16993717817996)
+    .then(event => {
+      //Do something with the event resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no event with the given ID")
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to access this unlisted event.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Update an event
+
+[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/update_event)
+
+```javascript
+  //Retrieve a specific event using its ID
+  event = await ticketing.events.find(16993717817996)
+
+  //Make changes to the resource
+  event.public = false
+  event.end = "2025-09-07T23:00"
+
+  //Save changes
+  event.save().then(saved => {
+    if(saved){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log(error.message)
+    }else if(error instanceof PermissionError){
+        console.log("You are not authorised to manage events on behalf of this host.")
+    }else if(error instanceof ResourceExistsError){
+      console.log("An event with the given name already exists.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Delete an event
+
+[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/delete_event)
+
+```javascript
+  //Retrieve a specific event using its ID
+  event = await ticketing.events.find(16993717817996)
+
+  //Delete the event
+  event.delete().then(deleted => {
+    if(deleted){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof PermissionError){
+      console.log("You are not authorised to manage events on behalf of this host.")
+    }else if(error instanceof ResourceIndelibleError){
+      console.log("The event has active sections which must be deleted first.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Submit an event for review
+
+[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/submit_event)
+
+```javascript
+  //Retrieve a specific event using its ID
+  event = await ticketing.events.find(16993717817996)
+
+  //Delete the event
+  event.submit().then(submitted => {
+    if(submitted){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof PermissionError){
+      console.log("You are not authorised to manage events on behalf of this host.")
+    }else if(error instanceof InvalidStateError){
+      console.log("The event has already been submitted or cancelled.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+
+## Categories
+
+Operations for managing the categories under which events can be classified
+(requires administrative access).
+
+### List event categories
+
+[API Reference](https://ticketing.redoc.ly/tag/Category-Management#operation/list_categories)
+
+```javascript
+  ticketing.categories.list()
+    .then(categories => {
+      //Do something with the collection of categories
+    })
+    .catch(error => {
+      //Handle errors
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    })
+```
+
+### Add new category
+
+[API Reference](https://ticketing.redoc.ly/tag/Category-Management#operation/create_category)
+
+```javascript
+  let categoryData = {
+    "name": "Fete", //Required
+    "subcategories": ["All Inclusive", "Drinks Inclusive", "Cooler"] //Optional
+  }
+
+  ticketing.categories.create(categoryData)
+    .then(category => {
+      //Do something with the created category resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log(error.message)
+      }else if(error instanceof ResourceExistsError){
+        console.log("A category with the given name already exists.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch a category
+
+[API Reference](https://ticketing.redoc.ly/tag/Category-Management#operation/retrieve_category)
+
+```javascript
+  //Retrieve a specific category using its ID
+  ticketing.categories.find(17325458293736)
+    .then(category => {
+      //Do something with the category resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no category with the given ID")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Update a category
+
+[API Reference](https://ticketing.redoc.ly/tag/Category-Management#operation/update_category)
+
+```javascript
+  //Retrieve a specific category using its ID
+  category = await ticketing.categories.find(17325458293736)
+
+  //Make changes to the resource
+  category.name = "Inclusive Fete"
+  category.subcategories = ["All Inclusive", "Drinks Inclusive"]
+
+  //Save changes
+  category.save().then(saved => {
+    if(saved){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log(error.message)
+    }else if(error instanceof ResourceExistsError){
+      console.log("A category with the given name already exists.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Delete a category
+
+[API Reference](https://ticketing.redoc.ly/tag/Category-Management#operation/delete_category)
+
+```javascript
+  //Retrieve a specific category using its ID
+  category = await ticketing.categories.find(19290238432215)
+
+  //Delete the category
+  category.delete().then(deleted => {
+    if(deleted){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof ResourceIndelibleError){
+      //The category cannot be deleted as it is in use
+      console.log(error.message)
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+
 ## Regions
 
 Operations for managing regions supported by the TickeTing platform
@@ -828,242 +1197,6 @@ Operations for managing the venues at which event can be staged
 ```
 
 
-## Events
-
-Operations for working with events in the TickeTing system.
-
-### List published events
-
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/list_published_events)
-
-```javascript
-  ticketing.events.published.list()
-    // Supported filters with examples
-    .filter({
-      region: 19290238432215,
-      title: "Dawn of the Seven Premier"
-    })
-    // Supported sort fields
-    .sort(
-      "alphabetical", //One of "alphabetical" "published" "popularity" "start"
-      true //Set true for ascending sort (default), or false for descending order
-    )
-    .then(events => {
-      //Do something with the collection of events
-    })
-    .catch(error => {
-      //Handle errors
-      if(error instanceof UnsupportedCriteriaError){
-        //Handle unsupported criteria error
-      }else if(error instanceof UnsupportedSortError){
-        //Handle unsupported sort field error
-      }else if(error instanceof PageAccessError){
-        //Handle non-existant page error
-      }else{
-        console.log(`${typeof error} (${error.code}): ${error.message}`)
-      }
-    })
-
-    // List upcoming events (earliest event first)
-    ticketing.events.published.list().sort("start").then(upcoming=>{})
-
-    // List popular events (most popular first)
-    ticketing.events.published.list().sort("popularity", false).then(popular=>{})
-
-    // List new events (newest first)
-    ticketing.events.published.list().sort("published", false).then(newest=>{})
-```
-
-### List all events (Admin Only)
-
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/list_events)
-
-```javascript
-  ticketing.events.list()
-    // Supported filters with examples
-    .filter({
-      region: 19290238432215,
-      host: 16951985851389,
-      title: "Dawn of the Seven Premier",
-      status: "Scheduled",
-      active: true,
-      public: false,
-      section: 16993964783416
-    })
-    // Supported sort fields
-    .sort(
-      "published", //One of "alphabetical" "published" "popularity" "start"
-      false //Set true for ascending sort (default), or false for descending order
-    )
-    .then(events => {
-      //Do something with the collection of events
-    })
-    .catch(error => {
-      //Handle errors
-      if(error instanceof UnsupportedCriteriaError){
-        //Handle unsupported criteria error
-      }else if(error instanceof UnsupportedSortError){
-        //Handle unsupported sort field error
-      }else if(error instanceof PageAccessError){
-        //Handle non-existant page error
-      }else{
-        console.log(`${typeof error} (${error.code}): ${error.message}`)
-      }
-    })
-```
-
-### Register an event
-
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/register_event)
-
-```javascript
-  let venue = await ticketing.venues.find(16878146473429)
-
-  let eventData = {
-    "host": "16951985851389", //Required
-    "title": "Dawn of the Seven Premier", //Required
-    "description": "World Premier of the long ....", //Required
-    "type": "Standard", //Required
-    "public": true, //Required
-    "category": "/categories/16878141745207", //Required
-    "subcategory": "Premier", //Required
-    "venue": venue, //Required
-    "start": "2024-06-07T20:00",
-    "end": "2024-06-07T23:00",
-    "disclaimer": "Attend at your own risk",
-    "tags": ["homelander", "queen maeve", "the deep", "A-Train"],
-    "banner": "data:image/png;base64,iVBORw0KGgoAAAA...",
-    "thumbnail": "data:image/png;base64,iVBORw0KGgoA..."
-  }
-
-  ticketing.events.create(eventData)
-    .then(event => {
-      //Do something with the created event resource
-    })
-    .catch(error => {
-      //Handle errors
-      if(error instanceof BadDataError){
-        console.log(error.message)
-      }else if(error instanceof ResourceNotFoundError){
-        console.log("The specified event host does not exist.")
-      }else if(error instanceof PermissionError){
-        console.log("You are not authorised to manage events on behalf of this host.")
-      }else if(error instanceof ResourceExistsError){
-        console.log("An event with the given name already exists.")
-      }else{
-        console.log(`${typeof error} (${error.code}): ${error.message}`)
-      }
-    })
-```
-
-### Fetch an event
-
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/retrieve_event)
-
-```javascript
-  //Retrieve a specific event using its ID
-  ticketing.events.find(16993717817996)
-    .then(event => {
-      //Do something with the event resource
-    })
-    .catch(error => {
-      //Handle errors
-      if(error instanceof ResourceNotFoundError){
-        console.log("There is no event with the given ID")
-      }else if(error instanceof PermissionError){
-        console.log("You are not authorised to access this unlisted event.")
-      }else{
-        console.log(`${typeof error} (${error.code}): ${error.message}`)
-      }
-    })
-```
-
-### Update an event
-
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/update_event)
-
-```javascript
-  //Retrieve a specific event using its ID
-  event = await ticketing.events.find(16993717817996)
-
-  //Make changes to the resource
-  event.public = false
-  event.end = "2025-09-07T23:00"
-
-  //Save changes
-  event.save().then(saved => {
-    if(saved){
-      //Do something on success
-    }else{
-      //Do something on failure
-    }
-  }).catch(error => {
-    //Handle errors
-    if(error instanceof BadDataError){
-      console.log(error.message)
-    }else if(error instanceof PermissionError){
-        console.log("You are not authorised to manage events on behalf of this host.")
-    }else if(error instanceof ResourceExistsError){
-      console.log("An event with the given name already exists.")
-    }else{
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
-    }
-  })
-```
-
-### Delete an event
-
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/delete_event)
-
-```javascript
-  //Retrieve a specific event using its ID
-  event = await ticketing.events.find(16993717817996)
-
-  //Delete the event
-  event.delete().then(deleted => {
-    if(deleted){
-      //Do something on success
-    }else{
-      //Do something on failure
-    }
-  }).catch(error => {
-    //Handle errors
-    if(error instanceof PermissionError){
-      console.log("You are not authorised to manage events on behalf of this host.")
-    }else if(error instanceof ResourceIndelibleError){
-      console.log("The event has active sections which must be deleted first.")
-    }else{
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
-    }
-  })
-```
-
-### Submit an event for review
-
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/submit_event)
-
-```javascript
-  //Retrieve a specific event using its ID
-  event = await ticketing.events.find(16993717817996)
-
-  //Delete the event
-  event.submit().then(submitted => {
-    if(submitted){
-      //Do something on success
-    }else{
-      //Do something on failure
-    }
-  }).catch(error => {
-    //Handle errors
-    if(error instanceof PermissionError){
-      console.log("You are not authorised to manage events on behalf of this host.")
-    }else if(error instanceof InvalidStateError){
-      console.log("The event has already been submitted or cancelled.")
-    }else{
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
-    }
-  })
-```
 
 ## Presets
 

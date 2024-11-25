@@ -8,7 +8,7 @@ import { expect } from '../setup'
 describe("Filters", function(){
 
   //Set hook timeout
-  this.timeout(20000)
+  this.timeout(10000)
 
   before(async function(){
     //Setup SDK for testing
@@ -45,11 +45,6 @@ describe("Filters", function(){
     }
 
     await Promise.all(deletions)
-  })
-
-  beforeEach(function(){
-    //Set test timeouts
-    this.timeout(5000)
   })
 
   describe('#filter()', function () {

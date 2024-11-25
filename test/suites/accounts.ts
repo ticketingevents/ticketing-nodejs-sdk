@@ -8,7 +8,7 @@ let testAccount = null
 
 describe("Accounts", function(){
 
-  //Set timeout for tests in suite
+  //Set hook timeout
   this.timeout(10000)
 
   before(async function(){

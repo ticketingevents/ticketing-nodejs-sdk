@@ -1,5 +1,5 @@
 //Control execution order
-import './accounts'
+import './categories'
 
 import { TickeTing, Region, BadDataError,  ResourceExistsError, ResourceNotFoundError, ResourceIndelibleError } from '../../src'
 import { RegionModel } from  '../../src/model'
@@ -11,7 +11,7 @@ let testRegion = null
 
 describe("Regions", function(){
 
-  //Set timeout for tests in suite
+  //Set hook timeout
   this.timeout(10000)
 
   before(async function(){
@@ -59,7 +59,7 @@ describe("Regions", function(){
           expect(region)
             .to.be.an.instanceof(RegionModel)
             .and.to.include(this.testRegionData)
-            .and.to.have.property("icon", `https://restfulcountries.com/assets/images/flags/Antigua-And-Barbuda.png`)
+            .and.to.have.property("icon", `https://qa.ticketingevents.com/media/antigua_and_barbuda.png`)
 
           resolve(true)
         })).catch(error=>{

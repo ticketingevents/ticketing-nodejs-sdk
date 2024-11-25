@@ -10,8 +10,9 @@ import { expect } from '../setup'
 let testVenue = null
 
 describe("Venues", function(){
-  //Set timeout for tests in suite
-  this.timeout(20000)
+
+  //Set hook timeout
+  this.timeout(10000)
 
   before(async function(){
     //Setup SDK for testing
@@ -58,10 +59,10 @@ describe("Venues", function(){
       })).data.self
     )[1]
 
-    this.category = (await this.__adapter.post("/categories", {
+    this.category = await this.ticketing.categories.create({
       name: "Event Category "+Math.floor(Math.random() * 999999),
       subcategories: ["Event Subcategory"]
-    })).data
+    })
 
     this.testEvent = await this.ticketing.events.create({
       host: this.host,
@@ -69,7 +70,7 @@ describe("Venues", function(){
       description: "Event Description",
       type: "Standard",
       public: true,
-      category: this.category.self,
+      category: this.category.uri,
       subcategory: "Event Subcategory",
       venue: this.secondVenue
     })
@@ -77,7 +78,7 @@ describe("Venues", function(){
 
   after(async function(){
     await this.testEvent.delete()
-    this.__adapter.delete(this.category.self).then(response => {})
+    this.category.delete().then(response => {})
     this.__adapter.delete(`/hosts/${this.host}`).then(response => {})
     await this.secondVenue.delete()
     await this.venueRegion.delete()

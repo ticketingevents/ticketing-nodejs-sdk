@@ -1,5 +1,5 @@
 export { TickeTing } from './ticketing'
-export { Account, AccountPreferences, Region, Venue, Event } from './interface'
+export { Account, AccountPreferences, Category, Region, Venue, Event } from './interface'
 export {
   BadDataError, InvalidStateError, PageAccessError, PermissionError,
   ResourceExistsError, ResourceIndelibleError, ResourceNotFoundError,

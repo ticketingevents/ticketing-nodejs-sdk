@@ -2,7 +2,7 @@
 import './venues'
 
 import { TickeTing, Event, BadDataError, InvalidStateError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
-import { EventModel, VenueModel } from  '../../src/model'
+import { CategoryModel, EventModel, VenueModel } from  '../../src/model'
 import { Collection, APIAdapter } from  '../../src/util'
 import { expect } from '../setup'
 
@@ -10,8 +10,9 @@ import { expect } from '../setup'
 let testEvent = null
 
 describe("Events", function(){
-  //Set timeout for tests in suite
-  this.timeout(20000)
+
+  //Set hook timeout
+  this.timeout(10000)
 
   before(async function(){
     //Setup SDK for testing
@@ -35,10 +36,10 @@ describe("Events", function(){
     )[1]
 
     //Create an event category
-    this.category = (await this.__adapter.post("/categories", {
+    this.category = await this.ticketing.categories.create({
       name: "Event Category "+Math.floor(Math.random() * 999999),
       subcategories: ["Event Subcategory"]
-    })).data
+    })
 
     //Create an event venue
     this.region = await this.ticketing.regions.create({
@@ -61,7 +62,7 @@ describe("Events", function(){
       description: "Event Description",
       type: "Standard",
       public: true,
-      category: this.category.self,
+      category: this.category.uri,
       subcategory: "Event Subcategory",
       venue: this.venue
     })
@@ -73,7 +74,7 @@ describe("Events", function(){
       description: "Event Description",
       type: "Standard",
       public: true,
-      category: this.category.self,
+      category: this.category,
       subcategory: "Event Subcategory",
       start: "2034-06-07T20:00",
       end: "2034-06-07T23:00",
@@ -86,16 +87,11 @@ describe("Events", function(){
   after(async function(){
     await this.secondEvent.delete()
 
-    this.__adapter.delete(this.category.self).then(response => {})
+    this.category.delete().then(response => {})
     this.__adapter.delete(`/hosts/${this.host}`).then(response => {})
     this.venue.delete().then(result => {
       this.region.delete().then(response => {})
     })
-  })
-
-  beforeEach(function(){
-    //Set test timeouts
-    this.timeout(10000)
   })
 
   describe('Register an event', function () {
@@ -108,15 +104,16 @@ describe("Events", function(){
           expect(event.description).to.equal(this.testEventData.description)
           expect(event.type).to.equal(this.testEventData.type)
           expect(event.public).to.equal(this.testEventData.public)
-          expect(event.category.self).to.equal(this.category.self)
+          expect(event.category).to.be.an.instanceOf(CategoryModel).
+            and.to.have.property("uri", this.testEventData.category.uri)
           expect(event.subcategory).to.equal(this.testEventData.subcategory)
           expect(event.start).to.equal(this.testEventData.start)
           expect(event.end).to.equal(this.testEventData.end)
           expect(event.venue).to.be.an.instanceOf(VenueModel).
             and.to.have.property("uri", this.testEventData.venue.uri)
           expect(event.disclaimer).to.equal(this.testEventData.disclaimer)
-          expect(event.banner).to.equal("")
-          expect(event.thumbnail).to.equal("")
+          expect(event.banner).to.equal(`https://qa.ticketingevents.com/media/banner/${event.id}`)
+          expect(event.thumbnail).to.equal(`https://qa.ticketingevents.com/media/thumbnail/${event.id}`)
           expect(event.status).to.equal("Draft")
           expect(event.published).to.be.a.string
           expect(event.popularity).to.equal(0)
@@ -242,24 +239,25 @@ describe("Events", function(){
 
   describe('List all events', function () {
     it('Should return a collection of Event resources', function () {
-      return expect(this.ticketing.events.list(5)).eventually.to.all.be.instanceof(EventModel)
+      return expect(this.ticketing.events.list(5).sort("start", false)).eventually.to.all.be.instanceof(EventModel)
     })
 
-    it('Should contain the newly created event as its last resource', function () {
+    it('Should contain the newly created event as its first resource', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.events.list(1).sort("published").last().then(events => {
+        this.ticketing.events.list(1).sort("start", false).first().then(events => {
           expect(events[0]).to.be.an.instanceof(EventModel)
           expect(events[0].description).to.equal(this.testEventData.description)
           expect(events[0].type).to.equal(this.testEventData.type)
           expect(events[0].public).to.equal(this.testEventData.public)
-          expect(events[0].category.self).to.equal(this.category.self)
+          expect(events[0]).to.be.an.instanceOf(CategoryModel).
+            and.to.have.property("uri", this.testEventData.category.uri)
           expect(events[0].subcategory).to.equal(this.testEventData.subcategory)
           expect(events[0].start).to.equal(this.testEventData.start)
           expect(events[0].venue).to.be.an.instanceof(VenueModel)
             .and.to.have.property("uri", this.testEventData.venue.uri)
           expect(events[0].disclaimer).to.equal(this.testEventData.disclaimer)
-          expect(events[0].banner).to.equal("")
-          expect(events[0].thumbnail).to.equal("")
+          expect(events[0].banner).to.equal(`https://qa.ticketingevents.com/media/banner/${events[0].id}`)
+          expect(events[0].thumbnail).to.equal(`https://qa.ticketingevents.com/media/thumbnail/${events[0].id}`)
           expect(events[0].status).to.equal("Draft")
           expect(events[0].published).to.be.a.string
           expect(events[0].popularity).to.equal(0)
@@ -382,15 +380,16 @@ describe("Events", function(){
           expect(event.description).to.equal(this.testEventData.description)
           expect(event.type).to.equal(this.testEventData.type)
           expect(event.public).to.equal(this.testEventData.public)
-          expect(event.category.self).to.equal(this.category.self)
+          expect(event.category).to.be.an.instanceOf(CategoryModel).
+            and.to.have.property("uri", this.testEventData.category.uri)
           expect(event.subcategory).to.equal(this.testEventData.subcategory)
           expect(event.start).to.equal(this.testEventData.start)
           expect(event.end).to.equal(this.testEventData.end)
           expect(event.venue).to.be.an.instanceof(VenueModel)
             .and.to.have.property("uri", this.testEventData.venue.uri)
           expect(event.disclaimer).to.equal(this.testEventData.disclaimer)
-          expect(event.banner).to.equal("")
-          expect(event.thumbnail).to.equal("")
+          expect(event.banner).to.equal(`https://qa.ticketingevents.com/media/banner/${event.id}`)
+          expect(event.thumbnail).to.equal(`https://qa.ticketingevents.com/media/thumbnail/${event.id}`)
           expect(event.status).to.equal("Draft")
           expect(event.published).to.be.a.string
           expect(event.popularity).to.equal(0)

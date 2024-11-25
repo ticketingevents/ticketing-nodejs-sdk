@@ -1,3 +1,4 @@
+import { Category } from '../Category'
 import { Venue } from '../Venue'
 
 export interface EventData{
@@ -6,7 +7,7 @@ export interface EventData{
   description: string
   type: string
   public: boolean
-  category: string
+  category: Category | string
   subcategory: string
   venue: Venue | string
   start?: string

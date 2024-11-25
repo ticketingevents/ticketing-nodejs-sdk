@@ -1,6 +1,7 @@
 import { APIAdapter } from '../util'
 import { InvalidStateError } from '../errors'
 import { BaseModel } from './BaseModel'
+import { CategoryModel } from './CategoryModel'
 import { Event } from '../interface/Event'
 import { EventData } from '../interface/data/EventData'
 import { VenueModel } from './VenueModel'
@@ -12,7 +13,7 @@ export class EventModel extends BaseModel implements Event{
   public status: string
   public type: string
   public public: boolean
-  public category: {[key: string]: string}
+  public category: CategoryModel
   public subcategory: string
   public start: string
   public end: string
@@ -35,7 +36,7 @@ export class EventModel extends BaseModel implements Event{
     this.status = event.status
     this.type = event.type
     this.public = event.public
-    this.category = event.category
+    this.category = new CategoryModel(event.category, adapter)
     this.subcategory = event.subcategory
     this.start = event.start
     this.end = event.end
@@ -89,7 +90,7 @@ export class EventModel extends BaseModel implements Event{
       description: this.description,
       type: this.type,
       public: this.public,
-      category: this.category.self,
+      category: this.category.uri,
       subcategory: this.subcategory,
       start: this.start,
       end: this.end,
