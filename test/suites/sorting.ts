@@ -2,7 +2,7 @@
 import './filters'
 
 import { TickeTing, UnsupportedSortError } from '../../src'
-import { Collection, APIAdapter } from  '../../src/util'
+import { Collection } from  '../../src/util'
 import { expect } from '../setup'
 
 describe("Sorting", function(){
@@ -17,19 +17,12 @@ describe("Sorting", function(){
       sandbox: true
     })
 
-    this.__adapter = new APIAdapter(
-      "07b2f3b08810a4296ee19fc59dff48b0",
-      true
-    )
-
     //Create an event host
-    this.host = /([A-Za-z0-9\-]+)$/.exec(
-      (await this.__adapter.post("/hosts", {
-        name: "Host "+Math.floor(Math.random() * 999999),
-        contact: "Jane Doe",
-        email: "jane@eventhost.com"
-      })).data.self
-    )[1]
+    this.host = await ticketing.hosts.create({
+      name: "Host "+Math.floor(Math.random() * 999999),
+      contact: "Jane Doe",
+      email: "jane@eventhost.com"
+    })
 
     //Create an event category
     this.category = await ticketing.categories.create({
@@ -61,7 +54,7 @@ describe("Sorting", function(){
           description: "Event Description",
           type: "Standard",
           public: true,
-          category: this.category.uri,
+          category: this.category,
           subcategory: "Event Subcategory",
           venue: this.venue
         }
@@ -82,7 +75,7 @@ describe("Sorting", function(){
     await Promise.all(deletions)
 
     this.category.delete().then(response => {})
-    this.__adapter.delete(`/hosts/${this.host}`).then(response => {})
+    this.host.delete().then(response => {})
     this.venue.delete().then(result => {
       this.region.delete().then(response => {})
     })

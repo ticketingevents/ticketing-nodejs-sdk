@@ -110,6 +110,12 @@ export class TickeTingService extends TickeTing{
   * [Delete an account](#delete-an-account)
   * [Fetch account preferences](#fetch-account-preferences)
   * [Update account preferences](#update-account-preferences)
+- [Hosts](#hosts)
+  * [List event hosts](#list-event-hosts)
+  * [Create an event host](#create-an-event-host)
+  * [Fetch an event host](#fetch-an-event-host)
+  * [Update an event host](#update-an-event-host)
+  * [Delete an event host](#delete-an-event-host)
 - [Events](#events)
   * [List published events](#list-published-events)
   * [List all events](#list-all-events)
@@ -567,6 +573,151 @@ preferences.
       console.log(error.message)
     }else if(error instanceof PermissionError){
       console.log("You are not authorised to access or modify this account.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+
+## Hosts
+
+Operations for managing hosts who can list events, sell tickets, book advertising, or request 
+add-on services through TickeTing
+
+### List event hosts
+
+[API Reference](https://ticketing.redocly.app/docs/api_reference/api_reference/managing-host-accounts/list_hosts)
+
+```javascript
+  ticketing.hosts.list()
+    // Supported filters with examples
+    .filter({
+      account: "MO-6A39EE8D" //Account that returned event hosts should list as an administrator
+    })
+    .then(hosts => {
+      //Do something with the collection of hosts
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Create an event host
+
+[API Reference](https://ticketing.redocly.app/docs/api_reference/api_reference/managing-host-accounts/create_host)
+
+```javascript
+  let hostData = {
+    "name": "The Boys Entertainment",
+    "contact": "Billy Butcher",
+    "email": "billy.butcher@fbsa.gov",
+    "description": "Premier events for supes of all ages",
+    "phone": "+1 (268) 555 8075",
+    "website": "https://theboys.net",
+    "country": "Antigua and Barbuda",
+    "firstAddressLine": "Wireless Road",
+    "secondAddressLine": "Clare Hall",
+    "city": "St. John's",
+    "state": "Saint John",
+    "businessNo": "A5585291"
+  }
+
+  ticketing.hosts.create(hostData)
+    .then(host => {
+      //Do something with the created host resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log(error.message)
+      }else if(error instanceof ResourceExistsError){
+        console.log("A host with the given name already exists.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch an event host
+
+[API Reference](https://ticketing.redocly.app/docs/api_reference/api_reference/managing-host-accounts/retrieve_host)
+
+```javascript
+  //Retrieve a specific host using its ID
+  ticketing.hosts.find(17327135633743)
+    .then(host => {
+      //Do something with the host resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no host with the given ID")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Update an event host
+
+[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/update_eventhttps://ticketing.redocly.app/docs/api_reference/api_reference/managing-host-accounts/update_account)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Make changes to the resource
+  host.name = "Boys Entertainment"
+  host.contact = "Marvin Milk"
+
+  //Save changes
+  host.save().then(saved => {
+    if(saved){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log(error.message)
+    }else if(error instanceof PermissionError){
+      console.log("This account is not an administrator of this event host.")
+    }else if(error instanceof ResourceExistsError){
+      console.log("A host with the given name already exists.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Delete an event host
+
+[API Reference](https://ticketing.redocly.app/docs/api_reference/api_reference/managing-host-accounts/delete_host)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Delete the event
+  host.delete().then(deleted => {
+    if(deleted){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof PermissionError){
+      console.log("This account is not an administrator of this event host.")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }

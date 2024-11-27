@@ -1,9 +1,9 @@
 //Control execution order
-import './venues'
+import './hosts'
 
 import { TickeTing, Event, BadDataError, InvalidStateError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
 import { CategoryModel, EventModel, VenueModel } from  '../../src/model'
-import { Collection, APIAdapter } from  '../../src/util'
+import { Collection } from  '../../src/util'
 import { expect } from '../setup'
 
 //Global event object
@@ -21,19 +21,12 @@ describe("Events", function(){
       sandbox: true
     })
 
-    this.__adapter = new APIAdapter(
-      "07b2f3b08810a4296ee19fc59dff48b0",
-      true
-    )
-
     //Create an event host
-    this.host = /([A-Za-z0-9\-]+)$/.exec(
-      (await this.__adapter.post("/hosts", {
-        name: "Host "+Math.floor(Math.random() * 999999),
-        contact: "Jane Doe",
-        email: "jane@eventhost.com"
-      })).data.self
-    )[1]
+    this.host = await this.ticketing.hosts.create({
+      name: "Host "+Math.floor(Math.random() * 999999),
+      contact: "Jane Doe",
+      email: "jane@eventhost.com"
+    })
 
     //Create an event category
     this.category = await this.ticketing.categories.create({
@@ -62,7 +55,7 @@ describe("Events", function(){
       description: "Event Description",
       type: "Standard",
       public: true,
-      category: this.category.uri,
+      category: this.category,
       subcategory: "Event Subcategory",
       venue: this.venue
     })
@@ -88,7 +81,7 @@ describe("Events", function(){
     await this.secondEvent.delete()
 
     this.category.delete().then(response => {})
-    this.__adapter.delete(`/hosts/${this.host}`).then(response => {})
+    this.host.delete().then(response => {})
     this.venue.delete().then(result => {
       this.region.delete().then(response => {})
     })
@@ -128,19 +121,21 @@ describe("Events", function(){
     it('Should throw a BadDataError if required fields are missing', function () {
       return expect(this.ticketing.events.create({
         host: this.host,
+        category: this.category,
         venue: this.venue,
         title: "",
         description: "",
         public: "",
-        category: "",
         subcategory: ""
       }))
-      .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: type, title, description, category, subcategory, public.")
+      .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: type, title, description, subcategory, public.")
       .and.be.an.instanceOf(BadDataError)
     })
 
     it('Should throw a BadDataError if a non-venue is passed in', function () {
       return expect(this.ticketing.events.create({
+        host: this.host,
+        category: this.category,
         venue: "Non-Venue"
       }))
       .to.eventually.be.rejectedWith("Please provide a valid venue for the event")
@@ -161,6 +156,8 @@ describe("Events", function(){
 
       let payload = JSON.parse(JSON.stringify(this.testEventData))
       payload.title = "Test Event "+Math.floor(Math.random() * 999999)
+      payload.host = this.host
+      payload.category = this.category
       payload.venue = this.venue
 
       return expect(unauthorised_sdk.events.create(payload))
@@ -249,7 +246,7 @@ describe("Events", function(){
           expect(events[0].description).to.equal(this.testEventData.description)
           expect(events[0].type).to.equal(this.testEventData.type)
           expect(events[0].public).to.equal(this.testEventData.public)
-          expect(events[0]).to.be.an.instanceOf(CategoryModel).
+          expect(events[0].category).to.be.an.instanceOf(CategoryModel).
             and.to.have.property("uri", this.testEventData.category.uri)
           expect(events[0].subcategory).to.equal(this.testEventData.subcategory)
           expect(events[0].start).to.equal(this.testEventData.start)

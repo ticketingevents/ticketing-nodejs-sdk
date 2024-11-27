@@ -3,7 +3,7 @@ import './accounts'
 
 import { TickeTing, Category, BadDataError,  ResourceExistsError, ResourceNotFoundError, ResourceIndelibleError } from '../../src'
 import { CategoryModel } from  '../../src/model'
-import { Collection, APIAdapter } from  '../../src/util'
+import { Collection } from  '../../src/util'
 import { expect } from '../setup'
 
 // Global category object
@@ -33,19 +33,12 @@ describe("Categories", function(){
       subcategories: ["Event Subcategory"]
     })
 
-    this.__adapter = new APIAdapter(
-      "07b2f3b08810a4296ee19fc59dff48b0",
-      true
-    )
-
     //Create an event host
-    this.host = /([A-Za-z0-9\-]+)$/.exec(
-      (await this.__adapter.post("/hosts", {
-        name: "Host "+Math.floor(Math.random() * 999999),
-        contact: "Jane Doe",
-        email: "jane@eventhost.com"
-      })).data.self
-    )[1]
+    this.host = await this.ticketing.hosts.create({
+      name: "Host "+Math.floor(Math.random() * 999999),
+      contact: "Jane Doe",
+      email: "jane@eventhost.com"
+    })
 
     //Create an event venue
     this.region = await this.ticketing.regions.create({
@@ -68,7 +61,7 @@ describe("Categories", function(){
       description: "Event Description",
       type: "Standard",
       public: true,
-      category: this.secondCategory.uri,
+      category: this.secondCategory,
       subcategory: "Event Subcategory",
       venue: this.venue
     })
@@ -76,7 +69,7 @@ describe("Categories", function(){
 
   after(async function(){
     await this.testEvent.delete()
-    this.__adapter.delete(`/hosts/${this.host}`).then(response => {})
+    this.host.delete().then(response => {})
     this.venue.delete().then(result => {
       this.region.delete().then(response => {})
     })
@@ -92,7 +85,7 @@ describe("Categories", function(){
 
           expect(category)
             .to.be.an.instanceof(CategoryModel)
-            .and.to.include(this.testCategoryData)
+            .and.to.deep.include(this.testCategoryData)
 
           resolve(true)
         })).catch(error=>{
@@ -124,7 +117,7 @@ describe("Categories", function(){
         this.ticketing.categories.list(1).last().then(categories => {
           expect(categories[0])
             .to.be.an.instanceof(CategoryModel)
-            .and.to.include(this.testCategoryData)
+            .and.to.deep.include(this.testCategoryData)
 
           resolve(true)
         }).catch(error => {
@@ -138,7 +131,7 @@ describe("Categories", function(){
     it('Should return the identified Category resource', function () {
       return expect(this.ticketing.categories.find(testCategory.id))
         .to.eventually.be.an.instanceof(CategoryModel)
-        .and.to.include(this.testCategoryData)
+        .and.to.deep.include(this.testCategoryData)
     })
 
     it('Should throw a ResourceNotFoundError when using a non-existant ID', function () {
@@ -160,7 +153,7 @@ describe("Categories", function(){
 
     it('Should persist category changes', function () {
       return expect(this.ticketing.categories.find(testCategory.id))
-        .to.eventually.include({
+        .to.eventually.deep.include({
           "name": "New Category",
           "subcategories": ["Subcategory 1", "Subcategory 3"]
         })

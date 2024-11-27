@@ -3,7 +3,7 @@ import { BaseService } from './BaseService'
 import { BadDataError, PermissionError } from '../errors'
 import { APIAdapter } from '../util'
 import { EventData, Event } from '../interface'
-import { EventModel, VenueModel } from '../model'
+import { EventModel, HostModel, CategoryModel, VenueModel } from '../model'
 import { UnsupportedOperationError } from '../errors'
 
 export class EventService extends BaseService<EventData, Event>{
@@ -20,11 +20,21 @@ export class EventService extends BaseService<EventData, Event>{
 
   create(data: EventData): Promise<Event>{
     return new Promise<Event>((resolve, reject) => {
+      if(!(data.host instanceof HostModel)){
+        reject(new BadDataError(400, "Please provide a valid host for the event"))
+      }
+
+      if(!(data.category instanceof CategoryModel)){
+        reject(new BadDataError(400, "Please provide a valid category for the event"))
+      }
+
       if(!(data.venue instanceof VenueModel)){
         reject(new BadDataError(400, "Please provide a valid venue for the event"))
       }
 
       let payload: EventData = JSON.parse(JSON.stringify(data))
+      payload.host = (data.host as HostModel).id
+      payload.category = (data.category as CategoryModel).uri
       payload.venue = (data.venue as VenueModel).uri
       super.create(payload).then(event => {
         resolve(event)

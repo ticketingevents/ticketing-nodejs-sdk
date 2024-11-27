@@ -1,6 +1,7 @@
 export { AccountService } from './AccountService'
 export { CategoryService } from './CategoryService'
 export { EventService } from './EventService'
+export { HostService } from './HostService'
 export { PresetService } from './PresetService'
 export { RegionService } from './RegionService'
 export { VenueService } from './VenueService'

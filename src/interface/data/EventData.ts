@@ -1,8 +1,9 @@
+import { Host } from '../Host'
 import { Category } from '../Category'
 import { Venue } from '../Venue'
 
 export interface EventData{
-  host?: string
+  host?: Host | string
   title: string
   description: string
   type: string
