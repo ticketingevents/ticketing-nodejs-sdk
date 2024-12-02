@@ -1,4 +1,4 @@
-import { APIAdapter } from './util/APIAdapter'
+import { APIAdapter, SessionManager } from './util'
 import {
   AccountService,
   CategoryService,
@@ -19,7 +19,8 @@ export class TickeTing{
   public events: EventService;
   public hosts: HostService;
   public presets: PresetService;
-  public regions: RegionService;
+  public regions: RegionService;;
+  public session: SessionManager;
   public venues: VenueService;
 
   constructor(config: {apiKey: string, sandbox: boolean}){
@@ -28,6 +29,7 @@ export class TickeTing{
       config.sandbox?config.sandbox:false
     )
 
+    this.session = new SessionManager(this.__apiAdapter)
     this.accounts = new AccountService(this.__apiAdapter)
     this.categories = new CategoryService(this.__apiAdapter)
     this.events = new EventService(this.__apiAdapter)
@@ -35,5 +37,9 @@ export class TickeTing{
     this.presets = new PresetService(this.__apiAdapter)
     this.regions = new RegionService(this.__apiAdapter)
     this.venues = new VenueService(this.__apiAdapter)
+  }
+
+  get apiKey(): string{
+    return this.__apiAdapter.key
   }
 }

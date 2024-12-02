@@ -1,3 +1,6 @@
+//Control execution order
+import './session'
+
 import { TickeTing, Region, BadDataError,  ResourceExistsError, ResourceNotFoundError, PermissionError } from '../../src'
 import { AccountModel, AccountPreferencesModel, RegionModel } from  '../../src/model'
 import { Collection } from  '../../src/util'

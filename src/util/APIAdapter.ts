@@ -3,19 +3,36 @@ import { constants } from './constants'
 import { TickeTingError, UnauthorisedError } from '../errors'
 
 export class APIAdapter{
+  private __originalKey;
+  private __currentKey;
   private __requester;
 
   constructor(apiKey: string, sandbox: boolean){
+    this.__originalKey = apiKey
     this.__requester = axios.create({
       baseURL: sandbox?
           "https://qa.ticketingevents.com/v3/":
           "https://api.ticketingevents.com/v3/",
       headers:{
-        "X-API-Key": apiKey,
         "X-Client-Version": constants.CLIENT_VERSION
       },
       timeout: 10000
     })
+
+    this.key = apiKey
+  }
+
+  get key(): string{
+    return this.__currentKey
+  }
+
+  set key(newKey: string){
+    this.__currentKey = newKey;
+    this.__requester.defaults.headers.common['X-API-Key'] = this.__currentKey;
+  }
+
+  reset(){
+    this.key = this.__originalKey
   }
 
   get(

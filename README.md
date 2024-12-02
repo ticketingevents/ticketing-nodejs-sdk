@@ -102,6 +102,11 @@ export class TickeTingService extends TickeTing{
   * [Pagination](#pagination)
   * [Chaining operations](#chaining-operations)
 - [Error handling](#error-handling)
+- [Session Management](#sessions)
+  * [Start a new session](#start-a-new-session)
+  * [Resume an active session](#resume-an-active-session)
+  * [End a session](#end-a-session)
+  * [Retrieve session information](#retrieve-session-information)
 - [Accounts](#accounts)
   * [List all accounts](#list-all-accounts)
   * [Register an account](#register-an-account)
@@ -375,6 +380,139 @@ Each TickeTing Error instance has a unique type, and provides an error message, 
       }
     })
 ```
+
+## Session Management
+
+The API Key passed to the TickeTing SDK constructor grants primarily read-only access to
+API resources (with the exception of an administrative key). Resource management is generally
+restricted to specific users and you will need to authenticate against the API to unlock
+these features.
+
+The SDK offers user authentication in the form of sessions. This section details how to
+work with user sessions.
+
+### Start a new session
+
+[API Reference](https://ticketing.redocly.app/docs/api_reference/api_reference/session-authentication/start_session)
+
+To authenticate a user, you will need to start a new session. This requires you to provide
+the user's unique identifier (username or email) and password. Once a session has been started,
+the SDK will make all subsequent calls to the API on behalf of the authenticated user, until
+the session is ended. The SDK supports only one active session at a time.
+
+**N.B.** The default API Key passed to the constructor may have a more permissive role than that of
+the authenticated user. In this case some access may be restricted during the course of the session.
+
+```javascript
+  ticketing.session.start({
+    "identification": "mothers.milk", //Account username or email
+    "password": "WuT4NGcl4n"
+  }).then(key => {
+    if(key){
+      //Do something with session key (for example save to local storage)
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof UnauthorisedError){
+      console.log("The provided username/password combination is invalid.")
+    }else if(error instanceof ResourceNotFoundError){
+      console.log("No account was found matching the provided identification string.")
+    }else if(error instanceof UnsupportedOperationError){
+      console.log("There is already an active session.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Resume an active session
+
+[API Reference](https://ticketing.redocly.app/docs/api_reference/api_reference/session-authentication/continue_session)
+
+While the TickeTing API persists sessions, the SDK does not. This allows developers the freedom to
+choose the local storage solution most suitable for their use case. If you wish to resume a previously started
+session, you can do so by providing a previously stored session key to the SDK. Once resumed, the SDK will
+authenticate subsequent requests on behalf of the session's attached user.
+
+**N.B.** A session cannot be resumed if another one has already been started.
+
+```javascript
+  ticketing.session.resume("24496b8f8a513737c26276d04397908c").then(resumed => {
+    if(resumed){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof InvalidStateError){
+      console.log("The session has ended or does not exist.")
+    }else if(error instanceof UnsupportedOperationError){
+      console.log("There is already an active session.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### End a session
+
+[API Reference](https://ticketing.redocly.app/docs/api_reference/api_reference/session-authentication/end_session)
+
+When you end an active session, the SDK will stop authenticating requests as the specified user, and revet to
+the API key provided during initialisation. Ending a session allows you to start a new session, or resume an
+existing one.
+
+```javascript
+  ticketing.session.end().then(ended => {
+    if(ended){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof InvalidStateError){
+      console.log("The session has already ended.")
+    }else if(error instanceof UnsupportedOperationError){
+      console.log("There is currently no active session.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Retrieve session information
+
+After successfully starting or resuming a session, you may want to retrieve information about it. You can query
+information about the ongoing session at any time.
+
+```javascript
+  ticketing.session.info().then(session => {
+    let started = session.started //Date and time that the session was started
+    let key = session.key //The active session's API Key
+    let account = session.account //The user account associated with the session
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof UnsupportedOperationError){
+      console.log("There is currently no active session.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+You can also check if the SDK currently has an active session before taking other actions
+```javascript
+  if(ticketing.session.active){
+    //Do something if active session
+  }else{
+    //Do something otherwise
+  }
+```
+
 
 ## Accounts
 
