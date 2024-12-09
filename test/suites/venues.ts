@@ -1,10 +1,10 @@
 //Control execution order
 import './regions'
 
-import { TickeTing, Venue, BadDataError,  ResourceExistsError, ResourceNotFoundError, ResourceIndelibleError } from '../../src'
+import { Venue, BadDataError,  ResourceExistsError, ResourceNotFoundError, ResourceIndelibleError } from '../../src'
 import { VenueModel, RegionModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
-import { expect } from '../setup'
+import { expect, ticketing } from '../setup'
 
 //Global venue object
 let testVenue = null
@@ -15,14 +15,8 @@ describe("Venues", function(){
   this.timeout(10000)
 
   before(async function(){
-    //Setup SDK for testing
-    this.ticketing = new TickeTing({
-      apiKey: "07b2f3b08810a4296ee19fc59dff48b0",
-      sandbox: true
-    })
-
     //Create a region for use in venue creation
-    this.venueRegion = await this.ticketing.regions.create({
+    this.venueRegion = await ticketing.regions.create({
       "name": "Venue Region "+Math.floor(Math.random() * 999999),
       "country": "Antigua and Barbuda"
     })
@@ -37,7 +31,7 @@ describe("Venues", function(){
     }
 
     //A venue to test duplication
-    this.secondVenue = await this.ticketing.venues.create({
+    this.secondVenue = await ticketing.venues.create({
       name: "Test Venue "+Math.floor(Math.random() * 999999),
       region: this.venueRegion,
       longitude: -70.99214,
@@ -46,18 +40,18 @@ describe("Venues", function(){
     })
 
     //An event to test region cannot be deleted
-    this.host = await this.ticketing.hosts.create({
+    this.host = await ticketing.hosts.create({
       name: "Host "+Math.floor(Math.random() * 999999),
       contact: "Jane Doe",
       email: "jane@eventhost.com"
     })
 
-    this.category = await this.ticketing.categories.create({
+    this.category = await ticketing.categories.create({
       name: "Event Category "+Math.floor(Math.random() * 999999),
       subcategories: ["Event Subcategory"]
     })
 
-    this.testEvent = await this.ticketing.events.create({
+    this.testEvent = await ticketing.events.create({
       host: this.host,
       title: "Test Event "+Math.floor(Math.random() * 999999),
       description: "Event Description",
@@ -80,7 +74,7 @@ describe("Venues", function(){
   describe('Create an event venue', function () {
     it('Should return a valid venue object', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.venues.create(this.testVenueData).then((venue => {
+        ticketing.venues.create(this.testVenueData).then((venue => {
           testVenue = venue
 
           expect(venue).to.be.an.instanceof(VenueModel)
@@ -100,7 +94,7 @@ describe("Venues", function(){
     })
 
     it('Should throw a BadDataError if required fields are missing', function () {
-      return expect(this.ticketing.venues.create({
+      return expect(ticketing.venues.create({
         region: this.venueRegion,
         name: "",
         longitude: "",
@@ -112,7 +106,7 @@ describe("Venues", function(){
     })
 
     it('Should throw a ResourceExistsError when using an existing name', function () {
-      return expect(this.ticketing.venues.create(this.testVenueData))
+      return expect(ticketing.venues.create(this.testVenueData))
         .to.eventually.be.rejectedWith("The following arguments conflict with those of another venue: name.")
         .and.be.an.instanceOf(ResourceExistsError)
     })
@@ -120,11 +114,11 @@ describe("Venues", function(){
 
   describe('List event venues', function () {
     it('Should return a collection of Venue resources', function () {
-      return expect(this.ticketing.venues.list()).eventually.to.all.be.instanceof(VenueModel)
+      return expect(ticketing.venues.list()).eventually.to.all.be.instanceof(VenueModel)
     })
 
     it('Should return a collection of venues matching the region filter', function () {return new Promise((resolve, reject) => {
-        this.ticketing.venues.list(5).filter({region: this.venueRegion.id}).then(venues => {
+        ticketing.venues.list(5).filter({region: this.venueRegion.id}).then(venues => {
           for(let venue of venues){
             expect(venue.region).to.be.an.instanceOf(RegionModel)
               .and.to.have.property("uri", this.testVenueData.region.uri)
@@ -139,7 +133,7 @@ describe("Venues", function(){
 
     it('Should contain the newly created venue as its last resource', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.venues.list(1).last().then(venues => {
+        ticketing.venues.list(1).last().then(venues => {
           expect(venues[0]).to.be.an.instanceOf(VenueModel)
           expect(venues[0].name).to.equal(this.testVenueData.name)
           expect(venues[0].region).to.be.an.instanceof(RegionModel)
@@ -159,7 +153,7 @@ describe("Venues", function(){
   describe('Fetch a venue', function () {
     it('Should return the identified Venue resource', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.venues.find(testVenue.id).then(venue => {
+        ticketing.venues.find(testVenue.id).then(venue => {
           expect(venue).to.be.an.instanceOf(VenueModel)
           expect(venue.name).to.equal(this.testVenueData.name)
           expect(venue.region).to.be.an.instanceof(RegionModel)
@@ -176,7 +170,7 @@ describe("Venues", function(){
     })
 
     it('Should throw a ResourceNotFoundError when using a non-existant ID', function () {
-      return expect(this.ticketing.venues.find(12345))
+      return expect(ticketing.venues.find(12345))
         .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
@@ -193,7 +187,7 @@ describe("Venues", function(){
     })
 
     it('Should persist venue changes', function () {
-      return expect(this.ticketing.venues.find(testVenue.id))
+      return expect(ticketing.venues.find(testVenue.id))
         .to.eventually.include({
           "name": "New Name",
           "address": "#1 High St., St. John's"
@@ -227,7 +221,7 @@ describe("Venues", function(){
     })
 
     it('Should no longer be retrievable', function () {
-      return expect(this.ticketing.venues.find(testVenue.id))
+      return expect(ticketing.venues.find(testVenue.id))
         .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })

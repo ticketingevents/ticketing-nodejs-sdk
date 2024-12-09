@@ -1,9 +1,9 @@
 //Control execution order
 import './sorting'
 
-import { TickeTing, Region, PageAccessError } from '../../src'
+import { Region, PageAccessError } from '../../src'
 import { Collection } from  '../../src/util'
-import { expect } from '../setup'
+import { expect, ticketing } from '../setup'
 
 describe("Pagination", function(){
 
@@ -11,12 +11,6 @@ describe("Pagination", function(){
   this.timeout(10000)
 
   before(async function(){
-    //Setup SDK for testing
-    let ticketing: TickeTing = new TickeTing({
-      apiKey: "07b2f3b08810a4296ee19fc59dff48b0",
-      sandbox: true
-    })
-
     //Initialise test data for suite
     let regionData = {
       name: "Test Region ",

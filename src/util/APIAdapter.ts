@@ -6,6 +6,7 @@ export class APIAdapter{
   private __originalKey;
   private __currentKey;
   private __requester;
+  private __sandbox;
 
   constructor(apiKey: string, sandbox: boolean){
     this.__originalKey = apiKey
@@ -20,6 +21,7 @@ export class APIAdapter{
     })
 
     this.key = apiKey
+    this.__sandbox = sandbox
   }
 
   get key(): string{
@@ -29,6 +31,18 @@ export class APIAdapter{
   set key(newKey: string){
     this.__currentKey = newKey;
     this.__requester.defaults.headers.common['X-API-Key'] = this.__currentKey;
+  }
+
+  get base(): string{
+    return this.__sandbox?
+      "https://qa.ticketingevents.com/v3":
+      "https://api.ticketingevents.com/v3"
+  }
+
+  get media(): string{
+    return this.__sandbox?
+      "https://qa.ticketingevents.com/media":
+      "https://api.ticketingevents.com/media"
   }
 
   reset(){

@@ -4,7 +4,7 @@ import './session'
 import { TickeTing, Region, BadDataError,  ResourceExistsError, ResourceNotFoundError, PermissionError } from '../../src'
 import { AccountModel, AccountPreferencesModel, RegionModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
-import { expect } from '../setup'
+import { expect, ticketing } from '../setup'
 
 // Global account object
 let testAccount = null
@@ -15,12 +15,6 @@ describe("Accounts", function(){
   this.timeout(10000)
 
   before(async function(){
-    //Setup SDK for testing
-    this.ticketing = new TickeTing({
-      apiKey: "07b2f3b08810a4296ee19fc59dff48b0",
-      sandbox: true
-    })
-
     //Initialise test data for suite
     this.testAccountData = {
       username: "zz.mothers.milk",
@@ -39,7 +33,7 @@ describe("Accounts", function(){
     }
 
     //Create a region for use in account preference management
-    this.preferredRegion = await this.ticketing.regions.create({
+    this.preferredRegion = await ticketing.regions.create({
       "name": "Preferred Region "+Math.floor(Math.random() * 999999),
       "country": "Antigua and Barbuda"
     })
@@ -52,7 +46,7 @@ describe("Accounts", function(){
   describe('Register an account', function () {
     it('Should return a valid account object', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.accounts.create(this.testAccountData).then((account => {
+        ticketing.accounts.create(this.testAccountData).then((account => {
           testAccount = account
 
           expect(account).to.be.an.instanceof(AccountModel)
@@ -81,7 +75,7 @@ describe("Accounts", function(){
     })
 
     it('Should throw a BadDataError if required fields are missing', function () {
-      return expect(this.ticketing.accounts.create({
+      return expect(ticketing.accounts.create({
         username: "",
         password: "",
         email: ""
@@ -91,7 +85,7 @@ describe("Accounts", function(){
     })
 
     it('Should throw a ResourceExistsError when using an existing username or email address', function () {
-      return expect(this.ticketing.accounts.create(this.testAccountData))
+      return expect(ticketing.accounts.create(this.testAccountData))
         .to.eventually.be.rejectedWith("The following arguments conflict with those of another user: username.")
         .and.be.an.instanceOf(ResourceExistsError)
     })
@@ -99,12 +93,12 @@ describe("Accounts", function(){
 
   describe('List all accounts', function () {
     it('Should return a collection of Account resources', function () {
-      return expect(this.ticketing.accounts.list(5)).eventually.to.all.be.instanceof(AccountModel)
+      return expect(ticketing.accounts.list(5)).eventually.to.all.be.instanceof(AccountModel)
     })
 
     it('Should contain the newly created account as its last resource', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.accounts.list(1).last().then(accounts => {
+        ticketing.accounts.list(1).last().then(accounts => {
           expect(accounts[0]).to.be.an.instanceof(AccountModel)
           expect(accounts[0].number).to.equal(testAccount.number)
           expect(accounts[0].username).to.equal(this.testAccountData.username)
@@ -132,7 +126,7 @@ describe("Accounts", function(){
 
     it('Should return a collection containing the account matching the number filter', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.accounts.list().filter({number: testAccount.number}).then(accounts => {
+        ticketing.accounts.list().filter({number: testAccount.number}).then(accounts => {
           expect(accounts.length).to.eq(1)
           expect(accounts[0].number).to.equal(testAccount.number)
 
@@ -145,7 +139,7 @@ describe("Accounts", function(){
 
     it('Should return a collection containing the account matching the email filter', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.accounts.list().filter({email: this.testAccountData.email}).then(accounts => {
+        ticketing.accounts.list().filter({email: this.testAccountData.email}).then(accounts => {
           expect(accounts.length).to.eq(1)
           expect(accounts[0].email).to.equal(this.testAccountData.email)
 
@@ -158,7 +152,7 @@ describe("Accounts", function(){
 
     it('Should return a collection containing the account matching the username filter', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.accounts.list().filter({username: this.testAccountData.username}).then(accounts => {
+        ticketing.accounts.list().filter({username: this.testAccountData.username}).then(accounts => {
           expect(accounts.length).to.eq(1)
           expect(accounts[0].username).to.equal(this.testAccountData.username)
 
@@ -173,7 +167,7 @@ describe("Accounts", function(){
   describe('Fetch an account', function () {
     it('Should return the identified Account resource', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.accounts.find(testAccount.number).then(account => {
+        ticketing.accounts.find(testAccount.number).then(account => {
           expect(account).to.be.an.instanceof(AccountModel)
           expect(account.number).to.match(/[A-Z0-9]{2}\-[0-9A-Z]{8}/)
           expect(account.username).to.equal(this.testAccountData.username)
@@ -200,16 +194,24 @@ describe("Accounts", function(){
     })
 
     it('Should throw a ResourceNotFoundError when using a non-existant number', function () {
-      return expect(this.ticketing.accounts.find("NO-12345678"))
+      return expect(ticketing.accounts.find("NO-12345678"))
         .to.eventually.be.rejectedWith("The requested account could not be located")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
 
     it('Should throw a PermissionError when accessed with another user', function () {
-      let unauthorised_sdk = new TickeTing({
-        apiKey: "413c7e517b63822c3037ead7679c780e",
-        sandbox: true
-      })
+      let unauthorised_sdk = null
+      if(process.env.npm_config_env == "production"){
+        unauthorised_sdk = new TickeTing({
+          apiKey: "0acb10082a313f517954a34d2a7aedb7",
+          sandbox: false
+        })
+      }else{
+        unauthorised_sdk = new TickeTing({
+          apiKey: "413c7e517b63822c3037ead7679c780e",
+          sandbox: true
+        })
+      }
 
       return expect(unauthorised_sdk.accounts.find(testAccount.number))
         .to.eventually.be.rejectedWith("You are not authorised to access or modify this account.")
@@ -228,7 +230,7 @@ describe("Accounts", function(){
     })
 
     it('Should persist account changes', function () {
-      return expect(this.ticketing.accounts.find(testAccount.number))
+      return expect(ticketing.accounts.find(testAccount.number))
         .to.eventually.include({
           "firstName": "New First",
           "lastName": "New Last"
@@ -313,7 +315,7 @@ describe("Accounts", function(){
     })
 
     it('Account should no longer be retrievable', function () {
-      return expect(this.ticketing.accounts.find(testAccount.number))
+      return expect(ticketing.accounts.find(testAccount.number))
         .to.eventually.be.rejectedWith("The requested account could not be located")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })

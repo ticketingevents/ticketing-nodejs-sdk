@@ -1,10 +1,10 @@
 //Control execution order
 import './categories'
 
-import { TickeTing, Region, BadDataError,  ResourceExistsError, ResourceNotFoundError, ResourceIndelibleError } from '../../src'
+import { Region, BadDataError,  ResourceExistsError, ResourceNotFoundError, ResourceIndelibleError } from '../../src'
 import { RegionModel } from  '../../src/model'
 import { Collection, APIAdapter } from  '../../src/util'
-import { expect } from '../setup'
+import { expect, ticketing } from '../setup'
 
 // Global region object
 let testRegion = null
@@ -14,15 +14,20 @@ describe("Regions", function(){
   //Set hook timeout
   this.timeout(15000)
 
-  before(async function(){
-    //Setup SDK for testing
-    this.ticketing = new TickeTing({
-      apiKey: "07b2f3b08810a4296ee19fc59dff48b0",
-      sandbox: true
-    })
-  
-    //TEMPORARY: Remove once functionality added to SDK
-    this.adapter = new APIAdapter("07b2f3b08810a4296ee19fc59dff48b0", true)
+  before(async function(){  
+    //TEMPORARY: Remove once functionality added to SDKlet sdk = null
+    this.adapter = null
+    if(process.env.npm_config_env == "production"){
+      this.adapter = new APIAdapter(
+        "1f573b7f728ba805604b9b1453d56105",
+        false
+      )
+    }else{
+      this.adapter = new APIAdapter(
+        "07b2f3b08810a4296ee19fc59dff48b0",
+        true
+      )
+    }
 
     //Initialise test data for suite
     this.testRegionData = {
@@ -33,13 +38,13 @@ describe("Regions", function(){
     }
 
     //A region to test duplication
-    this.secondRegion = await this.ticketing.regions.create({
+    this.secondRegion = await ticketing.regions.create({
       "name": "Test Region "+Math.floor(Math.random() * 999999),
       "country": "Antigua and Barbuda"
     })
 
     //A venue to test region cannot be deleted
-    this.testVenue = await this.ticketing.venues.create({
+    this.testVenue = await ticketing.venues.create({
       name: "Test Venue "+Math.floor(Math.random() * 999999),
       region: this.secondRegion,
       longitude: -70.99214,
@@ -48,20 +53,20 @@ describe("Regions", function(){
     })
 
     //Create an event host
-    this.host = await this.ticketing.hosts.create({
+    this.host = await ticketing.hosts.create({
       name: "Host "+Math.floor(Math.random() * 999999),
       contact: "Jane Doe",
       email: "jane@eventhost.com"
     })
 
     //Create an event category
-    this.category = await this.ticketing.categories.create({
+    this.category = await ticketing.categories.create({
       name: "Event Category "+Math.floor(Math.random() * 999999),
       subcategories: ["Event Subcategory"]
     })
 
     //An event to test active filter
-    this.regionEvent = await this.ticketing.events.create({
+    this.regionEvent = await ticketing.events.create({
       host: this.host,
       title: "Region Event",
       description: "Event Description",
@@ -90,13 +95,13 @@ describe("Regions", function(){
   describe('Add new region', function () {
     it('Should return a valid region object', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.regions.create(this.testRegionData).then((region => {
+        ticketing.regions.create(this.testRegionData).then((region => {
           testRegion = region
 
           expect(region)
             .to.be.an.instanceof(RegionModel)
             .and.to.include(this.testRegionData)
-            .and.to.have.property("icon", `https://qa.ticketingevents.com/media/antigua_and_barbuda.png`)
+            .and.to.have.property("icon", `${ticketing.mediaURL}/antigua_and_barbuda.png`)
 
           resolve(true)
         })).catch(error=>{
@@ -106,13 +111,13 @@ describe("Regions", function(){
     })
 
     it('Should throw a BadDataError if required fields are missing', function () {
-      return expect(this.ticketing.regions.create({name: "", country: this.testRegionData.country}))
+      return expect(ticketing.regions.create({name: "", country: this.testRegionData.country}))
         .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: name.")
         .and.be.an.instanceOf(BadDataError)
     })
 
     it('Should throw a ResourceExistsError when using an existing name', function () {
-      return expect(this.ticketing.regions.create(this.testRegionData))
+      return expect(ticketing.regions.create(this.testRegionData))
         .to.eventually.be.rejectedWith("The following arguments conflict with those of another region: name.")
         .and.be.an.instanceOf(ResourceExistsError)
     })
@@ -120,12 +125,12 @@ describe("Regions", function(){
 
   describe('List all regions', function () {
     it('Should return a collection of Region resources', function () {
-      return expect(this.ticketing.regions.list()).eventually.to.all.be.instanceof(RegionModel)
+      return expect(ticketing.regions.list()).eventually.to.all.be.instanceof(RegionModel)
     })
 
     it('Should contain the newly created region as its last resource', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.regions.list(1).last().then(regions => {
+        ticketing.regions.list(1).last().then(regions => {
           expect(regions[0])
             .to.be.an.instanceof(RegionModel)
             .and.to.include(this.testRegionData)
@@ -139,7 +144,7 @@ describe("Regions", function(){
 
     it('Should return a collection of regions matching the active filter', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.regions.list(1).filter({active: true}).last().then(regions => {
+        ticketing.regions.list(1).filter({active: true}).last().then(regions => {
           //Our test region should have been returned
           expect(regions[0])
             .to.be.an.instanceof(RegionModel)
@@ -155,13 +160,13 @@ describe("Regions", function(){
 
   describe('Fetch a region', function () {
     it('Should return the identified Region resource', function () {
-      return expect(this.ticketing.regions.find(testRegion.id))
+      return expect(ticketing.regions.find(testRegion.id))
         .to.eventually.be.an.instanceof(RegionModel)
         .and.to.include(this.testRegionData)
     })
 
     it('Should throw a ResourceNotFoundError when using a non-existant ID', function () {
-      return expect(this.ticketing.regions.find(12345))
+      return expect(ticketing.regions.find(12345))
         .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
@@ -178,7 +183,7 @@ describe("Regions", function(){
     })
 
     it('Should persist region changes', function () {
-      return expect(this.ticketing.regions.find(testRegion.id))
+      return expect(ticketing.regions.find(testRegion.id))
         .to.eventually.include({
           "name": "New Name",
           "district": "New District"
@@ -210,7 +215,7 @@ describe("Regions", function(){
     })
 
     it('Region should no longer be retrievable', function () {
-      return expect(this.ticketing.regions.find(testRegion.id))
+      return expect(ticketing.regions.find(testRegion.id))
         .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })

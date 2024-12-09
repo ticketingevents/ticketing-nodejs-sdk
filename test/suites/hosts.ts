@@ -4,7 +4,7 @@ import './venues'
 import { TickeTing, Host, BadDataError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
 import { HostModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
-import { expect } from '../setup'
+import { expect, ticketing } from '../setup'
 
 //Global host object
 let testHost = null
@@ -12,14 +12,8 @@ let testHost = null
 describe("Hosts", function(){
 
   before(async function(){
-    //Setup SDK for testing
-    this.ticketing = new TickeTing({
-      apiKey: "07b2f3b08810a4296ee19fc59dff48b0",
-      sandbox: true
-    })
-
     //An event to test duplication
-    this.secondHost = await this.ticketing.hosts.create({
+    this.secondHost = await ticketing.hosts.create({
       name: "Second Host "+Math.floor(Math.random() * 999999),
       contact: "Second Contact",
       email: "test@second.com"
@@ -49,7 +43,7 @@ describe("Hosts", function(){
   describe('Create an event host', function () {
     it('Should return a valid host object', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.hosts.create(this.testHostData).then((host => {
+        ticketing.hosts.create(this.testHostData).then((host => {
           testHost = host
 
           expect(host)
@@ -64,13 +58,13 @@ describe("Hosts", function(){
     })
 
     it('Should throw a BadDataError if required fields are missing', function () {
-      return expect(this.ticketing.hosts.create({name: "", contact: "", email: ""}))
+      return expect(ticketing.hosts.create({name: "", contact: "", email: ""}))
         .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: name, contact, email.")
         .and.be.an.instanceOf(BadDataError)
     })
 
     it('Should throw a ResourceExistsError when using an existing name', function () {
-      return expect(this.ticketing.hosts.create(this.testHostData))
+      return expect(ticketing.hosts.create(this.testHostData))
         .to.eventually.be.rejectedWith("The following arguments conflict with those of another host: name.")
         .and.be.an.instanceOf(ResourceExistsError)
     })
@@ -78,12 +72,12 @@ describe("Hosts", function(){
 
   describe('List event hosts', function () {
     it('Should return a collection of Host resources', function () {
-      return expect(this.ticketing.hosts.list()).eventually.to.all.be.instanceof(HostModel)
+      return expect(ticketing.hosts.list()).eventually.to.all.be.instanceof(HostModel)
     })
 
     it('Should contain the newly created host as its last resource', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.hosts.list(1).last().then(hosts => {
+        ticketing.hosts.list(1).last().then(hosts => {
           expect(hosts[0])
             .to.be.an.instanceof(HostModel)
             .and.to.deep.include(this.testHostData)
@@ -98,13 +92,13 @@ describe("Hosts", function(){
 
   describe('Fetch an event host', function () {
     it('Should return the identified Host resource', function () {
-      return expect(this.ticketing.hosts.find(testHost.id))
+      return expect(ticketing.hosts.find(testHost.id))
         .to.eventually.be.an.instanceof(HostModel)
         .and.to.deep.include(this.testHostData)
     })
 
     it('Should throw a ResourceNotFoundError when using a non-existant ID', function () {
-      return expect(this.ticketing.hosts.find(12345))
+      return expect(ticketing.hosts.find(12345))
         .to.eventually.be.rejectedWith("The specified host could not be found.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
@@ -121,7 +115,7 @@ describe("Hosts", function(){
     })
 
     it('Should persist host changes', function () {
-      return expect(this.ticketing.hosts.find(testHost.id))
+      return expect(ticketing.hosts.find(testHost.id))
         .to.eventually.deep.include({
           "name": "New Host",
           "contact":"New Host Contact"
@@ -138,10 +132,18 @@ describe("Hosts", function(){
     })
 
     it('Should throw a PermissionError when not a host administrator', function () {
-      let unauthorised_sdk = new TickeTing({
-        apiKey: "413c7e517b63822c3037ead7679c780e",
-        sandbox: true
-      })
+      let unauthorised_sdk = null
+      if(process.env.npm_config_env == "production"){
+        unauthorised_sdk = new TickeTing({
+          apiKey: "0acb10082a313f517954a34d2a7aedb7",
+          sandbox: false
+        })
+      }else{
+        unauthorised_sdk = new TickeTing({
+          apiKey: "413c7e517b63822c3037ead7679c780e",
+          sandbox: true
+        })
+      }
 
       return new Promise((resolve, reject) => {
         unauthorised_sdk.hosts.find(testHost.id).then(unauthorised_host => {
@@ -166,10 +168,18 @@ describe("Hosts", function(){
 
   describe('Delete an event host', function () {
     it('Should throw a PermissionError when not a host administrator', function () {
-      let unauthorised_sdk = new TickeTing({
-        apiKey: "413c7e517b63822c3037ead7679c780e",
-        sandbox: true
-      })
+      let unauthorised_sdk = null
+      if(process.env.npm_config_env == "production"){
+        unauthorised_sdk = new TickeTing({
+          apiKey: "0acb10082a313f517954a34d2a7aedb7",
+          sandbox: false
+        })
+      }else{
+        unauthorised_sdk = new TickeTing({
+          apiKey: "413c7e517b63822c3037ead7679c780e",
+          sandbox: true
+        })
+      }
 
       return new Promise((resolve, reject) => {
         unauthorised_sdk.hosts.find(testHost.id).then(unauthorised_host => {
@@ -187,7 +197,7 @@ describe("Hosts", function(){
     })
 
     it('Host should no longer be retrievable', function () {
-      return expect(this.ticketing.hosts.find(testHost.id))
+      return expect(ticketing.hosts.find(testHost.id))
         .to.eventually.be.rejectedWith("The specified host could not be found.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })

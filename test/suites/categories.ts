@@ -1,10 +1,10 @@
 //Control execution order
 import './accounts'
 
-import { TickeTing, Category, BadDataError,  ResourceExistsError, ResourceNotFoundError, ResourceIndelibleError } from '../../src'
+import { Category, BadDataError,  ResourceExistsError, ResourceNotFoundError, ResourceIndelibleError } from '../../src'
 import { CategoryModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
-import { expect } from '../setup'
+import { expect, ticketing } from '../setup'
 
 // Global category object
 let testCategory = null
@@ -15,12 +15,6 @@ describe("Categories", function(){
   this.timeout(10000)
 
   before(async function(){
-    //Setup SDK for testing
-    this.ticketing = new TickeTing({
-      apiKey: "07b2f3b08810a4296ee19fc59dff48b0",
-      sandbox: true
-    })
-
     //Initialise test data for suite
     this.testCategoryData = {
       name: "Test Category "+Math.floor(Math.random() * 999999),
@@ -28,25 +22,25 @@ describe("Categories", function(){
     }
 
     //A category to test duplication
-    this.secondCategory = await this.ticketing.categories.create({
+    this.secondCategory = await ticketing.categories.create({
       "name": "Test Category "+Math.floor(Math.random() * 999999),
       subcategories: ["Event Subcategory"]
     })
 
     //Create an event host
-    this.host = await this.ticketing.hosts.create({
+    this.host = await ticketing.hosts.create({
       name: "Host "+Math.floor(Math.random() * 999999),
       contact: "Jane Doe",
       email: "jane@eventhost.com"
     })
 
     //Create an event venue
-    this.region = await this.ticketing.regions.create({
+    this.region = await ticketing.regions.create({
       "name": "Region "+Math.floor(Math.random() * 999999),
       "country": "Antigua and Barbuda"
     })
 
-    this.venue = await this.ticketing.venues.create({
+    this.venue = await ticketing.venues.create({
       name: "Venue "+Math.floor(Math.random() * 999999),
       region: this.region,
       longitude: -70.99214,
@@ -55,7 +49,7 @@ describe("Categories", function(){
     })
 
     //Create an event to test category cannot be deleted
-    this.testEvent = await this.ticketing.events.create({
+    this.testEvent = await ticketing.events.create({
       host: this.host,
       title: "Second Event",
       description: "Event Description",
@@ -69,18 +63,16 @@ describe("Categories", function(){
 
   after(async function(){
     await this.testEvent.delete()
-    this.host.delete().then(response => {})
-    this.venue.delete().then(result => {
-      this.region.delete().then(response => {})
-    })
-
+    await this.host.delete()
+    await this.venue.delete()
+    await this.region.delete()
     await this.secondCategory.delete()
   })
 
   describe('Add new category', function () {
     it('Should return a valid category object', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.categories.create(this.testCategoryData).then((category => {
+        ticketing.categories.create(this.testCategoryData).then((category => {
           testCategory = category
 
           expect(category)
@@ -95,13 +87,13 @@ describe("Categories", function(){
     })
 
     it('Should throw a BadDataError if required fields are missing', function () {
-      return expect(this.ticketing.categories.create({name: "", subcategories: this.testCategoryData.subcategories}))
+      return expect(ticketing.categories.create({name: "", subcategories: this.testCategoryData.subcategories}))
         .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: name.")
         .and.be.an.instanceOf(BadDataError)
     })
 
     it('Should throw a ResourceExistsError when using an existing name', function () {
-      return expect(this.ticketing.categories.create(this.testCategoryData))
+      return expect(ticketing.categories.create(this.testCategoryData))
         .to.eventually.be.rejectedWith("The following arguments conflict with those of another category: name.")
         .and.be.an.instanceOf(ResourceExistsError)
     })
@@ -109,12 +101,12 @@ describe("Categories", function(){
 
   describe('List all categories', function () {
     it('Should return a collection of Category resources', function () {
-      return expect(this.ticketing.categories.list()).eventually.to.all.be.instanceof(CategoryModel)
+      return expect(ticketing.categories.list()).eventually.to.all.be.instanceof(CategoryModel)
     })
 
     it('Should contain the newly created category as its last resource', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.categories.list(1).last().then(categories => {
+        ticketing.categories.list(1).last().then(categories => {
           expect(categories[0])
             .to.be.an.instanceof(CategoryModel)
             .and.to.deep.include(this.testCategoryData)
@@ -129,13 +121,13 @@ describe("Categories", function(){
 
   describe('Fetch a category', function () {
     it('Should return the identified Category resource', function () {
-      return expect(this.ticketing.categories.find(testCategory.id))
+      return expect(ticketing.categories.find(testCategory.id))
         .to.eventually.be.an.instanceof(CategoryModel)
         .and.to.deep.include(this.testCategoryData)
     })
 
     it('Should throw a ResourceNotFoundError when using a non-existant ID', function () {
-      return expect(this.ticketing.categories.find(12345))
+      return expect(ticketing.categories.find(12345))
         .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
@@ -152,7 +144,7 @@ describe("Categories", function(){
     })
 
     it('Should persist category changes', function () {
-      return expect(this.ticketing.categories.find(testCategory.id))
+      return expect(ticketing.categories.find(testCategory.id))
         .to.eventually.deep.include({
           "name": "New Category",
           "subcategories": ["Subcategory 1", "Subcategory 3"]
@@ -184,7 +176,7 @@ describe("Categories", function(){
     })
 
     it('Category should no longer be retrievable', function () {
-      return expect(this.ticketing.categories.find(testCategory.id))
+      return expect(ticketing.categories.find(testCategory.id))
         .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })

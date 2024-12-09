@@ -1,9 +1,9 @@
 //Control execution order
 import './filters'
 
-import { TickeTing, UnsupportedSortError } from '../../src'
+import { UnsupportedSortError } from '../../src'
 import { Collection } from  '../../src/util'
-import { expect } from '../setup'
+import { expect, ticketing } from '../setup'
 
 describe("Sorting", function(){
 
@@ -11,12 +11,6 @@ describe("Sorting", function(){
   this.timeout(10000)
 
   before(async function(){
-    //Setup SDK for testing
-    let ticketing: TickeTing = new TickeTing({
-      apiKey: "07b2f3b08810a4296ee19fc59dff48b0",
-      sandbox: true
-    })
-
     //Create an event host
     this.host = await ticketing.hosts.create({
       name: "Host "+Math.floor(Math.random() * 999999),
@@ -73,12 +67,10 @@ describe("Sorting", function(){
     }
 
     await Promise.all(deletions)
-
-    this.category.delete().then(response => {})
-    this.host.delete().then(response => {})
-    this.venue.delete().then(result => {
-      this.region.delete().then(response => {})
-    })
+    await this.category.delete()
+    await this.host.delete()
+    await this.venue.delete()
+    await this.region.delete()
   })
 
   describe('#sort()', function () {

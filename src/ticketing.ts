@@ -42,4 +42,12 @@ export class TickeTing{
   get apiKey(): string{
     return this.__apiAdapter.key
   }
+
+  get baseURL(): string{
+    return this.__apiAdapter.base
+  }
+
+  get mediaURL(): string{
+    return this.__apiAdapter.media
+  }
 }

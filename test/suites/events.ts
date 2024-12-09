@@ -4,7 +4,7 @@ import './hosts'
 import { TickeTing, Event, BadDataError, InvalidStateError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
 import { CategoryModel, EventModel, VenueModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
-import { expect } from '../setup'
+import { expect, ticketing } from '../setup'
 
 //Global event object
 let testEvent = null
@@ -15,32 +15,26 @@ describe("Events", function(){
   this.timeout(10000)
 
   before(async function(){
-    //Setup SDK for testing
-    this.ticketing = new TickeTing({
-      apiKey: "07b2f3b08810a4296ee19fc59dff48b0",
-      sandbox: true
-    })
-
     //Create an event host
-    this.host = await this.ticketing.hosts.create({
+    this.host = await ticketing.hosts.create({
       name: "Host "+Math.floor(Math.random() * 999999),
       contact: "Jane Doe",
       email: "jane@eventhost.com"
     })
 
     //Create an event category
-    this.category = await this.ticketing.categories.create({
+    this.category = await ticketing.categories.create({
       name: "Event Category "+Math.floor(Math.random() * 999999),
       subcategories: ["Event Subcategory"]
     })
 
     //Create an event venue
-    this.region = await this.ticketing.regions.create({
+    this.region = await ticketing.regions.create({
       "name": "Region "+Math.floor(Math.random() * 999999),
       "country": "Antigua and Barbuda"
     })
 
-    this.venue = await this.ticketing.venues.create({
+    this.venue = await ticketing.venues.create({
       name: "Venue "+Math.floor(Math.random() * 999999),
       region: this.region,
       longitude: -70.99214,
@@ -49,7 +43,7 @@ describe("Events", function(){
     })
 
     //An event to test duplication
-    this.secondEvent = await this.ticketing.events.create({
+    this.secondEvent = await ticketing.events.create({
       host: this.host,
       title: "Second Event",
       description: "Event Description",
@@ -79,18 +73,16 @@ describe("Events", function(){
 
   after(async function(){
     await this.secondEvent.delete()
-
-    this.category.delete().then(response => {})
-    this.host.delete().then(response => {})
-    this.venue.delete().then(result => {
-      this.region.delete().then(response => {})
-    })
+    await this.category.delete()
+    await this.host.delete()
+    await this.venue.delete()
+    await this.region.delete()
   })
 
   describe('Register an event', function () {
     it('Should return a valid event object', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.events.create(this.testEventData).then((event => {
+        ticketing.events.create(this.testEventData).then((event => {
           testEvent = event
 
           expect(event).to.be.an.instanceof(EventModel)
@@ -105,8 +97,8 @@ describe("Events", function(){
           expect(event.venue).to.be.an.instanceOf(VenueModel).
             and.to.have.property("uri", this.testEventData.venue.uri)
           expect(event.disclaimer).to.equal(this.testEventData.disclaimer)
-          expect(event.banner).to.equal(`https://qa.ticketingevents.com/media/banner/${event.id}`)
-          expect(event.thumbnail).to.equal(`https://qa.ticketingevents.com/media/thumbnail/${event.id}`)
+          expect(event.banner).to.equal(`${ticketing.mediaURL}/banner/${event.id}`)
+          expect(event.thumbnail).to.equal(`${ticketing.mediaURL}/thumbnail/${event.id}`)
           expect(event.status).to.equal("Draft")
           expect(event.published).to.be.a.string
           expect(event.popularity).to.equal(0)
@@ -119,7 +111,7 @@ describe("Events", function(){
     })
 
     it('Should throw a BadDataError if required fields are missing', function () {
-      return expect(this.ticketing.events.create({
+      return expect(ticketing.events.create({
         host: this.host,
         category: this.category,
         venue: this.venue,
@@ -133,7 +125,7 @@ describe("Events", function(){
     })
 
     it('Should throw a BadDataError if a non-venue is passed in', function () {
-      return expect(this.ticketing.events.create({
+      return expect(ticketing.events.create({
         host: this.host,
         category: this.category,
         venue: "Non-Venue"
@@ -143,16 +135,24 @@ describe("Events", function(){
     })
 
     it('Should throw a ResourceExistsError when using an existing title', function () {
-      return expect(this.ticketing.events.create(this.testEventData))
+      return expect(ticketing.events.create(this.testEventData))
         .to.eventually.be.rejectedWith("The following arguments conflict with those of another event: title.")
         .and.be.an.instanceOf(ResourceExistsError)
     })
 
     it('Should throw a PermissionError when not a host administrator', function () {
-      let unauthorised_sdk = new TickeTing({
-        apiKey: "413c7e517b63822c3037ead7679c780e",
-        sandbox: true
-      })
+      let unauthorised_sdk = null
+      if(process.env.npm_config_env == "production"){
+        unauthorised_sdk = new TickeTing({
+          apiKey: "0acb10082a313f517954a34d2a7aedb7",
+          sandbox: false
+        })
+      }else{
+        unauthorised_sdk = new TickeTing({
+          apiKey: "413c7e517b63822c3037ead7679c780e",
+          sandbox: true
+        })
+      }
 
       let payload = JSON.parse(JSON.stringify(this.testEventData))
       payload.title = "Test Event "+Math.floor(Math.random() * 999999)
@@ -168,12 +168,12 @@ describe("Events", function(){
 
   describe('List published events', function () {
     it('Should return a collection of Event resources', function () {
-      return expect(this.ticketing.events.published.list(5)).eventually.to.all.be.instanceof(EventModel)
+      return expect(ticketing.events.published.list(5)).eventually.to.all.be.instanceof(EventModel)
     })
 
     it('Should return a collection of events matching the region filter', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.events.published.list(5).filter({region: this.region.id}).then(events => {
+        ticketing.events.published.list(5).filter({region: this.region.id}).then(events => {
           for(let event of events){
             expect(event.venue.region.self).to.equal(this.region.self)
           }
@@ -187,7 +187,7 @@ describe("Events", function(){
 
     it('Should return events sorted by title in ascending order', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.events.published.list(5).sort("alphabetical").then(events => {
+        ticketing.events.published.list(5).sort("alphabetical").then(events => {
           expect(events.map(event => event.title.toLowerCase())).to.be.ascending
 
           resolve(true)
@@ -199,7 +199,7 @@ describe("Events", function(){
 
     it('Should return events sorted by publication date in descending order', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.events.published.list(5).sort("published", false).then(events => {
+        ticketing.events.published.list(5).sort("published", false).then(events => {
           expect(events).to.be.descendingBy("published")
 
           resolve(true)
@@ -211,7 +211,7 @@ describe("Events", function(){
 
     it('Should return events sorted by popularity in ascending order', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.events.published.list(5).sort("popularity").then(events => {
+        ticketing.events.published.list(5).sort("popularity").then(events => {
           expect(events).to.be.ascendingBy("popularity")
 
           resolve(true)
@@ -223,7 +223,7 @@ describe("Events", function(){
 
     it('Should return events sorted by start date in descending order', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.events.published.list(5).sort("start", false).then(events => {
+        ticketing.events.published.list(5).sort("start", false).then(events => {
           expect(events).to.be.descendingBy("start")
 
           resolve(true)
@@ -236,12 +236,12 @@ describe("Events", function(){
 
   describe('List all events', function () {
     it('Should return a collection of Event resources', function () {
-      return expect(this.ticketing.events.list(5).sort("start", false)).eventually.to.all.be.instanceof(EventModel)
+      return expect(ticketing.events.list(5).sort("start", false)).eventually.to.all.be.instanceof(EventModel)
     })
 
     it('Should contain the newly created event as its first resource', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.events.list(1).sort("start", false).first().then(events => {
+        ticketing.events.list(1).sort("start", false).first().then(events => {
           expect(events[0]).to.be.an.instanceof(EventModel)
           expect(events[0].description).to.equal(this.testEventData.description)
           expect(events[0].type).to.equal(this.testEventData.type)
@@ -253,8 +253,8 @@ describe("Events", function(){
           expect(events[0].venue).to.be.an.instanceof(VenueModel)
             .and.to.have.property("uri", this.testEventData.venue.uri)
           expect(events[0].disclaimer).to.equal(this.testEventData.disclaimer)
-          expect(events[0].banner).to.equal(`https://qa.ticketingevents.com/media/banner/${events[0].id}`)
-          expect(events[0].thumbnail).to.equal(`https://qa.ticketingevents.com/media/thumbnail/${events[0].id}`)
+          expect(events[0].banner).to.equal(`${ticketing.mediaURL}/banner/${events[0].id}`)
+          expect(events[0].thumbnail).to.equal(`${ticketing.mediaURL}/thumbnail/${events[0].id}`)
           expect(events[0].status).to.equal("Draft")
           expect(events[0].published).to.be.a.string
           expect(events[0].popularity).to.equal(0)
@@ -268,7 +268,7 @@ describe("Events", function(){
 
     it('Should return a collection of events matching the region filter', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.events.list(5).filter({region: this.region.id}).then(events => {
+        ticketing.events.list(5).filter({region: this.region.id}).then(events => {
           expect(events.length).to.be.least(1)
 
           for(let event of events){
@@ -283,20 +283,20 @@ describe("Events", function(){
     })
 
     it('Should return a collection of events matching the title filter', function () {
-      return expect(this.ticketing.events.list(5).filter({title: this.testEventData.title}))
+      return expect(ticketing.events.list(5).filter({title: this.testEventData.title}))
         .to.eventually.have.lengthOf.at.least(1)
         .and.to.all.have.property("title", this.testEventData.title)
     })
 
     it('Should return a collection of events matching the status filter', function () {
-      return expect(this.ticketing.events.list(5).filter({status: "Draft"}))
+      return expect(ticketing.events.list(5).filter({status: "Draft"}))
         .to.eventually.have.lengthOf.at.least(1)
         .and.to.all.have.property("status", "Draft")
     })
 
     it('Should return a collection of events matching the active filter', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.events.list(5).filter({active: true}).then(events => {
+        ticketing.events.list(5).filter({active: true}).then(events => {
           expect(events.length).to.be.least(1)
 
           for(let event of events){
@@ -311,14 +311,14 @@ describe("Events", function(){
     })
 
     it('Should return a collection of events matching the public filter', function () {
-      return expect(this.ticketing.events.list(5).filter({public: true}))
+      return expect(ticketing.events.list(5).filter({public: true}))
         .to.eventually.have.lengthOf.at.least(1)
         .and.to.all.have.property("public", true)
     })
 
     it('Should return events sorted by title in ascending order', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.events.list(5).sort("alphabetical").then(events => {
+        ticketing.events.list(5).sort("alphabetical").then(events => {
           expect(events).to.have.lengthOf.at.least(1)
           expect(events.map(event => event.title.toLowerCase())).to.be.ascending
 
@@ -331,7 +331,7 @@ describe("Events", function(){
 
     it('Should return events sorted by publication date in descending order', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.events.list(5).sort("published", false).then(events => {
+        ticketing.events.list(5).sort("published", false).then(events => {
           expect(events).to.have.lengthOf.at.least(1)
             .and.to.be.descendingBy("published")
 
@@ -344,7 +344,7 @@ describe("Events", function(){
 
     it('Should return events sorted by popularity in ascending order', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.events.list(5).sort("popularity").then(events => {
+        ticketing.events.list(5).sort("popularity").then(events => {
           expect(events).to.have.lengthOf.at.least(1)
             .and.to.be.ascendingBy("popularity")
 
@@ -357,7 +357,7 @@ describe("Events", function(){
 
     it('Should return events sorted by start date in descending order', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.events.list(5).sort("start", false).then(events => {
+        ticketing.events.list(5).sort("start", false).then(events => {
           expect(events).to.have.lengthOf.at.least(1)
             .and.to.be.descendingBy("start")
 
@@ -372,7 +372,7 @@ describe("Events", function(){
   describe('Fetch an event', function () {
     it('Should return the identified Event resource', function () {
       return new Promise((resolve, reject) => {
-        this.ticketing.events.find(testEvent.id).then(event => {
+        ticketing.events.find(testEvent.id).then(event => {
           expect(event).to.be.an.instanceof(EventModel)
           expect(event.description).to.equal(this.testEventData.description)
           expect(event.type).to.equal(this.testEventData.type)
@@ -385,8 +385,8 @@ describe("Events", function(){
           expect(event.venue).to.be.an.instanceof(VenueModel)
             .and.to.have.property("uri", this.testEventData.venue.uri)
           expect(event.disclaimer).to.equal(this.testEventData.disclaimer)
-          expect(event.banner).to.equal(`https://qa.ticketingevents.com/media/banner/${event.id}`)
-          expect(event.thumbnail).to.equal(`https://qa.ticketingevents.com/media/thumbnail/${event.id}`)
+          expect(event.banner).to.equal(`${ticketing.mediaURL}/banner/${event.id}`)
+          expect(event.thumbnail).to.equal(`${ticketing.mediaURL}/thumbnail/${event.id}`)
           expect(event.status).to.equal("Draft")
           expect(event.published).to.be.a.string
           expect(event.popularity).to.equal(0)
@@ -399,16 +399,24 @@ describe("Events", function(){
     })
 
     it('Should throw a ResourceNotFoundError when using a non-existant ID', function () {
-      return expect(this.ticketing.events.find(12345))
+      return expect(ticketing.events.find(12345))
         .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
 
     it('Should throw a PermissionError when accessed with another user', function () {
-      let unauthorised_sdk = new TickeTing({
-        apiKey: "413c7e517b63822c3037ead7679c780e",
-        sandbox: true
-      })
+      let unauthorised_sdk = null
+      if(process.env.npm_config_env == "production"){
+        unauthorised_sdk = new TickeTing({
+          apiKey: "0acb10082a313f517954a34d2a7aedb7",
+          sandbox: false
+        })
+      }else{
+        unauthorised_sdk = new TickeTing({
+          apiKey: "413c7e517b63822c3037ead7679c780e",
+          sandbox: true
+        })
+      }
 
       return expect(unauthorised_sdk.events.find(testEvent.id))
         .to.eventually.be.rejectedWith("You are not authorised to access this unlisted event.")
@@ -427,7 +435,7 @@ describe("Events", function(){
     })
 
     it('Should persist event changes', function () {
-      return expect(this.ticketing.events.find(testEvent.id))
+      return expect(ticketing.events.find(testEvent.id))
         .to.eventually.include({
           "public": false,
           "end": "2034-09-07T23:00"
@@ -472,7 +480,7 @@ describe("Events", function(){
     })
 
     it('Event should no longer be retrievable', function () {
-      return expect(this.ticketing.events.find(testEvent.id))
+      return expect(ticketing.events.find(testEvent.id))
         .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
