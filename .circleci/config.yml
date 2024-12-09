@@ -27,10 +27,59 @@ jobs:
       - slack/notify:
           event: fail
           channel: C03UFNPMF09
-          template: basic_fail_1
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "NodeJS SDK Publication Failed! :rotating_light:",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Version:*\t\t  $CIRCLE_TAG\n*Commit:*\t\t\t\t  $CIRCLE_SHA1\n*Triggered By:*\t\t  $CIRCLE_USERNAME"
+                  },
+                  "accessory": {
+                    "type": "image",
+                    "image_url": "https://storage.mlcdn.com/account_image/5014/icon512-roundedxBqu0p.png",
+                    "alt_text": "ticketing"
+                  }
+                }
+              ]
+            }
       - slack/notify:
           event: pass
-          template: success_tagged_deploy_1
+          channel: C03UFNPMF09
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "NodeJS SDK Successfully Published! :white_check_mark:",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Environment:*\t\t  $CIRCLE_TAG\n*Commit:*\t\t\t\t  $CIRCLE_SHA1\n*Triggered By:*\t\t  $CIRCLE_USERNAME"
+                  },
+                  "accessory": {
+                    "type": "image",
+                    "image_url": "https://storage.mlcdn.com/account_image/5014/icon512-roundedxBqu0p.png",
+                    "alt_text": "ticketing"
+                  }
+                }
+              ]
+            }
 
 workflows:
   publish_sdk:
