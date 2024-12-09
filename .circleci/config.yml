@@ -70,7 +70,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Environment:*\t\t  $CIRCLE_TAG\n*Commit:*\t\t\t\t  $CIRCLE_SHA1\n*Triggered By:*\t\t  $CIRCLE_USERNAME"
+                    "text": "*Version:*\t\t  $CIRCLE_TAG\n*Commit:*\t\t\t\t  $CIRCLE_SHA1\n*Triggered By:*\t\t  $CIRCLE_USERNAME"
                   },
                   "accessory": {
                     "type": "image",
