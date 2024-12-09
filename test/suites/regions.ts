@@ -3,7 +3,7 @@ import './categories'
 
 import { TickeTing, Region, BadDataError,  ResourceExistsError, ResourceNotFoundError, ResourceIndelibleError } from '../../src'
 import { RegionModel } from  '../../src/model'
-import { Collection } from  '../../src/util'
+import { Collection, APIAdapter } from  '../../src/util'
 import { expect } from '../setup'
 
 // Global region object
@@ -12,7 +12,7 @@ let testRegion = null
 describe("Regions", function(){
 
   //Set hook timeout
-  this.timeout(10000)
+  this.timeout(15000)
 
   before(async function(){
     //Setup SDK for testing
@@ -20,6 +20,9 @@ describe("Regions", function(){
       apiKey: "07b2f3b08810a4296ee19fc59dff48b0",
       sandbox: true
     })
+  
+    //TEMPORARY: Remove once functionality added to SDK
+    this.adapter = new APIAdapter("07b2f3b08810a4296ee19fc59dff48b0", true)
 
     //Initialise test data for suite
     this.testRegionData = {
@@ -43,9 +46,43 @@ describe("Regions", function(){
       latitude: 43.75518,
       address: "Miami Beach, Miami, Florida"
     })
+
+    //Create an event host
+    this.host = await this.ticketing.hosts.create({
+      name: "Host "+Math.floor(Math.random() * 999999),
+      contact: "Jane Doe",
+      email: "jane@eventhost.com"
+    })
+
+    //Create an event category
+    this.category = await this.ticketing.categories.create({
+      name: "Event Category "+Math.floor(Math.random() * 999999),
+      subcategories: ["Event Subcategory"]
+    })
+
+    //An event to test active filter
+    this.regionEvent = await this.ticketing.events.create({
+      host: this.host,
+      title: "Region Event",
+      description: "Event Description",
+      type: "Standard",
+      public: true,
+      category: this.category,
+      subcategory: "Event Subcategory",
+      venue: this.testVenue
+    })
+
+    //Submit event for review
+    await this.adapter.post(`${this.regionEvent.uri}/submissions`, {})
+
+    //Approve event
+    await this.adapter.delete(`/submissions/${btoa(this.regionEvent.uri)}?approved=true`)
   })
 
   after(async function(){
+    await this.regionEvent.delete()
+    await this.category.delete()
+    await this.host.delete()
     await this.testVenue.delete()
     await this.secondRegion.delete()
   })
@@ -92,6 +129,21 @@ describe("Regions", function(){
           expect(regions[0])
             .to.be.an.instanceof(RegionModel)
             .and.to.include(this.testRegionData)
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return a collection of regions matching the active filter', function () {
+      return new Promise((resolve, reject) => {
+        this.ticketing.regions.list(1).filter({active: true}).last().then(regions => {
+          //Our test region should have been returned
+          expect(regions[0])
+            .to.be.an.instanceof(RegionModel)
+            .and.to.include(this.secondRegion)
 
           resolve(true)
         }).catch(error => {

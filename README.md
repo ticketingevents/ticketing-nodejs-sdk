@@ -1236,6 +1236,10 @@ Operations for managing regions supported by the TickeTing platform
 
 ```javascript
   ticketing.regions.list()
+    // Supported filters with examples
+    .filter({
+      active: true //Only return regions with upcoming events
+    })
     .then(regions => {
       //Do something with the collection of regions
     })

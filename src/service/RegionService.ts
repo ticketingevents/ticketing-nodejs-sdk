@@ -6,6 +6,6 @@ import { RegionModel } from '../model'
 
 export class RegionService extends BaseService<RegionData, Region>{
   constructor(apiAdapter: APIAdapter){
-    super(apiAdapter, "/regions", RegionModel)
+    super(apiAdapter, "/regions", RegionModel, ["active"])
   }
 }
