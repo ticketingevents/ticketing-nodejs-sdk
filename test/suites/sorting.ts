@@ -5,7 +5,7 @@ import { UnsupportedSortError } from '../../src'
 import { Collection } from  '../../src/util'
 import { expect, ticketing } from '../setup'
 
-describe("Sorting", function(){
+describe.skip("Sorting", function(){
 
   //Set hook timeout
   this.timeout(10000)

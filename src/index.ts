@@ -1,8 +1,11 @@
 export { TickeTing } from './ticketing'
-export { Account, AccountPreferences, Category, Event, Host, Region, Session, Venue } from './interface'
+export {
+  Account, AccountPreferences, Category, Event, Host, Region,
+  Section, Session, Token, Venue
+} from './interface'
 export {
   BadDataError, InvalidStateError, PageAccessError, PermissionError,
-  ResourceExistsError, ResourceIndelibleError, ResourceNotFoundError,
-  UnauthorisedError, UnsupportedCriteriaError, UnsupportedOperationError,
-  UnsupportedSortError
+  ResourceExistsError, ResourceImmutableError, ResourceIndelibleError,
+  ResourceNotFoundError, UnauthorisedError, UnsupportedCriteriaError,
+  UnsupportedOperationError, UnsupportedSortError
 } from './errors'

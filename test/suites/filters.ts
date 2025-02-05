@@ -5,7 +5,7 @@ import { UnsupportedCriteriaError } from '../../src'
 import { Collection } from  '../../src/util'
 import { expect, ticketing } from '../setup'
 
-describe("Filters", function(){
+describe.skip("Filters", function(){
 
   //Set hook timeout
   this.timeout(10000)

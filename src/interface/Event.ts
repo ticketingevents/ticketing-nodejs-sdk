@@ -1,5 +1,6 @@
 import { Base } from './Base'
 import { Category } from './Category'
+import { Section } from './Section'
 import { Venue } from './Venue'
 
 export interface Event extends Base{
@@ -19,4 +20,5 @@ export interface Event extends Base{
   status: string
   published: string
   popularity: number
+  sections: Array<Section>
 }

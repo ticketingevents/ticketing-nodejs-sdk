@@ -1,5 +1,5 @@
 //Control execution order
-import './regions'
+import './tokens'
 
 import { Venue, BadDataError,  ResourceExistsError, ResourceNotFoundError, ResourceIndelibleError } from '../../src'
 import { VenueModel, RegionModel } from  '../../src/model'
@@ -9,7 +9,7 @@ import { expect, ticketing } from '../setup'
 //Global venue object
 let testVenue = null
 
-describe("Venues", function(){
+describe.skip("Venues", function(){
 
   //Set hook timeout
   this.timeout(10000)

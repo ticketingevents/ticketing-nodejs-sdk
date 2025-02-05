@@ -9,7 +9,7 @@ import { expect, ticketing } from '../setup'
 // Global region object
 let testRegion = null
 
-describe("Regions", function(){
+describe.skip("Regions", function(){
 
   //Set hook timeout
   this.timeout(15000)

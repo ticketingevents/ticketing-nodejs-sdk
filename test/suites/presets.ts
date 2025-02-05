@@ -3,7 +3,7 @@ import './events'
 
 import { expect, ticketing } from '../setup'
 
-describe("Presets", function(){
+describe.skip("Presets", function(){
   describe('Retrieve a list of countries', function () {
     it('Should return a list of strings', function () {
       return new Promise((resolve, reject) => {

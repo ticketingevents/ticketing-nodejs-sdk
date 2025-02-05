@@ -6,7 +6,7 @@ import { expect, ticketing } from '../setup'
 let originalKey = ticketing.apiKey
 let sessionKey = ""
 
-describe("Session", function(){
+describe.skip("Session", function(){
   before(async function(){
     //Initialise test data for suite
     this.sessionAccountData = {

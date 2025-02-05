@@ -129,6 +129,11 @@ export class TickeTingService extends TickeTing{
   * [Update an event](#update-an-event)
   * [Delete an event](#delete-an-event)
   * [Submit an event for review](#submit-an-event-for-review)
+  * [Admissions Tokens](#admissions-tokens)
+    * [List admissions tokens](#list-admissions-tokens)
+    * [Issue admissions token](#issue-admissions-token)
+    * [Update admissions token sections](#update-admissions-token-sections)
+    * [Invalidate an admissions token](#invalidate-an-admissions-token)
 - [Categories](#categories)
   * [List event categories](#list-event-categories)
   * [Add new category](#add-new-category)
@@ -1098,6 +1103,129 @@ Operations for working with events in the TickeTing system.
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
   })
+```
+
+---
+### Admissions Tokens
+
+Event admissions tokens allow staff to admit patrons to one or more of an event's sections. Tokens
+are anonymous and can be shared for use with multiple scanning devices. This subsection covers the
+operations used to manage admissions tokens.
+
+---
+
+### List admissions tokens
+
+[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/list_event_tokens)
+
+```javascript
+  let event = await ticketing.events.find(16993717817996)
+
+  event.tokens // The tokens property returns a standard collection with supported methods
+    // Supported filters with examples
+    .filter({
+      global: true //Only return global admissions tokens
+    })
+    .then(tokens => {
+      //Do something with the collection of tokens
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof PermissionError){
+        console.log("This account is not an administrator of this event host.")
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Issue admissions token
+
+[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/manage_admission_tokens)
+
+```javascript
+  let event = await ticketing.events.find(16993717817996)
+
+  event.issue_token(event.sections)  //We are required to provide the subset of an event's sections to link the token to
+    .then(token => {
+      //Do something with the created token resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log("One or more of the specified sections does not belong to this event.")
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to manage events on behalf of this host.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Update admissions token sections
+
+[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/update_admission_token)
+
+```javascript
+  let event = await ticketing.events.find(16993717817996)
+
+  event.tokens
+    .then(tokens => {
+      tokens[0].allow(event.sections[0]) //Allow admission to a section using this token
+      tokens[0].deny(event.sections[1]) //Deny admission to a section using this token
+
+      //Save changes
+      tokens[0].save().then(saved => {
+        if(saved){
+          //Do something on success
+        }else{
+          //Do something on failure
+        }
+      })
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log("You can only allow or deny sections of the token's event")
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to manage events on behalf of this host.")
+      }else if(error instanceof ResourceImmutableError){
+        console.log("An event's global token cannot be modified.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Invalidate an admissions token
+
+[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/invalidate_admission_token)
+
+```javascript
+  let event = await ticketing.events.find(16993717817996)
+
+  event.tokens
+    .then(tokens => {
+      tokens[1].delete().then(invalidated => {
+        if(invalidated){
+          //Do something on success
+        }else{
+          //Do something on failure
+        }
+      })
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof PermissionError){
+        console.log("You are not authorised to manage events on behalf of this host.")
+      }else if(error instanceof ResourceIndelibleError){
+        console.log("An event's global token cannot be invalidated.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
 ```
 
 

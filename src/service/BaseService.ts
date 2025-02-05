@@ -105,6 +105,10 @@ export class BaseService<RequestType, ResponseType>{
     })
   }
 
+  protected _instantiateModel(data: any){
+    return new this.__modelClass(data, this.__adapter)
+  }
+
   private __listQuery(resolve, reject){
     //Validate list criteria before sending query
     let criteriaError = null
@@ -151,7 +155,7 @@ export class BaseService<RequestType, ResponseType>{
 
       let entries: Array<ResponseType> = []
       for(let entry of response.data.entries){
-        entries.push(new this.__modelClass(entry, this.__adapter))
+        entries.push(this._instantiateModel(entry))
       }
 
       this.__listResult.entries = entries

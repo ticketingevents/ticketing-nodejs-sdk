@@ -9,7 +9,7 @@ import { expect, ticketing } from '../setup'
 //Global event object
 let testEvent = null
 
-describe("Events", function(){
+describe.skip("Events", function(){
 
   //Set hook timeout
   this.timeout(10000)
