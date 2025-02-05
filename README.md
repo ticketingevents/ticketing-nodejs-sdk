@@ -129,11 +129,19 @@ export class TickeTingService extends TickeTing{
   * [Update an event](#update-an-event)
   * [Delete an event](#delete-an-event)
   * [Submit an event for review](#submit-an-event-for-review)
-  * [Admissions Tokens](#admissions-tokens)
+- [Admissions](#admissions)
+  * [Admissions tokens](#admissions-tokens)
     * [List admissions tokens](#list-admissions-tokens)
     * [Issue admissions token](#issue-admissions-token)
     * [Update admissions token sections](#update-admissions-token-sections)
     * [Invalidate an admissions token](#invalidate-an-admissions-token)
+  * [Admitting patrons](#admitting-patrons)
+    * [Start admission session](#start-admission-session)
+    * [Get admission session information](#fetch0admission-session-information)
+    * [List valid tickets](#list-valid-tickets)
+    * [Grant admission to event](#grant-admission-to-event)
+    * [List event admissions](#list-admissions-to-event)
+    * [End admission session](#end-admission-session)
 - [Categories](#categories)
   * [List event categories](#list-event-categories)
   * [Add new category](#add-new-category)
@@ -1104,6 +1112,7 @@ Operations for working with events in the TickeTing system.
     }
   })
 ```
+## Admissions
 
 ---
 ### Admissions Tokens
@@ -1228,6 +1237,160 @@ operations used to manage admissions tokens.
     })
 ```
 
+---
+### Admitting Patrons
+
+Valid ticket holders are allowed entry to an event through admission sessions. Admission sessions
+allow gate staff to verify tickets and permit entry to the event. A session can be started using
+an admissions token which allows the staff member to grant access to designated event sections.
+
+---
+
+### Start admission session
+
+[API Reference](https://docs.ticketingevents.com/openapi/token-authentication/retrieve_token_auth)
+
+Starting a session grants access to the remaining operations in this section, with the event and sections
+linked to the session determined by the admissions token.
+
+```javascript
+  //Start an admission session using an admission token
+  ticketing.admissions.start(
+    "A0F9GG8D", //Admission token code
+    "Billy Butcher", //Name of the staff member who will be admitting patrons
+    "Google Pixel 6 Pro" //Device that will be verifying tickets
+  )
+  .then(info => {
+    //Do something with the session info
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof ResourceNotFoundError){
+      console.log("The provided code does not belong to any event token")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Get admission session information
+
+[API Reference](https://docs.ticketingevents.com/openapi/token-authentication/retrieve_token_auth)
+
+```javascript
+  //Retrieve information of an open admission session
+  ticketing.admissions.info().then(info => {
+    //Do something with the session info
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof UnsupportedOperationError){
+      console.log("You have not started an admission session.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### List valid tickets
+
+[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/list_event_tickets)
+
+```javascript
+  ticketing.admissions.tickets() // The tickets method returns a standard collection
+    // Supported filters with examples
+    .filter({
+      modified_since: "2024-02-21T14:59:18+00:00" //Only return tickets with a status change after the specified date
+    })
+    .then(tickets => {
+      //Do something with the collection of tickets
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedOperationError){
+        console.log("You have not started an admission session.")
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Grant admission to event
+
+[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/admit_event_patrons)
+
+```javascript
+  ticketing.admissions.admit(
+    ["DAWIER-BACK75580348", "DAWIER-VIPV37536946", "DAWIER-BACK75580348"] //List of ticket serials to attempt to redeem for entry to the event
+  )
+  .then(admissions => {
+    //Do something with the list of successful admissions
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof UnsupportedOperationError){
+      console.log("You are not authorised to manage events on behalf of this host.")
+    }else if(error instanceof BadDataError){
+      console.log("None of the provided ticket serials grants admission to the designated event sections")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### List event admissions
+
+[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/list_event_admissions)
+
+```javascript
+  ticketing.admissions.list()
+    // Supported filters with examples
+    .filter({
+      redeemer: "Billy Butcher", //Only return admissions granted by this redeemer
+      device: "Google Pixel Pro 6", //Only return admissions granted from this device
+      ticket: "DAWIER-BACK75580348", //Only return the admission granted on this ticket
+      patron: "AZ-4918SF92", //Only return admissions granted to the specified patron
+      section: "16993964783416" //Only return admissions granted to this event section
+    })
+    .then(admissions => {
+      //Do something with the admissions collection
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedOperationError){
+        console.log("You have not started an admission session.")
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### End admission session
+
+[API Reference](https://docs.ticketingevents.com/openapi/token-authentication/retrieve_token_auth)
+
+After ending an admission session all further operations will fail. You will first need to start a new
+admissions session to perform these operations.
+
+```javascript
+  ticketing.admissions.end().then(ended => {
+    if(ended){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof UnsupportedOperationError){
+      console.log("You have not started an admission session.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
 
 ## Categories
 
