@@ -48,7 +48,7 @@ describe("Categories", function(){
       address: "Miami Beach, Miami, Florida"
     })
 
-    //Create an event to test category cannot be deleted
+    //Create an event so test category cannot be deleted
     this.testEvent = await ticketing.events.create({
       host: this.host,
       title: "Second Event",

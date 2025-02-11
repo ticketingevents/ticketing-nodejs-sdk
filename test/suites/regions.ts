@@ -4,7 +4,7 @@ import './categories'
 import { Region, BadDataError,  ResourceExistsError, ResourceNotFoundError, ResourceIndelibleError } from '../../src'
 import { RegionModel } from  '../../src/model'
 import { Collection, APIAdapter } from  '../../src/util'
-import { expect, ticketing } from '../setup'
+import { expect, api, ticketing } from '../setup'
 
 // Global region object
 let testRegion = null
@@ -14,21 +14,7 @@ describe("Regions", function(){
   //Set hook timeout
   this.timeout(15000)
 
-  before(async function(){  
-    //TEMPORARY: Remove once functionality added to SDKlet sdk = null
-    this.adapter = null
-    if(process.env.npm_config_env == "production"){
-      this.adapter = new APIAdapter(
-        "1f573b7f728ba805604b9b1453d56105",
-        false
-      )
-    }else{
-      this.adapter = new APIAdapter(
-        "07b2f3b08810a4296ee19fc59dff48b0",
-        true
-      )
-    }
-
+  before(async function(){ 
     //Initialise test data for suite
     this.testRegionData = {
       name: "Test Region "+Math.floor(Math.random() * 999999),
@@ -78,10 +64,10 @@ describe("Regions", function(){
     })
 
     //Submit event for review
-    await this.adapter.post(`${this.regionEvent.uri}/submissions`, {})
+    await api.post(`${this.regionEvent.uri}/submissions`, {})
 
     //Approve event
-    await this.adapter.delete(`/submissions/${btoa(this.regionEvent.uri)}?approved=true`)
+    await api.delete(`/submissions/${btoa(this.regionEvent.uri)}?approved=true`)
   })
 
   after(async function(){

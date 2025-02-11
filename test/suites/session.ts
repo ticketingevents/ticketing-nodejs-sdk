@@ -7,6 +7,9 @@ let originalKey = ticketing.apiKey
 let sessionKey = ""
 
 describe("Session", function(){
+  //Set hook timeout
+  this.timeout(5000)
+
   before(async function(){
     //Initialise test data for suite
     this.sessionAccountData = {
