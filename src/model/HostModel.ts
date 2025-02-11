@@ -1,5 +1,4 @@
 import { APIAdapter } from '../util'
-import { InvalidStateError } from '../errors'
 import { BaseModel } from './BaseModel'
 import { Host } from '../interface/Host'
 import { HostData } from '../interface/data/HostData'
@@ -36,7 +35,7 @@ export class HostModel extends BaseModel implements Host{
   }
 
   serialise(): HostData{
-    let data: HostData = {
+    const data: HostData = {
       name: this.name,
       contact: this.contact,
       email: this.email,

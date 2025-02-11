@@ -1,7 +1,8 @@
 import { APIAdapter } from './APIAdapter'
 import { UnsupportedOperationError, UnauthorisedError, ResourceNotFoundError, InvalidStateError } from '../errors'
-import { SessionData, Session } from '../interface'
-import { SessionModel } from '../model'
+import { AdmissionSession, SessionData, Session } from '../interface'
+import { AdmissionSessionModel, SessionModel } from '../model'
+import { EventService } from '../service'
 
 export class SessionManager{
   private __apiAdapter: APIAdapter;
@@ -18,6 +19,7 @@ export class SessionManager{
         reject(new UnsupportedOperationError(0, "There is already an active session"))
       }else{
         this.__apiAdapter.post("/sessions", credentials).then(response => {
+
           this.__session = new SessionModel(response.data, this.__apiAdapter)
           this.__apiAdapter.key = this.__session.key
 
@@ -63,7 +65,7 @@ export class SessionManager{
         reject(new UnsupportedOperationError(0, "There is currently no active session."))
       }else{
         if(persist){
-          this.__apiAdapter.delete("/sessions/active").then(response => {
+          this.__apiAdapter.delete("/sessions/active").then(() => {
             this.__session = null
             this.__apiAdapter.reset()
 
@@ -99,5 +101,41 @@ export class SessionManager{
 
   public get active(): boolean{
     return this.__session != null
+  }
+
+  public admission(code: string, name: string, device: string): Promise<AdmissionSession>{
+    return new Promise((resolve, reject) => {
+      if(!code){
+        reject(new UnauthorisedError(404, "Please provide a valid token to start an admission session."))
+      }else{
+        this.__apiAdapter.get(`/tokens/${code}`).then(response => {
+          //Setup admissions session adapter
+          const admissionsAdapter = new APIAdapter(response.data.key, this.__apiAdapter.sandbox)
+
+          //Load admission token event
+          const eventService = new EventService(this.__apiAdapter)
+          eventService.find(/([A-Za-z0-9\-]+)$/.exec(response.data.event)[1]).then(event => {
+            const session = new AdmissionSessionModel({
+              started: (new Date()).toISOString(),
+              name: name,
+              device: device,
+              code: code,
+              event: event,
+              sections: response.data.sections
+            }, admissionsAdapter)
+
+            resolve(session)
+          }).catch(error => {
+            reject(error)
+          })
+        }).catch(error => {
+          if(error.code == 404){
+            error = new UnauthorisedError(error.code, error.message)
+          }
+
+          reject(error)
+        })
+      }
+    })
   }
 }

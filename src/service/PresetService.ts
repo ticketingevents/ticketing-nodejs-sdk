@@ -1,5 +1,3 @@
-import { BaseService } from './BaseService'
-
 import { APIAdapter } from '../util'
 
 export class PresetService{

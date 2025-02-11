@@ -13,6 +13,9 @@ jobs:
           name: Install build dependencies
           command: npm install
       - run:
+          name: Lint SDK
+          command: npm run lint
+      - run:
           name: Run unit tests
           command: npm --env=production run test
       - run:

@@ -9,7 +9,7 @@ import { expect, ticketing } from '../setup'
 //Global host object
 let testHost = null
 
-describe.skip("Hosts", function(){
+describe("Hosts", function(){
 
   before(async function(){
     //An event to test duplication

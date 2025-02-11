@@ -9,7 +9,7 @@ import { expect, ticketing } from '../setup'
 // Global account object
 let testAccount = null
 
-describe.skip("Accounts", function(){
+describe("Accounts", function(){
 
   //Set hook timeout
   this.timeout(10000)

@@ -1,7 +1,7 @@
 import { BaseService } from './BaseService'
 
-import { BadDataError } from '../errors'
 import { APIAdapter } from '../util'
+import { BadDataError } from '../errors'
 import { VenueData, Venue } from '../interface'
 import { RegionModel, VenueModel } from '../model'
 
@@ -16,7 +16,7 @@ export class VenueService extends BaseService<VenueData, Venue>{
         reject(new BadDataError(400, "Please provide a valid region for the venue"))
       }
 
-      let payload: VenueData = JSON.parse(JSON.stringify(data))
+      const payload: VenueData = JSON.parse(JSON.stringify(data))
       payload.region = (data.region as RegionModel).id
       super.create(payload).then(response => {
         resolve(response)

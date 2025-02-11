@@ -27,7 +27,7 @@ export class BaseService<RequestType, ResponseType>{
     this.__modelClass = modelClass
 
     this.__listCollection = new Collection<ResponseType>(
-      (resolve, reject) => {}
+      () => {}
     )
 
     this.__listFilters = ['page','records','sort','order'].concat(supportedFilters)
@@ -42,7 +42,28 @@ export class BaseService<RequestType, ResponseType>{
         //Increment resource list total
         this.__listResult.total += 1
 
-        resolve(new this.__modelClass(response.data, this.__adapter))
+        resolve(this._instantiateModel(response.data))
+      }).catch(error => {
+        if(error.code == 400){
+          error = new BadDataError(error.code, error.message)
+        }else if(error.code == 409){
+          error = new ResourceExistsError(error.code, error.message)
+        }
+
+        reject(error)
+      })
+    })
+  }
+
+  public batchCreate(data: RequestType): Promise<Array<ResponseType>>{
+    return new Promise<Array<ResponseType>>((resolve, reject) => {
+      this.__adapter.post(this.__baseUrl, data).then(response => {
+        const results = []
+        for(const entry of response.data){
+          results.push(this._instantiateModel(entry))
+        }
+
+        resolve(results)
       }).catch(error => {
         if(error.code == 400){
           error = new BadDataError(error.code, error.message)
@@ -68,7 +89,7 @@ export class BaseService<RequestType, ResponseType>{
     })
 
     this.__listCollection.onFilter((criteria: {[key: string]: string}) => {
-      for(let criterion in criteria){
+      for(const criterion in criteria){
         if(!(criterion in this.__listCriteria)){
           this.__listCriteria[criterion] = criteria[criterion]
         }
@@ -117,8 +138,8 @@ export class BaseService<RequestType, ResponseType>{
       criteriaError = new PageAccessError(404, "Please specify a positive integer page number")
     }
 
-    let unsupportedFilters = []
-    for(let field in this.__listCriteria){
+    const unsupportedFilters = []
+    for(const field in this.__listCriteria){
       if(this.__listFilters.indexOf(field) < 0){
         unsupportedFilters.push(field)
       }
@@ -153,8 +174,8 @@ export class BaseService<RequestType, ResponseType>{
       this.__listResult.records = Number(response.data.records)
       this.__listResult.total = Number(response.data.total)
 
-      let entries: Array<ResponseType> = []
-      for(let entry of response.data.entries){
+      const entries: Array<ResponseType> = []
+      for(const entry of response.data.entries){
         entries.push(this._instantiateModel(entry))
       }
 

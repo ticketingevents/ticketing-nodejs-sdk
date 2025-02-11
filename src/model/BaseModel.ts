@@ -24,7 +24,7 @@ export class BaseModel implements Base{
       this._apiAdapter.put(
         this._self,
         this.serialise()
-      ).then(response => {
+      ).then(() => {
         resolve(true)
       }).catch(error => {
         if(error.code == 400){
@@ -42,7 +42,7 @@ export class BaseModel implements Base{
     return new Promise((resolve, reject) => {
       this._apiAdapter.delete(
         this._self
-      ).then(response => {
+      ).then(() => {
         resolve(true)
       }).catch(error => {
         if(error.code == 409){

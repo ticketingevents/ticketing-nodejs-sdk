@@ -9,7 +9,7 @@ import { expect, ticketing } from '../setup'
 // Global category object
 let testCategory = null
 
-describe.skip("Categories", function(){
+describe("Categories", function(){
 
   //Set hook timeout
   this.timeout(10000)

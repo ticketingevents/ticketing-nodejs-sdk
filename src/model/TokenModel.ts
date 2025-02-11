@@ -12,6 +12,7 @@ export class TokenModel extends BaseModel implements Token{
   public sections: Array<SectionModel>
 
   private __event: EventModel
+  private __original_sections: Array<SectionModel>
 
   constructor(token: any, event: EventModel, adapter: APIAdapter){
     super(token.self, adapter)
@@ -19,17 +20,19 @@ export class TokenModel extends BaseModel implements Token{
     this.code = token.code
     this.global = token.global
     this.sections = []
+    this.__original_sections = []
 
     this.__event = event
 
     //Index event sections
-    let sectionMap = {}
-    for(let section of this.__event.sections){
+    const sectionMap = {}
+    for(const section of this.__event.sections){
     	sectionMap[section.uri] = section
     }
 
-    for(let section of token.sections){
+    for(const section of token.sections){
     	this.sections.push(sectionMap[section])
+      this.__original_sections.push(sectionMap[section])
     }
   }
 
@@ -44,10 +47,20 @@ export class TokenModel extends BaseModel implements Token{
   save(): Promise<boolean>{
     return new Promise<boolean>((resolve, reject) => {
       super.save().then(saved => {
+        this.__original_sections = []
+        for(const section of this.sections){
+          this.__original_sections.push(section)
+        }
+
         resolve(saved)
       }).catch(error => {
         if(error.code == 409){
           error = new ResourceImmutableError(error.code, error.message)
+        }
+
+        this.sections = []
+        for(const section of this.__original_sections){
+          this.sections.push(section)
         }
 
         reject(error)
@@ -56,12 +69,12 @@ export class TokenModel extends BaseModel implements Token{
   }
 
   serialise(): TokenData{
-  	let sections = []
-  	for(let section of this.sections){
+  	const sections = []
+  	for(const section of this.sections){
   		sections.push(section.uri)
   	}
 
-    let data: TokenData = {
+    const data: TokenData = {
       sections: sections
     }
 

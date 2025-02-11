@@ -15,11 +15,15 @@
     "chai-like": "^1.1.1",
     "chai-sorted": "^0.2.0",
     "chai-things": "^0.2.0",
+    "eslint": "^9.20.0",
+    "globals": "^15.14.0",
     "mocha": "^10.4.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "typescript-eslint": "^8.24.0"
   },
   "scripts": {
+    "lint": "eslint src",
     "build": "tsc",
     "test": "mocha --ui bdd --reporter spec --require ts-node/register --require test/fixtures/fixtures.ts test/suites/*.ts"
   },

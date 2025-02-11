@@ -52,7 +52,7 @@ export class EventModel extends BaseModel implements Event{
     this.popularity = event.popularity
     this.sections = []
 
-    for(let section of event.sections){
+    for(const section of event.sections){
       section.self = `${this.uri}${section.self}`
       this.sections.push(new SectionModel(section, adapter))
     }
@@ -89,7 +89,7 @@ export class EventModel extends BaseModel implements Event{
       this._apiAdapter.post(
         `${this._self}/submissions`,
         {}
-      ).then(response => {
+      ).then(() => {
         resolve(true)
       }).catch(error => {
         if(error.code == 409){
@@ -103,8 +103,8 @@ export class EventModel extends BaseModel implements Event{
 
   issue_token(sections: Array<SectionModel>): Promise<TokenModel>{
     return new Promise((resolve, reject) => {
-      let sectionData = []
-      for(let section of sections){
+      const sectionData = []
+      for(const section of sections){
         sectionData.push(section.uri)
       }
 
@@ -113,7 +113,7 @@ export class EventModel extends BaseModel implements Event{
           sections: sectionData
         }
       ).then(response => {
-        let token = new TokenModel(response.data, this, this._apiAdapter)
+        const token = new TokenModel(response.data, this, this._apiAdapter)
         resolve(token)
       }).catch(error => {
         if(error.code == 400){
@@ -128,7 +128,7 @@ export class EventModel extends BaseModel implements Event{
   }
 
   serialise(): EventData{
-    let data: EventData = {
+    const data: EventData = {
       title: this.title,
       description: this.description,
       type: this.type,

@@ -17,4 +17,6 @@ export interface Account extends Base{
   secondAddressLine: string
   city: string
   state: string
+
+  preferences: Promise<AccountPreferences>
 }

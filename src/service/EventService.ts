@@ -32,10 +32,11 @@ export class EventService extends BaseService<EventData, Event>{
         reject(new BadDataError(400, "Please provide a valid venue for the event"))
       }
 
-      let payload: EventData = JSON.parse(JSON.stringify(data))
+      const payload: EventData = JSON.parse(JSON.stringify(data))
       payload.host = (data.host as HostModel).id
       payload.category = (data.category as CategoryModel).uri
       payload.venue = (data.venue as VenueModel).uri
+
       super.create(payload).then(event => {
         resolve(event)
       }).catch(error => {
@@ -71,13 +72,13 @@ class PublishedEventService extends BaseService<EventData, Event>{
     )
   }
 
-  create(data: EventData): Promise<Event>{
+  create(): Promise<Event>{
     return new Promise<Event>((resolve, reject) => {
       reject(new UnsupportedOperationError(0, "Operation not supported"))
     })
   }
 
-  find(id: number|string): Promise<Event>{
+  find(): Promise<Event>{
     return new Promise<Event>((resolve, reject) => {
       reject(new UnsupportedOperationError(0, "Operation not supported"))
     })

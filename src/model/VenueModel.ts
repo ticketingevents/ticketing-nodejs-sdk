@@ -16,7 +16,7 @@ export class VenueModel extends BaseModel implements Venue{
     super(venue.self, adapter)
 
     this.name = venue.name
-    this.region = new RegionModel({self: venue.region}, adapter),
+    this.region = new RegionModel({self: venue.region}, adapter)
     this.longitude = venue.longitude
     this.latitude = venue.latitude
     this.address = venue.address

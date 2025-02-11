@@ -1,6 +1,8 @@
 import { Base } from './Base'
+import { Collection } from '../util'
 import { Category } from './Category'
 import { Section } from './Section'
+import { Token } from './Token'
 import { Venue } from './Venue'
 
 export interface Event extends Base{
@@ -21,4 +23,8 @@ export interface Event extends Base{
   published: string
   popularity: number
   sections: Array<Section>
+  tokens: Collection<Token>
+
+  submit(): Promise<boolean>
+  issue_token(sections: Array<SectionModel>): Promise<TokenModel>
 }

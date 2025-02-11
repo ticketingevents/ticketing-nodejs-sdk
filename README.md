@@ -137,7 +137,6 @@ export class TickeTingService extends TickeTing{
     * [Invalidate an admissions token](#invalidate-an-admissions-token)
   * [Admitting patrons](#admitting-patrons)
     * [Start admission session](#start-admission-session)
-    * [Get admission session information](#fetch0admission-session-information)
     * [List valid tickets](#list-valid-tickets)
     * [Grant admission to event](#grant-admission-to-event)
     * [List event admissions](#list-admissions-to-event)
@@ -1250,41 +1249,29 @@ an admissions token which allows the staff member to grant access to designated 
 
 [API Reference](https://docs.ticketingevents.com/openapi/token-authentication/retrieve_token_auth)
 
-Starting a session grants access to the remaining operations in this section, with the event and sections
-linked to the session determined by the admissions token.
+Before retrieving a list of valid tickets or redeeming them, an admissions session must be commenced.
+This is done by providing an admissions token which is linked to a specific event and sections.
 
 ```javascript
-  //Start an admission session using an admission token
-  ticketing.admissions.start(
+  //Start a session using an admission token
+  ticketing.session.admission(
     "A0F9GG8D", //Admission token code
     "Billy Butcher", //Name of the staff member who will be admitting patrons
     "Google Pixel 6 Pro" //Device that will be verifying tickets
   )
-  .then(info => {
-    //Do something with the session info
+  .then(session => {
+    //Do something with the admission session
+    let started = session.started //Date and time that the session was started
+    let name = session.name //Name of the redeemer that initiated this session
+    let device = session.device //Device that initiated this sesson
+    let code = session.code //Admissions token code used to start this session
+    let event = session.event //The event this session can admit patrons to
+    let sections = session.sections //The event sections this session can admit patrons to
   })
   .catch(error => {
     //Handle errors
-    if(error instanceof ResourceNotFoundError){
+    if(error instanceof UnauthorisedError){
       console.log("The provided code does not belong to any event token")
-    }else{
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
-    }
-  })
-```
-
-### Get admission session information
-
-[API Reference](https://docs.ticketingevents.com/openapi/token-authentication/retrieve_token_auth)
-
-```javascript
-  //Retrieve information of an open admission session
-  ticketing.admissions.info().then(info => {
-    //Do something with the session info
-  }).catch(error => {
-    //Handle errors
-    if(error instanceof UnsupportedOperationError){
-      console.log("You have not started an admission session.")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
@@ -1296,7 +1283,8 @@ linked to the session determined by the admissions token.
 [API Reference](https://docs.ticketingevents.com/openapi/event-admissions/list_event_tickets)
 
 ```javascript
-  ticketing.admissions.tickets() // The tickets method returns a standard collection
+  let session = await ticketing.session.admission("A0F9GG8D", "Name", "Device")
+  session.tickets() // The tickets method returns a standard collection
     // Supported filters with examples
     .filter({
       modified_since: "2024-02-21T14:59:18+00:00" //Only return tickets with a status change after the specified date
@@ -1306,8 +1294,8 @@ linked to the session determined by the admissions token.
     })
     .catch(error => {
       //Handle errors
-      if(error instanceof UnsupportedOperationError){
-        console.log("You have not started an admission session.")
+      if(error instanceof InvalidStateError){
+        console.log("The admission session has ended, you must start a new one.")
       }else if(error instanceof PageAccessError){
         //Handle non-existant page error
       }else{
@@ -1321,16 +1309,21 @@ linked to the session determined by the admissions token.
 [API Reference](https://docs.ticketingevents.com/openapi/event-admissions/admit_event_patrons)
 
 ```javascript
-  ticketing.admissions.admit(
-    ["DAWIER-BACK75580348", "DAWIER-VIPV37536946", "DAWIER-BACK75580348"] //List of ticket serials to attempt to redeem for entry to the event
+  let session = await ticketing.session.admission("A0F9GG8D", "Name", "Device")
+  session.admit(
+    [ //List of ticket serials to attempt to redeem for entry to the event
+      "DAWIER-BACK75580348",
+      "DAWIER-VIPV37536946",
+      "DAWIER-BACK75580348"
+    ]
   )
   .then(admissions => {
     //Do something with the list of successful admissions
   })
   .catch(error => {
     //Handle errors
-    if(error instanceof UnsupportedOperationError){
-      console.log("You are not authorised to manage events on behalf of this host.")
+    if(error instanceof InvalidStateError){
+      console.log("The admission session has ended, you must start a new one.")
     }else if(error instanceof BadDataError){
       console.log("None of the provided ticket serials grants admission to the designated event sections")
     }else{
@@ -1344,7 +1337,8 @@ linked to the session determined by the admissions token.
 [API Reference](https://docs.ticketingevents.com/openapi/event-admissions/list_event_admissions)
 
 ```javascript
-  ticketing.admissions.list()
+  let session = await ticketing.session.admission("A0F9GG8D", "Name", "Device")
+  session.admissions() // The admissions() method returns a standard collection
     // Supported filters with examples
     .filter({
       redeemer: "Billy Butcher", //Only return admissions granted by this redeemer
@@ -1358,8 +1352,8 @@ linked to the session determined by the admissions token.
     })
     .catch(error => {
       //Handle errors
-      if(error instanceof UnsupportedOperationError){
-        console.log("You have not started an admission session.")
+      if(error instanceof InvalidStateError){
+        console.log("The admission session has ended, you must start a new one.")
       }else if(error instanceof PageAccessError){
         //Handle non-existant page error
       }else{
@@ -1376,7 +1370,8 @@ After ending an admission session all further operations will fail. You will fir
 admissions session to perform these operations.
 
 ```javascript
-  ticketing.admissions.end().then(ended => {
+  let session = await ticketing.session.admission("A0F9GG8D", "Name", "Device")
+  session.end().then(ended => {
     if(ended){
       //Do something on success
     }else{
@@ -1384,8 +1379,8 @@ admissions session to perform these operations.
     }
   }).catch(error => {
     //Handle errors
-    if(error instanceof UnsupportedOperationError){
-      console.log("You have not started an admission session.")
+    if(error instanceof InvalidStateError){
+      console.log("The admission session has ended, you must start a new one.")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }

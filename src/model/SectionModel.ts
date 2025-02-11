@@ -1,5 +1,4 @@
 import { APIAdapter } from '../util'
-import { InvalidStateError } from '../errors'
 import { BaseModel } from './BaseModel'
 import { Section } from '../interface/Section'
 import { SectionData } from '../interface/data/SectionData'
@@ -32,7 +31,7 @@ export class SectionModel extends BaseModel implements Section{
   }
 
   serialise(): SectionData{
-    let data: SectionData = {
+    const data: SectionData = {
       name: this.name,
       description: this.description,
       basePrice: this.basePrice,

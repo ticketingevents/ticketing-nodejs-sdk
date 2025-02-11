@@ -1,5 +1,5 @@
 import { Section } from '../Section'
 
 export interface TokenData{
-  sections: Array<string>
+  sections: Array<Section>
 }

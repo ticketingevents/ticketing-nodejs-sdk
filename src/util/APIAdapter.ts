@@ -33,6 +33,10 @@ export class APIAdapter{
     this.__requester.defaults.headers.common['X-API-Key'] = this.__currentKey;
   }
 
+  get sandbox(): boolean{
+    return this.__sandbox
+  }
+
   get base(): string{
     return this.__sandbox?
       "https://qa.ticketingevents.com/v3":

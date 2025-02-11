@@ -1,7 +1,7 @@
 export { TickeTing } from './ticketing'
 export {
-  Account, AccountPreferences, Category, Event, Host, Region,
-  Section, Session, Token, Venue
+  Account, AccountPreferences, Admission, Category, Event, Host, Region,
+  Section, Session, Ticket, Token, Venue
 } from './interface'
 export {
   BadDataError, InvalidStateError, PageAccessError, PermissionError,
