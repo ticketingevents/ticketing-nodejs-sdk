@@ -1,4 +1,5 @@
 import { Base } from './Base'
+import { AccountPreferences } from './AccountPreferences'
 
 export interface Account extends Base{
   number: string

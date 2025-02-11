@@ -3,5 +3,4 @@ export interface Base{
   
   save(): Promise<boolean>
   delete(): Promise<boolean>
-  serialise(): AccountData
 }

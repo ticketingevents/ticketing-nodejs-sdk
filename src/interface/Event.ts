@@ -4,6 +4,7 @@ import { Category } from './Category'
 import { Section } from './Section'
 import { Token } from './Token'
 import { Venue } from './Venue'
+import { SectionModel, TokenModel } from '../model'
 
 export interface Event extends Base{
   title: string

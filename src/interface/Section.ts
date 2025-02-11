@@ -1,3 +1,5 @@
+import { Base } from './Base'
+
 export interface Section extends Base{
   name: string
   description: string
