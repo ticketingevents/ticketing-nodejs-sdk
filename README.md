@@ -271,12 +271,6 @@ You can use a collection's pagination access methods to page back and forth thro
       //Do something with the page of resources
     })
 
-  //Retrieve the last page of the collection
-  collection.last()
-    .then(resources => {
-      //Do something with the page of resources
-    })
-
   //Retrieve the next page of the collection
   collection.next()
     .then(resources => {
@@ -303,8 +297,8 @@ will be thrown when the collection is resolved.
 
 ```javascript
   let collection = ticketing.venues.list(10)
-    .last()
-    .next() // This call to next() will cause the collection to reference a non-existant page
+    .first()
+    .previous() // This call to next() will cause the collection to reference a non-existant page
     .then(venues => {
       //Do something with the matching venue resource(s)
     })
@@ -377,8 +371,8 @@ Each TickeTing Error instance has a unique type, and provides an error message, 
   import TickeTing, PageAccessError from '@ticketingevents/ticketing-sdk';
 
   ticketing.regions.list()
-    .last()
-    .next()
+    .first()
+    .previous()
     .then(regions => {
       //Do something with the page of matching region resource(s)
     })

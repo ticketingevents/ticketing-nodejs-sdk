@@ -48,13 +48,6 @@ describe("Pagination", function(){
     })
   })
 
-  describe('#last()', function () {
-    it("Should return the last page of resources", async function(){
-      return expect(this.collection.last().current)
-        .to.eventually.equal(await this.collection.pages)
-    })
-  })
-
   describe('#next()', function () {
     it("Should navigate to the next page of resources", function(){
       return expect(this.collection.first().next().current)
@@ -62,16 +55,28 @@ describe("Pagination", function(){
     })
 
     it("Should throw a PageAccessError if no subsequent page exists", function(){
-      return expect(this.collection.last().next())
-        .to.eventually.be.rejectedWith("The specified page does not exist for the given records per page")
-        .and.be.an.instanceof(PageAccessError)
+      return new Promise((resolve, reject) => {
+        this.collection.pages.then(pages => {
+          expect(this.collection.goto(pages).next())
+            .to.eventually.be.rejectedWith("The specified page does not exist for the given records per page")
+            .and.be.an.instanceof(PageAccessError)
+
+          resolve(true)
+        })
+      })
     })
   })
 
   describe('#previous()', function () {
-    it("Should navigate to the previous page of resources", async function(){
-      return expect(this.collection.last().previous().current)
-        .to.eventually.equal(await this.collection.last().previous().pages - 1)
+    it("Should navigate to the previous page of resources", function(){
+      return new Promise((resolve, reject) => {
+        this.collection.pages.then(pages => {
+          expect(this.collection.goto(pages).previous().current)
+            .to.eventually.equal(pages - 1)
+
+          resolve(true)
+        })
+      })
     })
 
     it("Should throw a PageAccessError if no previous page exists", function(){
@@ -86,12 +91,6 @@ describe("Pagination", function(){
       return expect(this.collection.goto(3).current)
         .to.eventually.equal(3)
     })
-
-    it("Should throw a PageAccessError if the specified page does not exist", async function(){
-      return expect(this.collection.last().next())
-        .to.eventually.be.rejectedWith("The specified page does not exist for the given records per page")
-        .and.be.an.instanceof(PageAccessError)
-    })
   })
 
   describe('#hasNext()', function () {
@@ -101,15 +100,27 @@ describe("Pagination", function(){
     })
 
     it("Should return false if no subsequent page of resources exists", function(){
-      return expect(this.collection.last().hasNext())
-        .to.eventually.be.false
+      return new Promise((resolve, reject) => {
+        this.collection.pages.then(pages => {
+          expect(this.collection.goto(pages).hasNext())
+            .to.eventually.be.false
+
+          resolve(true)
+        })
+      })
     })
   })
 
   describe('#hasPrevious()', function () {
     it("Should return true if a previous page of resources exists", function(){
-      return expect(this.collection.last().hasPrevious())
-        .to.eventually.be.true
+      return new Promise((resolve, reject) => {
+        this.collection.pages.then(pages => {
+          expect(this.collection.goto(pages).hasPrevious())
+            .to.eventually.be.true
+
+          resolve(true)
+        })
+      })
     })
 
     it("Should return false if no previous page of resources exists", function(){

@@ -133,18 +133,21 @@ describe("Venues", function(){
 
     it('Should contain the newly created venue as its last resource', function () {
       return new Promise((resolve, reject) => {
-        ticketing.venues.list(1).last().then(venues => {
-          expect(venues[0]).to.be.an.instanceOf(VenueModel)
-          expect(venues[0].name).to.equal(this.testVenueData.name)
-          expect(venues[0].region).to.be.an.instanceof(RegionModel)
-            .and.to.have.property("uri", this.testVenueData.region.uri)
-          expect(venues[0].address).to.equal(this.testVenueData.address)
-          expect(venues[0].latitude).to.be.closeTo(this.testVenueData.latitude, 0.0001)
-          expect(venues[0].longitude).to.be.closeTo(this.testVenueData.longitude, 0.0001)
+        let collection = ticketing.venues.list(1)
+        collection.pages.then(pages => {
+          collection.goto(pages).then(venues => {
+            expect(venues[0]).to.be.an.instanceOf(VenueModel)
+            expect(venues[0].name).to.equal(this.testVenueData.name)
+            expect(venues[0].region).to.be.an.instanceof(RegionModel)
+              .and.to.have.property("uri", this.testVenueData.region.uri)
+            expect(venues[0].address).to.equal(this.testVenueData.address)
+            expect(venues[0].latitude).to.be.closeTo(this.testVenueData.latitude, 0.0001)
+            expect(venues[0].longitude).to.be.closeTo(this.testVenueData.longitude, 0.0001)
 
-          resolve(true)
-        }).catch(error => {
-          reject(error)
+            resolve(true)
+          }).catch(error => {
+            reject(error)
+          })
         })
       })
     })

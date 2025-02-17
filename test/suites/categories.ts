@@ -106,14 +106,17 @@ describe("Categories", function(){
 
     it('Should contain the newly created category as its last resource', function () {
       return new Promise((resolve, reject) => {
-        ticketing.categories.list(1).last().then(categories => {
-          expect(categories[0])
-            .to.be.an.instanceof(CategoryModel)
-            .and.to.deep.include(this.testCategoryData)
+        let collection = ticketing.categories.list(1)
+        collection.pages.then(pages => {
+          collection.goto(pages).then(categories => {
+            expect(categories[0])
+              .to.be.an.instanceof(CategoryModel)
+              .and.to.deep.include(this.testCategoryData)
 
-          resolve(true)
-        }).catch(error => {
-          reject(error)
+            resolve(true)
+          }).catch(error => {
+            reject(error)
+          })
         })
       })
     })

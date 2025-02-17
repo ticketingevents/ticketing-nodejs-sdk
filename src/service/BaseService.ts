@@ -107,6 +107,10 @@ export class BaseService<RequestType, ResponseType>{
       }
     })
 
+    this.__listCollection.onReset(() => {
+      this.__listCriteria = {records: this.__listCriteria.records}
+    })
+
     return this.__listCollection
   }
 

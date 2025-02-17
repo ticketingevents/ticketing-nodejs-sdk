@@ -98,28 +98,31 @@ describe("Accounts", function(){
 
     it('Should contain the newly created account as its last resource', function () {
       return new Promise((resolve, reject) => {
-        ticketing.accounts.list(1).last().then(accounts => {
-          expect(accounts[0]).to.be.an.instanceof(AccountModel)
-          expect(accounts[0].number).to.equal(testAccount.number)
-          expect(accounts[0].username).to.equal(this.testAccountData.username)
-          expect(accounts[0].email).to.equal(this.testAccountData.email)
-          expect(accounts[0].role).to.equal("customer")
-          expect(accounts[0].verified).to.equal(false)
-          expect(accounts[0].activated).to.equal(true)
-          expect(accounts[0].firstName).to.equal(this.testAccountData.firstName)
-          expect(accounts[0].lastName).to.equal(this.testAccountData.lastName)
-          expect(accounts[0].title).to.equal(this.testAccountData.title)
-          expect(accounts[0].dateOfBirth).to.equal(this.testAccountData.dateOfBirth)
-          expect(accounts[0].phone).to.equal(this.testAccountData.phone)
-          expect(accounts[0].country).to.equal(this.testAccountData.country)
-          expect(accounts[0].firstAddressLine).to.equal(this.testAccountData.firstAddressLine)
-          expect(accounts[0].secondAddressLine).to.equal(this.testAccountData.secondAddressLine)
-          expect(accounts[0].city).to.equal(this.testAccountData.city)
-          expect(accounts[0].state).to.equal(this.testAccountData.state)
+        let collection = ticketing.accounts.list(1)
+        collection.pages.then(pages => {
+          collection.goto(pages).then(accounts => {
+            expect(accounts[0]).to.be.an.instanceof(AccountModel)
+            expect(accounts[0].number).to.equal(testAccount.number)
+            expect(accounts[0].username).to.equal(this.testAccountData.username)
+            expect(accounts[0].email).to.equal(this.testAccountData.email)
+            expect(accounts[0].role).to.equal("customer")
+            expect(accounts[0].verified).to.equal(false)
+            expect(accounts[0].activated).to.equal(true)
+            expect(accounts[0].firstName).to.equal(this.testAccountData.firstName)
+            expect(accounts[0].lastName).to.equal(this.testAccountData.lastName)
+            expect(accounts[0].title).to.equal(this.testAccountData.title)
+            expect(accounts[0].dateOfBirth).to.equal(this.testAccountData.dateOfBirth)
+            expect(accounts[0].phone).to.equal(this.testAccountData.phone)
+            expect(accounts[0].country).to.equal(this.testAccountData.country)
+            expect(accounts[0].firstAddressLine).to.equal(this.testAccountData.firstAddressLine)
+            expect(accounts[0].secondAddressLine).to.equal(this.testAccountData.secondAddressLine)
+            expect(accounts[0].city).to.equal(this.testAccountData.city)
+            expect(accounts[0].state).to.equal(this.testAccountData.state)
 
-          resolve(true)
-        }).catch(error => {
-          reject(error)
+            resolve(true)
+          }).catch(error => {
+            reject(error)
+          })
         })
       })
     })

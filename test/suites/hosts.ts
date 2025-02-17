@@ -77,14 +77,17 @@ describe("Hosts", function(){
 
     it('Should contain the newly created host as its last resource', function () {
       return new Promise((resolve, reject) => {
-        ticketing.hosts.list(1).last().then(hosts => {
-          expect(hosts[0])
-            .to.be.an.instanceof(HostModel)
-            .and.to.deep.include(this.testHostData)
+        let collection = ticketing.hosts.list(1)
+        collection.pages.then(pages => {
+          collection.goto(pages).then(hosts => {
+            expect(hosts[0])
+              .to.be.an.instanceof(HostModel)
+              .and.to.deep.include(this.testHostData)
 
-          resolve(true)
-        }).catch(error => {
-          reject(error)
+            resolve(true)
+          }).catch(error => {
+            reject(error)
+          })
         })
       })
     })

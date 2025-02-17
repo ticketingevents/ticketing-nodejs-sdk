@@ -116,29 +116,35 @@ describe("Regions", function(){
 
     it('Should contain the newly created region as its last resource', function () {
       return new Promise((resolve, reject) => {
-        ticketing.regions.list(1).last().then(regions => {
-          expect(regions[0])
-            .to.be.an.instanceof(RegionModel)
-            .and.to.include(this.testRegionData)
+        let collection = ticketing.regions.list(1)
+        collection.pages.then(pages => {
+          collection.goto(pages).then(regions => {
+            expect(regions[0])
+              .to.be.an.instanceof(RegionModel)
+              .and.to.include(this.testRegionData)
 
-          resolve(true)
-        }).catch(error => {
-          reject(error)
+            resolve(true)
+          }).catch(error => {
+            reject(error)
+          })
         })
       })
     })
 
     it('Should return a collection of regions matching the active filter', function () {
       return new Promise((resolve, reject) => {
-        ticketing.regions.list(1).filter({active: true}).last().then(regions => {
-          //Our test region should have been returned
-          expect(regions[0])
-            .to.be.an.instanceof(RegionModel)
-            .and.to.include(this.secondRegion)
+        let collection = ticketing.regions.list(1).filter({active: true})
+        collection.pages.then(pages => {
+          collection.goto(pages).then(regions => {
+            //Our test region should have been returned
+            expect(regions[0])
+              .to.be.an.instanceof(RegionModel)
+              .and.to.include(this.secondRegion)
 
-          resolve(true)
-        }).catch(error => {
-          reject(error)
+            resolve(true)
+          }).catch(error => {
+            reject(error)
+          })
         })
       })
     })
