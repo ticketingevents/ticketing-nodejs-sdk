@@ -12,7 +12,7 @@ export class Collection<T> extends Promise<Array<T>>{
   private __deferredPromise: Promise<Array<T>> | null
 
   constructor(executor, root=true, cursor=1){
-    super((resolve, reject) => {})
+    super(() => {})
     this.__executor = executor
     this.__root = root
     this.__cursor = cursor
@@ -31,13 +31,13 @@ export class Collection<T> extends Promise<Array<T>>{
   }
 
   get current(): Promise<number>{
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       resolve(this.__cursor)
     })
   }
 
   get pages(): Promise<number>{
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       this.then(() => {
         resolve(this.__onPages())
       })
