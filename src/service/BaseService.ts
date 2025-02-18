@@ -119,7 +119,7 @@ export class BaseService<RequestType, ResponseType>{
       this.__adapter.get(
         `${this.__baseUrl}/${id}`
       ).then(response => {
-        resolve(new this.__modelClass(response.data, this.__adapter))
+        resolve(this._instantiateModel(response.data))
       }).catch(error => {
         if(error.code == 404){
           error = new ResourceNotFoundError(error.code, error.message)

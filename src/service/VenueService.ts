@@ -6,8 +6,12 @@ import { VenueData, Venue } from '../interface'
 import { RegionModel, VenueModel } from '../model'
 
 export class VenueService extends BaseService<VenueData, Venue>{
+  private __apiAdapter: APIAdapter
+
   constructor(apiAdapter: APIAdapter){
     super(apiAdapter, "/venues", VenueModel, ["region"])
+
+    this.__apiAdapter = apiAdapter
   }
 
   create(data: VenueData): Promise<Venue>{
@@ -24,5 +28,10 @@ export class VenueService extends BaseService<VenueData, Venue>{
         reject(error)
       })
     })
+  }
+
+  protected _instantiateModel(data: any){
+    data.region = {self: data.region}
+    return new VenueModel(data, this.__apiAdapter)
   }
 }
