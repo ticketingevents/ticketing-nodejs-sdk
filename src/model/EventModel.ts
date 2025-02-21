@@ -5,6 +5,7 @@ import { BaseModel } from './BaseModel'
 import { CategoryModel } from './CategoryModel'
 import { Event } from '../interface/Event'
 import { EventData } from '../interface/data/EventData'
+import { Section } from '../interface/Section'
 import { SectionModel } from './SectionModel'
 import { Token } from '../interface/Token'
 import { TokenModel } from './TokenModel'
@@ -101,7 +102,7 @@ export class EventModel extends BaseModel implements Event{
     })
   }
 
-  issue_token(sections: Array<SectionModel>): Promise<TokenModel>{
+  issue_token(sections: Array<Section>): Promise<TokenModel>{
     return new Promise((resolve, reject) => {
       const sectionData = []
       for(const section of sections){

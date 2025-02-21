@@ -6,7 +6,7 @@ import { SectionData } from '../interface/data/SectionData'
 export class SectionModel extends BaseModel implements Section{
   public name: string
   public description: string
-  public basePrice: number
+  public price: {base: number, current: number, expires: string}
   public salesStart: string
   public salesEnd: string
   public active: boolean
@@ -20,7 +20,7 @@ export class SectionModel extends BaseModel implements Section{
 
     this.name = section.name
     this.description = section.description
-    this.basePrice = section.basePrice
+    this.price = section.price
     this.salesStart = section.salesStart
     this.salesEnd = section.salesEnd
     this.active = section.active
@@ -34,7 +34,7 @@ export class SectionModel extends BaseModel implements Section{
     const data: SectionData = {
       name: this.name,
       description: this.description,
-      basePrice: this.basePrice,
+      price: this.price,
       salesStart: this.salesStart,
       salesEnd: this.salesEnd,
       active: this.active,

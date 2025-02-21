@@ -1,4 +1,6 @@
-export class Collection<T> extends Promise<Array<T>>{
+import { Collection as CollectionInterface } from '../interface'
+
+export class Collection<T> extends Promise<Array<T>> implements CollectionInterface{
   private __executor: (resolve, reject) => void
   private __onPages: () => number = () => {return 0}
   private __onFilter: (criteria: {[key: string]: string | number}) => void = () => {}
