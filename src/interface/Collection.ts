@@ -1,4 +1,4 @@
-export interface Collection{
+export interface Collection<T>{
 	current: Promise<number>
 	pages: Promise<number>
 
@@ -8,18 +8,18 @@ export interface Collection{
 	): Promise<TResult1 | TResult2>
 
 	filter(criteria: {[key: string]: string|number}): Collection<T>
-	sort(field: string, ascending: boolean = true): Collection<T>
-		next(): Collection<T>
-		previous(): Collection<T>
-		first(): Collection<T>
-		goto(page: number): Collection<T>
-		hasNext(): Promise<boolean>
-		hasPrevious(): Promise<boolean>
+	sort(field: string, ascending: boolean): Collection<T>
+	next(): Collection<T>
+	previous(): Collection<T>
+	first(): Collection<T>
+	goto(page: number): Collection<T>
+	hasNext(): Promise<boolean>
+	hasPrevious(): Promise<boolean>
 
-		onCurrent(callback: () => number): void
-		onPages(callback: () => number): void
-		onFilter(callback: (criteria: {[key: string]: string}) => void): void
-		onSort(callback: (field: string, ascending: string) => void): void
-		onPageChange(callback: (page: number) => void): void
-		onReset(callback: () => void): void
+	onCurrent(callback: () => number): void
+	onPages(callback: () => number): void
+	onFilter(callback: (criteria: {[key: string]: string}) => void): void
+	onSort(callback: (field: string, ascending: string) => void): void
+	onPageChange(callback: (page: number) => void): void
+	onReset(callback: () => void): void
 }
