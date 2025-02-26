@@ -1646,7 +1646,10 @@ Operations for managing the venues at which event can be staged
 ```javascript
   ticketing.venues.list()
     // Supported filters with examples
-    .filter({region: 19290238432215})
+    .filter({
+      region: 19290238432215,
+      name: "Vought Tower"
+    })
     .then(venues => {
       //Do something with the collection of venues
     })

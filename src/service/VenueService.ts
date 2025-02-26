@@ -9,7 +9,7 @@ export class VenueService extends BaseService<VenueData, Venue>{
   private __apiAdapter: APIAdapter
 
   constructor(apiAdapter: APIAdapter){
-    super(apiAdapter, "/venues", VenueModel, ["region"])
+    super(apiAdapter, "/venues", VenueModel, ["region", "name"])
 
     this.__apiAdapter = apiAdapter
   }

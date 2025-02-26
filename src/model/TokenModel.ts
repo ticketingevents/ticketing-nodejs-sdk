@@ -2,17 +2,17 @@ import { APIAdapter } from '../util'
 import { ResourceImmutableError } from '../errors'
 import { BaseModel } from './BaseModel'
 import { EventModel } from './EventModel'
-import { SectionModel } from './SectionModel'
+import { Section } from '../interface/Section'
 import { Token } from '../interface/Token'
 import { TokenData } from '../interface/data/TokenData'
 
 export class TokenModel extends BaseModel implements Token{
   public code: string
   public global: boolean
-  public sections: Array<SectionModel>
+  public sections: Array<Section>
 
   private __event: EventModel
-  private __original_sections: Array<SectionModel>
+  private __original_sections: Array<Section>
 
   constructor(token: any, event: EventModel, adapter: APIAdapter){
     super(token.self, adapter)
@@ -36,11 +36,11 @@ export class TokenModel extends BaseModel implements Token{
     }
   }
 
-  allow(section: SectionModel){
+  allow(section: Section){
   	this.sections.push(section)
   }
 
-  deny(section: SectionModel){
+  deny(section: Section){
   	this.sections.splice(this.sections.indexOf(section), 1)
   }
 

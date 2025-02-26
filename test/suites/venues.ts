@@ -131,6 +131,19 @@ describe("Venues", function(){
       })
     })
 
+    it('Should return a collection of venues matching the name filter', function () {return new Promise((resolve, reject) => {
+        ticketing.venues.list(5).filter({name: testVenue.name}).then(venues => {
+          for(let venue of venues){
+            expect(venue.name).to.be.eq(testVenue.name)
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
     it('Should contain the newly created venue as its last resource', function () {
       return new Promise((resolve, reject) => {
         let collection = ticketing.venues.list(1)
