@@ -37,11 +37,15 @@ export class TokenModel extends BaseModel implements Token{
   }
 
   allow(section: Section){
-  	this.sections.push(section)
+    if(this.sections.indexOf(section) < 0){
+    	this.sections.push(section)
+    }
   }
 
   deny(section: Section){
-  	this.sections.splice(this.sections.indexOf(section), 1)
+    if(this.sections.indexOf(section) >= 0){
+  	 this.sections.splice(this.sections.indexOf(section), 1)
+    }
   }
 
   save(): Promise<boolean>{
