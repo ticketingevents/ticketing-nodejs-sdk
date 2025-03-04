@@ -11,9 +11,9 @@ export interface AdmissionSession{
   code: string
   event: Event
   sections: Array<Section>
-  admissions: Collection<Admission>
-  tickets: Collection<Ticket>
 
+  admissions(pageLength: number): Collection<Admission>
+  tickets(pageLength: number): Collection<Ticket>
   admit(serials: string[]): Promise<Array<Admission>>
   end(): Promise<boolean>
 }

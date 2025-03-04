@@ -15,6 +15,7 @@ let testToken = null
 let testSession = null
 let testTicket = null
 let testSerials = []
+let testTimestamp = ""
 
 describe("Admissions", function(){
 
@@ -90,13 +91,22 @@ describe("Admissions", function(){
 		this.secondSection = new SectionModel(sectionData, api)
 		this.testEvent.sections.push(this.secondSection)
 
-		//Place ticket order
+		//Place first ticket order
     await api.post("/orders", {
         items: {
-        	[this.testSection.uri]: 5,
-        	[this.secondSection.uri]: 5,
+        	[this.testSection.uri]: 5
         }
     })
+
+    //Place second ticket order
+    setTimeout(async () => {
+    	testTimestamp = (new Date()).toISOString()
+	    await api.post("/orders", {
+	        items: {
+	        	[this.secondSection.uri]: 5,
+	        }
+	    })
+    }, 5000)
 	})
 
 	after(async function(){
@@ -247,12 +257,12 @@ describe("Admissions", function(){
 
   describe('List valid tickets', function () {
 		it('Should return a collection of Ticket resources', function () {
-		  return expect(testSession.tickets).eventually.to.all.be.instanceof(TicketModel)
+		  return expect(testSession.tickets()).eventually.to.all.be.instanceof(TicketModel)
 		})
 
 		it('Should contain valid Ticket resources', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.tickets.then(tickets => {
+				testSession.tickets().then(tickets => {
 				  let sample = tickets[Math.floor(Math.random()*tickets.length)]
 
 				  let sections = []
@@ -280,10 +290,26 @@ describe("Admissions", function(){
 		  })
 		})
 
+		it('Should return a number of records equal to the page size', function () {
+		  return new Promise((resolve, reject) => {
+				testSession.tickets(3).then(tickets => {
+				  expect(tickets.length).to.be.equal(3)
+
+				  resolve(true)
+				}).catch(error => {
+				  reject(error)
+				})
+		  })
+		})
+
 		it('Should return an empty collection usign the modified_since filter', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.tickets.filter({modified_since: (new Date()).toISOString()}).then(tickets => {
-				  expect(tickets.length).to.be.eq(0)
+				testSession.tickets().filter({modified_since: testTimestamp}).then(tickets => {
+				  expect(tickets.length).to.be.at.least(1)
+
+				  for(let ticket of tickets){
+				  	expect(ticket.section.uri).to.eq(this.secondSection.uri)
+				  }
 
 				  resolve(true)
 				}).catch(error => {
@@ -329,12 +355,12 @@ describe("Admissions", function(){
 
   describe('List event admissions', function () {
 		it('Should return a collection of Admission resources', function () {
-		  return expect(testSession.admissions).eventually.to.all.be.instanceof(AdmissionModel)
+		  return expect(testSession.admissions()).eventually.to.all.be.instanceof(AdmissionModel)
 		})
 
 		it('Should contain valid Admission resources', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.admissions.then(admissions => {
+				testSession.admissions().then(admissions => {
 				  let sample = admissions[Math.floor(Math.random()*admissions.length)]
 
 				  let sections = []
@@ -356,9 +382,21 @@ describe("Admissions", function(){
 		  })
 		})
 
+		it('Should return a number of records equal to the page size', function () {
+		  return new Promise((resolve, reject) => {
+				testSession.admissions(3).then(admissions => {
+				  expect(admissions.length).to.be.equal(3)
+
+				  resolve(true)
+				}).catch(error => {
+				  reject(error)
+				})
+		  })
+		})
+
 		it('Should return a collection of admissions matching the redeemer filter', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.admissions.filter({redeemer: testSession.name}).then(admissions => {
+				testSession.admissions().filter({redeemer: testSession.name}).then(admissions => {
 				  expect(admissions.length).to.be.at.least(1)
 
 				  for(let admission of admissions){
@@ -374,7 +412,7 @@ describe("Admissions", function(){
 
 		it('Should return a collection of admissions matching the device filter', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.admissions.filter({device: testSession.device}).then(admissions => {
+				testSession.admissions().filter({device: testSession.device}).then(admissions => {
 				  expect(admissions.length).to.be.at.least(1)
 
 				  for(let admission of admissions){
@@ -390,7 +428,7 @@ describe("Admissions", function(){
 
 		it('Should return a collection of admissions matching the ticket filter', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.admissions.filter({ticket: testTicket.serial}).then(admissions => {
+				testSession.admissions().filter({ticket: testTicket.serial}).then(admissions => {
 				  expect(admissions.length).to.be.at.least(1)
 
 				  for(let admission of admissions){
@@ -406,7 +444,7 @@ describe("Admissions", function(){
 
 		it('Should return a collection of admissions matching the patron filter', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.admissions.filter({patron: testTicket.owner.uri}).then(admissions => {
+				testSession.admissions().filter({patron: testTicket.owner.uri}).then(admissions => {
 				  expect(admissions.length).to.be.at.least(1)
 
 				  for(let admission of admissions){
@@ -422,7 +460,7 @@ describe("Admissions", function(){
 
 		it('Should return a collection of admissions matching the section filter', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.admissions.filter({section: this.testSection.id}).then(admissions => {
+				testSession.admissions().filter({section: this.testSection.id}).then(admissions => {
 				  expect(admissions.length).to.be.at.least(1)
 
 				  for(let admission of admissions){
@@ -459,7 +497,7 @@ describe("Admissions", function(){
 
 		it('Should throw an InvalidStateError when calling tickets() method after end()', function () {
 		  //Make changes to the global token
-		  return expect(testSession.tickets)
+		  return expect(testSession.tickets())
 				.to.eventually.be.rejectedWith("The admission session has ended, you must start a new one.")
 				.and.be.an.instanceOf(InvalidStateError)
 		})
@@ -473,7 +511,7 @@ describe("Admissions", function(){
 
 		it('Should throw an InvalidStateError when calling admissions() method after end()', function () {
 		  //Make changes to the global token
-		  return expect(testSession.admissions)
+		  return expect(testSession.admissions())
 				.to.eventually.be.rejectedWith("The admission session has ended, you must start a new one.")
 				.and.be.an.instanceOf(InvalidStateError)
 		})

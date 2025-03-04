@@ -1278,7 +1278,7 @@ This is done by providing an admissions token which is linked to a specific even
 
 ```javascript
   let session = await ticketing.session.admission("A0F9GG8D", "Name", "Device")
-  session.tickets() // The tickets method returns a standard collection
+  session.tickets(25 // page size) // The tickets method returns a standard collection
     // Supported filters with examples
     .filter({
       modified_since: "2024-02-21T14:59:18+00:00" //Only return tickets with a status change after the specified date
@@ -1332,7 +1332,7 @@ This is done by providing an admissions token which is linked to a specific even
 
 ```javascript
   let session = await ticketing.session.admission("A0F9GG8D", "Name", "Device")
-  session.admissions() // The admissions() method returns a standard collection
+  session.admissions(25 //page size) // The admissions() method returns a standard collection
     // Supported filters with examples
     .filter({
       redeemer: "Billy Butcher", //Only return admissions granted by this redeemer

@@ -41,9 +41,9 @@ export class AdmissionSessionModel implements AdmissionSession{
     this.__ticketService = new TicketService(this.__apiAdapter, this.event)
   }
 
-  get admissions(): Collection<Admission>{
+  admissions(pageLength: number): Collection<Admission>{
     if(this.started){
-      return this.__admissionService.list()
+      return this.__admissionService.list(pageLength)
     }else{
       return new Collection((resolve, reject) => {
         reject(new InvalidStateError(0, "The admission session has ended, you must start a new one."))
@@ -51,9 +51,9 @@ export class AdmissionSessionModel implements AdmissionSession{
     }
   }
 
-  get tickets(): Collection<Ticket>{
+  tickets(pageLength: number): Collection<Ticket>{
     if(this.started){
-      return this.__ticketService.list()
+      return this.__ticketService.list(pageLength)
     }else{
       return new Collection((resolve, reject) => {
         reject(new InvalidStateError(0, "The admission session has ended, you must start a new one."))
