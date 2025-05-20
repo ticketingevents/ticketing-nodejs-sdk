@@ -1,10 +1,19 @@
-import { APIAdapter } from '../util'
+import { APIAdapter, Collection } from '../util'
+import { BaseService } from '../service/BaseService'
 import { BaseModel } from './BaseModel'
 import { Account } from '../interface/Account'
 import { AccountData } from '../interface/data/AccountData'
 import { AccountPreferences } from '../interface/AccountPreferences'
 import { AccountPreferencesModel } from './AccountPreferencesModel'
+import { Host } from '../interface/Host'
+import { HostData } from '../interface/data/HostData'
+import { HostModel } from './HostModel'
 
+class ManagedHostService extends BaseService<HostData, Host>{
+  constructor(apiAdapter: APIAdapter, account: Account){
+    super(apiAdapter, `${account.uri}/hosts`, HostModel)
+  }
+}
 
 export class AccountModel extends BaseModel implements Account{
   public number: string
@@ -25,6 +34,7 @@ export class AccountModel extends BaseModel implements Account{
   public state: string
 
   private __preferences: string
+  private __managedHostService: ManagedHostService
 
   constructor(account: any, adapter: APIAdapter){
     super(account.self, adapter)
@@ -47,6 +57,7 @@ export class AccountModel extends BaseModel implements Account{
     this.state = account.state
 
     this.__preferences = account.preferences
+    this.__managedHostService = new ManagedHostService(this._apiAdapter, this)
   }
 
   get preferences(): Promise<AccountPreferences>{
@@ -57,6 +68,10 @@ export class AccountModel extends BaseModel implements Account{
         reject(error)
       })
     })
+  }
+
+  get hosts(): Collection<Host>{
+    return this.__managedHostService.list()
   }
 
   serialise(): AccountData{

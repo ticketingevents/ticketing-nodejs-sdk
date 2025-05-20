@@ -115,6 +115,7 @@ export class TickeTingService extends TickeTing{
   * [Delete an account](#delete-an-account)
   * [Fetch account preferences](#fetch-account-preferences)
   * [Update account preferences](#update-account-preferences)
+  * [Retrieve managed hosts](#retrieve-managed-hosts)
 - [Hosts](#hosts)
   * [List event hosts](#list-event-hosts)
   * [Create an event host](#create-an-event-host)
@@ -527,7 +528,7 @@ preferences.
 
 ### List all accounts
 
-[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/list_accounts)
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/list_accounts)
 
 ```javascript
   ticketing.accounts.list()
@@ -548,7 +549,7 @@ preferences.
 
 ### Register an account
 
-[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/create_account)
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/create_account)
 
 ```javascript
   let accountData = {
@@ -585,7 +586,7 @@ preferences.
 
 ### Fetch an account
 
-[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/retrieve_account)
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/retrieve_account)
 
 ```javascript
   //Retrieve a specific account using its account number
@@ -607,7 +608,7 @@ preferences.
 
 ### Update an account
 
-[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/update_account)
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/update_account)
 
 ```javascript
   //Retrieve a specific account using its account number
@@ -638,7 +639,7 @@ preferences.
 
 ### Delete an account
 
-[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/delete_account)
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/delete_account)
 
 ```javascript
   //Retrieve a specific account using its account number
@@ -666,7 +667,7 @@ preferences.
 
 ### Fetch account preferences
 
-[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/retrieve_account_preferences)
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/retrieve_account_preferences)
 
 ```javascript
   //Retrieve a specific account using its account number
@@ -691,7 +692,7 @@ preferences.
 
 ### Update account preferences
 
-[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/update_account_preferences)
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/update_account_preferences)
 
 ```javascript
   //Retrieve a specific account using its account number
@@ -723,6 +724,27 @@ preferences.
   })
 ```
 
+### Retrieve managed hosts
+
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/list_account_hosts)
+
+```javascript
+  //Retrieve a specific account using its account number
+  account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  account.hosts
+    .then(hosts => {
+      //Do something with the collection of hosts
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
 
 ## Hosts
 
@@ -735,18 +757,12 @@ add-on services through TickeTing
 
 ```javascript
   ticketing.hosts.list()
-    // Supported filters with examples
-    .filter({
-      account: "MO-6A39EE8D" //Account that returned event hosts should list as an administrator
-    })
     .then(hosts => {
       //Do something with the collection of hosts
     })
     .catch(error => {
       //Handle errors
-      if(error instanceof UnsupportedCriteriaError){
-        //Handle unsupported criteria error
-      }else if(error instanceof PageAccessError){
+      if(error instanceof PageAccessError){
         //Handle non-existant page error
       }else{
         console.log(`${typeof error} (${error.code}): ${error.message}`)

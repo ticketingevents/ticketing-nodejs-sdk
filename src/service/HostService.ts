@@ -6,6 +6,6 @@ import { HostModel } from '../model'
 
 export class HostService extends BaseService<HostData, Host>{
   constructor(apiAdapter: APIAdapter){
-    super(apiAdapter, "/hosts", HostModel,["account"])
+    super(apiAdapter, "/hosts", HostModel)
   }
 }

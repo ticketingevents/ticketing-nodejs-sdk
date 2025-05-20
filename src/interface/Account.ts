@@ -1,5 +1,6 @@
 import { Base } from './Base'
 import { AccountPreferences } from './AccountPreferences'
+import { Host } from './Host'
 
 export interface Account extends Base{
   number: string
@@ -20,4 +21,5 @@ export interface Account extends Base{
   state: string
 
   preferences: Promise<AccountPreferences>
+  hosts: Collection<Host>
 }
