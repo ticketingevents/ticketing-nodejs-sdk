@@ -1,4 +1,5 @@
 import { Base } from './Base'
+import { Collection } from '../util'
 import { AccountPreferences } from './AccountPreferences'
 import { Host } from './Host'
 
