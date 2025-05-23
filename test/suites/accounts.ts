@@ -355,7 +355,6 @@ describe("Accounts", function(){
         ticketing.accounts.lookup({
           identification: testAccount.username
         }).then((result => {
-          console.log(result)
           expect(result.identification).to.equal(testAccount.username)
           expect(result.role).to.equal("")
           expect(result.found).to.equal(true)
