@@ -1,7 +1,20 @@
-import { APIAdapter } from '../util'
+import { APIAdapter, Collection } from '../util'
+import { BaseService } from '../service/BaseService'
 import { BaseModel } from './BaseModel'
 import { Host } from '../interface/Host'
 import { HostData } from '../interface/data/HostData'
+import { Event } from '../interface/Event'
+import { EventModel } from './EventModel'
+import { EventData } from '../interface/data/EventData'
+
+class HostedEventService extends BaseService<EventData, Event>{
+  constructor(apiAdapter: APIAdapter, host: Host){
+    super(apiAdapter, `${host.uri}/events`, EventModel,
+      ["region", "host", "title", "status", "active", "public", "section"],
+      ["alphabetical","published","popularity","start"]
+    )
+  }
+}
 
 export class HostModel extends BaseModel implements Host{
   public name: string
@@ -16,6 +29,8 @@ export class HostModel extends BaseModel implements Host{
   public city: string
   public state: string
   public businessNo: string
+
+  private __hostedEventService: HostedEventService
 
   constructor(host: any, adapter: APIAdapter){
     super(host.self, adapter)
@@ -32,6 +47,12 @@ export class HostModel extends BaseModel implements Host{
     this.city = host.city
     this.state = host.state
     this.businessNo = host.businessNo
+
+    this.__hostedEventService = new HostedEventService(this._apiAdapter, this)
+  }
+
+  get events(): Collection<Event>{
+    return this.__hostedEventService.list()
   }
 
   serialise(): HostData{

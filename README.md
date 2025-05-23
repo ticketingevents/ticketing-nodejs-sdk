@@ -116,12 +116,14 @@ export class TickeTingService extends TickeTing{
   * [Fetch account preferences](#fetch-account-preferences)
   * [Update account preferences](#update-account-preferences)
   * [Retrieve managed hosts](#retrieve-managed-hosts)
+  * [Lookup an account](#lookup-an-account)
 - [Hosts](#hosts)
   * [List event hosts](#list-event-hosts)
   * [Create an event host](#create-an-event-host)
   * [Fetch an event host](#fetch-an-event-host)
   * [Update an event host](#update-an-event-host)
   * [Delete an event host](#delete-an-event-host)
+  * [List hosted events](#list-hosted-events)
 - [Events](#events)
   * [List published events](#list-published-events)
   * [List all events](#list-all-events)
@@ -746,6 +748,28 @@ preferences.
     })
 ```
 
+### Lookup an account
+
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/lookup_account)
+
+```javascript
+  ticketing.accounts.lookup({
+    identification: "mothers.milk", //Required
+    role: "customer" //Optional
+  })
+  .then(account => {
+    //Do something with the new account resource
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log(error.message)
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
 ## Hosts
 
 Operations for managing hosts who can list events, sell tickets, book advertising, or request 
@@ -882,6 +906,45 @@ add-on services through TickeTing
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
   })
+```
+
+### List hosted events
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/list_host_events)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  host.list()
+    // Supported filters with examples
+    .filter({
+      region: 19290238432215,
+      title: "Dawn of the Seven Premier",
+      status: "Scheduled",
+      active: true,
+      public: false
+    })
+    // Supported sort fields
+    .sort(
+      "published", //One of "alphabetical" "published" "popularity" "start"
+      false //Set true for ascending sort (default), or false for descending order
+    )
+    .then(events => {
+      //Do something with the collection of events
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof UnsupportedSortError){
+        //Handle unsupported sort field error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
 ```
 
 

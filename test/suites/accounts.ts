@@ -349,6 +349,66 @@ describe("Accounts", function(){
     })
   })
 
+  describe('Lookup an account', function () {
+    it('Should return a valid lookup result', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.accounts.lookup({
+          identification: testAccount.username
+        }).then((result => {
+          console.log(result)
+          expect(result.identification).to.equal(testAccount.username)
+          expect(result.role).to.equal("")
+          expect(result.found).to.equal(true)
+
+          resolve(true)
+        })).catch(error=>{
+          reject(error)
+        })
+      })
+    })
+
+    it('Should support email lookup', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.accounts.lookup({
+          identification: testAccount.email
+        }).then((result => {
+          expect(result.identification).to.equal(testAccount.email)
+          expect(result.role).to.equal("")
+          expect(result.found).to.equal(true)
+
+          resolve(true)
+        })).catch(error=>{
+          reject(error)
+        })
+      })
+    })
+
+    it('Should support role lookup', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.accounts.lookup({
+          identification: testAccount.username,
+          role: "administrator"
+        }).then((result => {
+          expect(result.identification).to.equal(testAccount.username)
+          expect(result.role).to.equal("administrator")
+          expect(result.found).to.equal(false)
+
+          resolve(true)
+        })).catch(error=>{
+          reject(error)
+        })
+      })
+    })
+
+    it('Should throw a BadDataError if required fields are missing', function () {
+      return expect(ticketing.accounts.lookup({
+        identification: ""
+      }))
+      .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: identification.")
+      .and.be.an.instanceOf(BadDataError)
+    })
+  })
+
   describe('Delete an account', function () {
     it('Should delete the account from the system', function () {
       return expect(testAccount.delete()).to.eventually.be.true

@@ -2,7 +2,7 @@
 import './venues'
 
 import { TickeTing, Host, BadDataError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
-import { HostModel } from  '../../src/model'
+import { HostModel, EventModel, CategoryModel, VenueModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
 import { expect, ticketing } from '../setup'
 
@@ -11,12 +11,46 @@ let testHost = null
 
 describe("Hosts", function(){
 
+  //Set hook timeout
+  this.timeout(10000)
+
   before(async function(){
-    //An event to test duplication
+    //A host to test duplication
     this.secondHost = await ticketing.hosts.create({
-      name: "Second Host "+Math.floor(Math.random() * 999999),
+      name: "Host "+Math.floor(Math.random() * 999999),
       contact: "Second Contact",
       email: "test@second.com"
+    })
+
+    //Add an event to test hosted events collection
+    this.category = await ticketing.categories.create({
+      name: "Event Category "+Math.floor(Math.random() * 999999),
+      subcategories: ["Event Subcategory"]
+    })
+
+    this.region = await ticketing.regions.create({
+      "name": "Region "+Math.floor(Math.random() * 999999),
+      "country": "Antigua and Barbuda"
+    })
+
+    this.venue = await ticketing.venues.create({
+      name: "Venue "+Math.floor(Math.random() * 999999),
+      region: this.region,
+      longitude: -70.99214,
+      latitude: 43.75518,
+      address: "Miami Beach, Miami, Florida"
+    })
+
+    //An event to test duplication
+    this.hostedEvent = await ticketing.events.create({
+      host: this.secondHost,
+      title: "Hosted Event "+Math.floor(Math.random() * 999999),
+      description: "Event Description",
+      type: "Standard",
+      public: true,
+      category: this.category,
+      subcategory: "Event Subcategory",
+      venue: this.venue
     })
 
     //Initialise test data for suite
@@ -37,6 +71,10 @@ describe("Hosts", function(){
   })
 
   after(async function(){
+    await this.hostedEvent.delete()
+    await this.venue.delete()
+    await this.region.delete()
+    await this.category.delete()
     await this.secondHost.delete()
   })
 
@@ -166,6 +204,41 @@ describe("Hosts", function(){
       return expect(testHost.save())
         .to.eventually.be.rejectedWith("The following arguments conflict with those of another host: name.")
         .and.be.an.instanceOf(ResourceExistsError)
+    })
+  })
+
+  describe('List hosted events', function () {
+    it('Should return a collection of Event resources', function () {
+      return expect(this.secondHost.events).eventually.to.all.be.instanceof(EventModel)
+    })
+
+    it('Should contain a single hosted event', function () {
+      return new Promise((resolve, reject) => {
+        this.secondHost.events.then(events => {
+          expect(events.length).to.equal(1)
+
+          expect(events[0]).to.be.an.instanceof(EventModel)
+          expect(events[0].description).to.equal(this.hostedEvent.description)
+          expect(events[0].type).to.equal(this.hostedEvent.type)
+          expect(events[0].public).to.equal(this.hostedEvent.public)
+          expect(events[0].category).to.be.an.instanceOf(CategoryModel).
+            and.to.have.property("uri", this.hostedEvent.category.uri)
+          expect(events[0].subcategory).to.equal(this.hostedEvent.subcategory)
+          expect(events[0].start).to.equal(this.hostedEvent.start)
+          expect(events[0].venue).to.be.an.instanceof(VenueModel)
+            .and.to.have.property("uri", this.hostedEvent.venue.uri)
+          expect(events[0].disclaimer).to.equal(this.hostedEvent.disclaimer)
+          expect(events[0].banner).to.equal(`${ticketing.mediaURL}/banner/${events[0].id}`)
+          expect(events[0].thumbnail).to.equal(`${ticketing.mediaURL}/thumbnail/${events[0].id}`)
+          expect(events[0].status).to.equal("Draft")
+          expect(events[0].published).to.be.a.string
+          expect(events[0].popularity).to.equal(0)
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
     })
   })
 
