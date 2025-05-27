@@ -916,7 +916,7 @@ add-on services through TickeTing
   //Retrieve a specific host using its ID
   let host = await ticketing.hosts.find(17327135633743)
 
-  host.list()
+  host.events
     // Supported filters with examples
     .filter({
       region: 19290238432215,

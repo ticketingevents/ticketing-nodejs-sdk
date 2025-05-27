@@ -1,4 +1,6 @@
 import { Base } from './Base'
+import { Collection } from '../util'
+import { Event } from './Event'
 
 export interface Host extends Base{
   name: string
@@ -13,4 +15,6 @@ export interface Host extends Base{
   city: string
   state: string
   businessNo: string
+
+  events: Collection<Event>
 }
