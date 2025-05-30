@@ -14,7 +14,7 @@ export class PasswordResetModel extends BaseModel implements PasswordReset{
     this.status = reset.status
   }
 
-  confirm(details: {otp: string, password: string}): Promise<boolean>{
+  confirm(details: {code: string, password: string}): Promise<boolean>{
   	return new Promise((resolve, reject) => {
 	  this._apiAdapter.patch(this.uri, details).then(response => {
       if(response.status == 200){
