@@ -197,7 +197,7 @@ describe("Events", function(){
       })
     })
 
-    //Publication date sort is not working
+    //TODO: Sorting by publication date is broken and needs fixing
     /*
     it('Should return events sorted by publication date in descending order', function () {
       return new Promise((resolve, reject) => {
@@ -332,7 +332,7 @@ describe("Events", function(){
       })
     })
 
-    //Publication date sort is not working
+    //TODO: Sorting by publication date is broken and needs fixing
     /*
     it('Should return events sorted by publication date in descending order', function () {
       return new Promise((resolve, reject) => {
