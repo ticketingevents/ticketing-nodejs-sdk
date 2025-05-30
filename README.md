@@ -116,7 +116,7 @@ export class TickeTingService extends TickeTing{
   * [Fetch account preferences](#fetch-account-preferences)
   * [Update account preferences](#update-account-preferences)
   * [Retrieve managed hosts](#retrieve-managed-hosts)
-  * [Reset password](#reset-password)
+  * [Reset account password](#reset-account-password)
   * [Lookup an account](#lookup-an-account)
 - [Hosts](#hosts)
   * [List event hosts](#list-event-hosts)
