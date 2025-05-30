@@ -4,7 +4,7 @@ import './session'
 import { TickeTing, Region, BadDataError,  ResourceExistsError, ResourceNotFoundError, PermissionError } from '../../src'
 import { AccountModel, AccountPreferencesModel, RegionModel, HostModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
-import { expect, ticketing, api } from '../setup'
+import { expect, ticketing, api, public_ticketing } from '../setup'
 
 // Global account object
 let testAccount = null
@@ -349,13 +349,69 @@ describe("Accounts", function(){
     })
   })
 
+  describe('Reset account password', function () {
+    it('Should return a valid password reset object', function () {
+      return new Promise((resolve, reject) => {
+        public_ticketing.accounts.reset(testAccount.email).then((reset => {
+          expect(reset.email).to.equal(testAccount.email)
+          expect(reset.status).to.equal("Pending")
+
+          resolve(true)
+        })).catch(error=>{
+          reject(error)
+        })
+      })
+    })
+
+    it('Should throw a BadDataError if email address is missing', function () {
+      return expect(public_ticketing.accounts.reset(""))
+      .to.eventually.be.rejectedWith("You must provide an email address to which to send the reset code.")
+      .and.be.an.instanceOf(BadDataError)
+    })
+
+    it('Should throw a ResourceNotFoundError if email address is not registered', function () {
+      return expect(public_ticketing.accounts.reset("non-existant@unregistered.com"))
+      .to.eventually.be.rejectedWith("The requested account could not be located")
+      .and.be.an.instanceOf(ResourceNotFoundError)
+    })
+
+    it('Should throw a BadDataError when the OTP code is incorrect', function () {
+      return new Promise((resolve, reject) => {
+        public_ticketing.accounts.reset(testAccount.email).then(reset => {
+          resolve(expect(reset.confirm({"code": "123456", "password": "new_password"}))
+          .to.eventually.be.rejectedWith("The provided password reset code is incorrect.")
+          .and.be.an.instanceOf(BadDataError))
+        })
+      })
+    })
+
+    it('Should throw a BadDataError when required values are omitted', function () {
+      return new Promise((resolve, reject) => {
+        public_ticketing.accounts.reset(testAccount.email).then(reset => {
+          resolve(expect(reset.confirm({"code": "", "password": ""}))
+          .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: code, password.")
+          .and.be.an.instanceOf(BadDataError))
+        })
+      })
+    })
+
+    it('Should throw a BadDataError when required values are invalid', function () {
+      return new Promise((resolve, reject) => {
+        public_ticketing.accounts.reset(testAccount.email).then(reset => {
+          resolve(expect(reset.confirm({"code": "123", "password": "short"}))
+          .to.eventually.be.rejectedWith("The following arguments have invalid values: code, password.")
+          .and.be.an.instanceOf(BadDataError))
+        })
+      })
+    })
+  })
+
   describe('Lookup an account', function () {
     it('Should return a valid lookup result', function () {
       return new Promise((resolve, reject) => {
         ticketing.accounts.lookup({
           identification: testAccount.username
         }).then((result => {
-          console.log(result)
           expect(result.identification).to.equal(testAccount.username)
           expect(result.role).to.equal("")
           expect(result.found).to.equal(true)

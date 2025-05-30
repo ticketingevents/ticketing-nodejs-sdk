@@ -77,6 +77,14 @@ export class APIAdapter{
     return this.__request("put", url, {}, headers, data)
   }
 
+  patch(
+    url: string,
+    data: {[key: string]: any} = {},
+    headers: {[key: string]: string} = {}
+  ): Promise<AxiosResponse>{
+    return this.__request("patch", url, {}, headers, data)
+  }
+
   delete(
     url: string,
     params: {[key: string]: string|number} = {},

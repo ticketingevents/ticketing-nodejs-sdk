@@ -116,6 +116,7 @@ export class TickeTingService extends TickeTing{
   * [Fetch account preferences](#fetch-account-preferences)
   * [Update account preferences](#update-account-preferences)
   * [Retrieve managed hosts](#retrieve-managed-hosts)
+  * [Reset password](#reset-password)
   * [Lookup an account](#lookup-an-account)
 - [Hosts](#hosts)
   * [List event hosts](#list-event-hosts)
@@ -746,6 +747,41 @@ preferences.
         console.log(`${typeof error} (${error.code}): ${error.message}`)
       }
     })
+```
+
+### Reset account password
+
+[API Reference](https://docs.ticketingevents.com/openapi/password-reset)
+
+```javascript
+  ticketing.accounts.reset("billy.butcher@fbsa.gov")
+  .then(reset => {
+    //Reset the password using the OTP code sent to the email address
+    reset.confirm({
+      "code": "123456",
+      "password": "mYn3Wp4$$word!"
+    }).then(success => {
+      //Do something with success status
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log(error.message) //Missing or invalid OTP or password
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log(error.message) //Missing or invalid email address
+    }else if(error instanceof ResourceNotFoundError){
+      console.log("The email address provided is not registered with TickeTing.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
 ```
 
 ### Lookup an account
