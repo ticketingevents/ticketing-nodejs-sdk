@@ -32,10 +32,22 @@ export class EventService extends BaseService<EventData, Event>{
         reject(new BadDataError(400, "Please provide a valid venue for the event"))
       }
 
-      const payload: EventData = JSON.parse(JSON.stringify(data))
-      payload.host = (data.host as HostModel).id
-      payload.category = (data.category as CategoryModel).uri
-      payload.venue = (data.venue as VenueModel).uri
+      const payload: EventData = {
+        host: (data.host as HostModel).id,
+        title: data.title,
+        description: data.description,
+        type: data.type,
+        public: data.public,
+        category: (data.category as CategoryModel).uri,
+        subcategory: data.subcategory,
+        venue: (data.venue as VenueModel).uri,
+        start: data.start,
+        end: data.end,
+        disclaimer: data.disclaimer,
+        tags: data.tags,
+        banner: data.banner,
+        thumbnail: data.thumbnail
+      }
 
       super.create(payload).then(event => {
         resolve(event)
