@@ -133,6 +133,9 @@ export class TickeTingService extends TickeTing{
   * [Update an event](#update-an-event)
   * [Delete an event](#delete-an-event)
   * [Submit an event for review](#submit-an-event-for-review)
+- [Reporting](#reporting)
+  * [View host statistics](#view-host-statistics)
+  * [View event statistics](#view-event-statistics)
 - [Admissions](#admissions)
   * [Admissions tokens](#admissions-tokens)
     * [List admissions tokens](#list-admissions-tokens)
@@ -1222,6 +1225,58 @@ Operations for working with events in the TickeTing system.
     }
   })
 ```
+
+## Reporting
+
+The TickeTing SDK provides a set of functionality that let you report on hosts, events,
+users, advertisements and more. These features are documented below.
+
+---
+
+### View host statistics
+
+[API Reference](https://docs.ticketingevents.com/openapi/event-reporting/view_host_statistics)
+
+```javascript
+  //Retrieve a specific event using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Access the host's statistics resource
+  host.statistics().then(statistics => {
+    console.log(statistics) //See documentation for list of available statisitics
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof ResourceNotFoundError){
+      console.log("There is no host with the given ID")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### View event statistics
+
+[API Reference](https://docs.ticketingevents.com/openapi/event-reporting/view_event_statistics)
+
+```javascript
+  //Retrieve a specific event using its ID
+  let event = await ticketing.events.find(16993717817996)
+
+  //Access the event's statistics resource
+  event.statistics().then(statistics => {
+    console.log(statistics) //See documentation for list of available statisitics
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof ResourceNotFoundError){
+      console.log("There is no event with the given ID")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
 ## Admissions
 
 ---
