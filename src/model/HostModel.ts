@@ -6,6 +6,7 @@ import { HostData } from '../interface/data/HostData'
 import { Event } from '../interface/Event'
 import { EventModel } from './EventModel'
 import { EventData } from '../interface/data/EventData'
+import { HostStatisticsModel } from './reporting/HostStatisticsModel'
 
 class HostedEventService extends BaseService<EventData, Event>{
   constructor(apiAdapter: APIAdapter, host: Host){
@@ -53,6 +54,16 @@ export class HostModel extends BaseModel implements Host{
 
   get events(): Collection<Event>{
     return this.__hostedEventService.list()
+  }
+
+  public statistics(): Promise<HostStatisticsModel>{
+    return new Promise((resolve, reject) => {
+      this._apiAdapter.get(`${this._self}/statistics`).then(response => {
+        resolve(new HostStatisticsModel(response.data, this._apiAdapter))
+      }).catch(error => {
+        reject(error)
+      })
+    })
   }
 
   serialise(): HostData{

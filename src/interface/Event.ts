@@ -4,6 +4,7 @@ import { Category } from './Category'
 import { Section } from './Section'
 import { Token } from './Token'
 import { Venue } from './Venue'
+import { EventStatistics } from './reporting/EventStatistics'
 import { SectionModel, TokenModel } from '../model'
 
 export interface Event extends Base{
@@ -26,6 +27,7 @@ export interface Event extends Base{
   sections: Array<Section>
   tokens: Collection<Token>
 
+  statistics(): Promise<EventStatistics>
   submit(): Promise<boolean>
   issue_token(sections: Array<SectionModel>): Promise<TokenModel>
 }

@@ -27,3 +27,7 @@ export { Token } from './Token'
 export { TokenData } from './data/TokenData'
 export { Venue } from './Venue'
 export { VenueData } from './data/VenueData'
+
+//Reporting
+export { EventStatistics } from './reporting/EventStatistics'
+export { HostStatistics } from './reporting/HostStatistics'

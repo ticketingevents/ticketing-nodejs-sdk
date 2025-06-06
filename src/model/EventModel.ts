@@ -10,6 +10,7 @@ import { SectionModel } from './SectionModel'
 import { Token } from '../interface/Token'
 import { TokenModel } from './TokenModel'
 import { VenueModel } from './VenueModel'
+import { EventStatisticsModel } from './reporting/EventStatisticsModel'
 
 export class EventModel extends BaseModel implements Event{
   public published: string
@@ -123,6 +124,16 @@ export class EventModel extends BaseModel implements Event{
           error = new PermissionError(error.code, error.message)
         }
 
+        reject(error)
+      })
+    })
+  }
+
+  public statistics(): Promise<EventStatisticsModel>{
+    return new Promise((resolve, reject) => {
+      this._apiAdapter.get(`${this._self}/statistics`).then(response => {
+        resolve(new EventStatisticsModel(response.data, this._apiAdapter))
+      }).catch(error => {
         reject(error)
       })
     })

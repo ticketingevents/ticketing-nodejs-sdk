@@ -1,6 +1,7 @@
 import { Base } from './Base'
 import { Collection } from '../util'
 import { Event } from './Event'
+import { HostStatistics } from './reporting/HostStatistics'
 
 export interface Host extends Base{
   name: string
@@ -17,4 +18,5 @@ export interface Host extends Base{
   businessNo: string
 
   events: Collection<Event>
+  statistics(): Promise<HostStatistics>
 }

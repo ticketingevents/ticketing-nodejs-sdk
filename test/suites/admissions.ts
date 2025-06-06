@@ -1,5 +1,5 @@
 //Control execution order
-import './events'
+import './reporting'
 
 import { 
 	TickeTing, BadDataError, InvalidStateError, ResourceImmutableError,

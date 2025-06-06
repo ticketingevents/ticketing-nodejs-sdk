@@ -1073,15 +1073,17 @@ Operations for working with events in the TickeTing system.
 [API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/register_event)
 
 ```javascript
+  let host = ticketing.hosts.find(16951985851389)
+  let category = await ticketing.categories.find(16878141745207)
   let venue = await ticketing.venues.find(16878146473429)
 
   let eventData = {
-    "host": "16951985851389", //Required
+    "host": host, //Required
     "title": "Dawn of the Seven Premier", //Required
     "description": "World Premier of the long ....", //Required
     "type": "Standard", //Required
     "public": true, //Required
-    "category": "/categories/16878141745207", //Required
+    "category": category, //Required
     "subcategory": "Premier", //Required
     "venue": venue, //Required
     "start": "2024-06-07T20:00",

@@ -1,8 +1,11 @@
 export { TickeTing } from './ticketing'
+
 export {
   Account, AccountPreferences, Admission, Category, Collection, Event, Host,
-  Lookup, PasswordReset, Region, Section, Session, Ticket, Token, Venue
+  Lookup, PasswordReset, Region, Section, Session, Ticket, Token, Venue,
+  HostStatistics, EventStatistics //Reporting
 } from './interface'
+
 export {
   BadDataError, InvalidStateError, PageAccessError, PermissionError,
   ResourceExistsError, ResourceImmutableError, ResourceIndelibleError,

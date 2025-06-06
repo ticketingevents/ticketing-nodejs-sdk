@@ -12,3 +12,7 @@ export { SessionModel } from './SessionModel'
 export { TicketModel } from './TicketModel'
 export { TokenModel } from './TokenModel'
 export { VenueModel } from './VenueModel'
+
+//Reporting
+export { EventStatisticsModel } from './reporting/EventStatisticsModel'
+export { HostStatisticsModel } from './reporting/HostStatisticsModel'
