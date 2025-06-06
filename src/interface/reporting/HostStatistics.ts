@@ -1,4 +1,4 @@
-import { Base } from './Base'
+import { Base } from '../Base'
 
 export interface HostStatistics extends Base{
   events: number
