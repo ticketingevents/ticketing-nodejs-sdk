@@ -1,5 +1,6 @@
 export { AccountModel } from './AccountModel'
 export { AccountPreferencesModel } from './AccountPreferencesModel'
+export { AccountVerificationModel } from './AccountVerificationModel'
 export { AdmissionModel } from './AdmissionModel'
 export { AdmissionSessionModel } from './AdmissionSessionModel'
 export { CategoryModel } from './CategoryModel'

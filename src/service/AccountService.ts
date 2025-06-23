@@ -2,8 +2,8 @@ import { BaseService } from './BaseService'
 
 import { BadDataError, PermissionError, ResourceNotFoundError } from '../errors'
 import { APIAdapter } from '../util'
-import { AccountData, Account, LookupData, Lookup, PasswordReset } from '../interface'
-import { AccountModel, PasswordResetModel } from '../model'
+import { AccountData, Account, AccountVerification, LookupData, Lookup, PasswordReset } from '../interface'
+import { AccountModel, AccountVerificationModel, PasswordResetModel } from '../model'
 
 export class AccountService extends BaseService<AccountData, Account>{
   private __apiAdapter: APIAdapter
@@ -23,6 +23,22 @@ export class AccountService extends BaseService<AccountData, Account>{
       }).catch(error => {
         if(error.code == 403){
           error = new PermissionError(error.code, "You are not authorised to access or modify this account.")
+        }
+
+        reject(error)
+      })
+    })
+  }
+
+  verify(email: string): Promise<AccountVerification>{
+    return new Promise<AccountVerification>((resolve, reject) => {
+      this.__apiAdapter.post("/verifications", {email: email}).then(response => {
+        resolve(new AccountVerificationModel(response.data, this.__apiAdapter))
+      }).catch(error => {
+        if(error.code == 400){
+          error = new BadDataError(error.code, error.message)
+        }else if(error.code == 404){
+          error = new ResourceNotFoundError(error.code, error.message)
         }
 
         reject(error)

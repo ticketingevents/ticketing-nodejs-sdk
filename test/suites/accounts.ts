@@ -267,6 +267,63 @@ describe("Accounts", function(){
     })
   })
 
+  describe('Verify an account', function () {
+    it('Should return a valid account verification object', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.accounts.verify(testAccount.email).then((verification => {
+          expect(verification.email).to.equal(testAccount.email)
+          expect(verification.status).to.equal("Pending")
+
+          resolve(true)
+        })).catch(error=>{
+          reject(error)
+        })
+      })
+    })
+
+    it('Should throw a BadDataError if email address is missing', function () {
+      return expect(ticketing.accounts.verify(""))
+      .to.eventually.be.rejectedWith("You must provide an email address to which to send the verification code.")
+      .and.be.an.instanceOf(BadDataError)
+    })
+
+    it('Should throw a ResourceNotFoundError if email address is not registered', function () {
+      return expect(ticketing.accounts.verify("non-existant@unregistered.com"))
+      .to.eventually.be.rejectedWith("The requested account could not be located")
+      .and.be.an.instanceOf(ResourceNotFoundError)
+    })
+
+    it('Should throw a BadDataError when the OTP code is incorrect', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.accounts.verify(testAccount.email).then(verification => {
+          resolve(expect(verification.confirm({"code": "123456"}))
+          .to.eventually.be.rejectedWith("The provided account verification code is incorrect.")
+          .and.be.an.instanceOf(BadDataError))
+        })
+      })
+    })
+
+    it('Should throw a BadDataError when required values are omitted', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.accounts.verify(testAccount.email).then(verification => {
+          resolve(expect(verification.confirm({"code": ""}))
+          .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: code.")
+          .and.be.an.instanceOf(BadDataError))
+        })
+      })
+    })
+
+    it('Should throw a BadDataError when required values are invalid', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.accounts.verify(testAccount.email).then(verification => {
+          resolve(expect(verification.confirm({"code": "123"}))
+          .to.eventually.be.rejectedWith("The following arguments have invalid values: code.")
+          .and.be.an.instanceOf(BadDataError))
+        })
+      })
+    })
+  })
+
   describe('Fetch account preferences', function () {
     it('Should return the identified AccountPreferences resource', function () {
       return new Promise((resolve, reject) => {

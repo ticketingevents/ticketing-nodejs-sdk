@@ -113,6 +113,7 @@ export class TickeTingService extends TickeTing{
   * [Fetch an account](#fetch-an-account)
   * [Update an account](#update-an-account)
   * [Delete an account](#delete-an-account)
+  * [Verify an account](#verify-an-account)
   * [Fetch account preferences](#fetch-account-preferences)
   * [Update account preferences](#update-account-preferences)
   * [Retrieve managed hosts](#retrieve-managed-hosts)
@@ -665,6 +666,40 @@ preferences.
       console.log(error.message)
     }else if(error instanceof PermissionError){
       console.log("You are not authorised to access or modify this account.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Verify an account
+
+[API Reference](https://docs.ticketingevents.com/openapi/account-verification)
+
+```javascript
+  ticketing.accounts.verify("billy.butcher@fbsa.gov")
+  .then(verification => {
+    //Verify the account using the OTP code sent to the email address
+    verification.confirm({
+      "code": "123456"
+    }).then(success => {
+      //Do something with success status
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log(error.message) //Missing or invalid OTP
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log(error.message) //Missing or invalid email address
+    }else if(error instanceof ResourceNotFoundError){
+      console.log("The email address provided is not registered to a TickeTing user.")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
