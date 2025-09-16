@@ -9,29 +9,56 @@ jobs:
       - image: node:18
     steps:
       - checkout
+
+      - run:
+          name: Configure environment
+          command: |
+            if [ $(echo $CIRCLE_TAG | grep -oE '(rc|alpha)') == 'alpha' ]; then
+              echo 'export ENVIRONMENT=qa' >> "$BASH_ENV"
+              echo 'export BASE_URL=https://qa.ticketingevents.com/v3' >> "$BASH_ENV"
+              echo 'export MEDIA_URL=https://qa.ticketingevents.com/media' >> "$BASH_ENV"
+            elif [ $(echo $CIRCLE_TAG | grep -oE '(rc|alpha)') == 'rc' ]; then
+              echo 'export ENVIRONMENT=uat' >> "$BASH_ENV"
+              echo 'export BASE_URL=https://uat.ticketingevents.com/v3' >> "$BASH_ENV"
+              echo 'export MEDIA_URL=https://uat.ticketingevents.com/media' >> "$BASH_ENV"
+            else
+              echo 'export ENVIRONMENT=production' >> "$BASH_ENV"
+              echo 'export BASE_URL=https://api.ticketingevents.com/v3' >> "$BASH_ENV"
+              echo 'export MEDIA_URL=https://api.ticketingevents.com/media' >> "$BASH_ENV"
+            fi
+
       - run:
           name: Install build dependencies
           command: npm install
+
       - run:
           name: Lint SDK
           command: npm run lint
-      - when:
-          condition:
-            not:
-              equal: ["production", $CIRCLE_BRANCH]
-          steps:
-            - run:
-                name: Run unit tests
-                command: npm run test
+
+      - run:
+          name: Run unit tests
+          command: |
+            source "$BASH_ENV"
+            if [ $ENVIRONMENT != 'production' ]; then
+              npm run test
+            fi
+
       - run:
           name: Build distribution files
-          command: npm run build
+          command: |
+            source "$BASH_ENV"
+            npm run build
+
       - run:
           name: Authenticate to NPM
           command: npm set //registry.npmjs.org/:_authToken=$NPM_TOKEN
+
       - run:
           name: Publish package to NPM
-          command: npm publish --access=public --tag=$CIRCLE_BRANCH
+          command: |
+            source "$BASH_ENV"
+            npm publish --access=public --tag=$ENVIRONMENT
+
       - slack/notify:
           event: fail
           channel: C03UFNPMF09
