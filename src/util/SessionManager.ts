@@ -110,7 +110,7 @@ export class SessionManager{
       }else{
         this.__apiAdapter.get(`/tokens/${code}`).then(response => {
           //Setup admissions session adapter
-          const admissionsAdapter = new APIAdapter(response.data.key, this.__apiAdapter.sandbox)
+          const admissionsAdapter = new APIAdapter(response.data.key)
 
           //Load admission token event
           const eventService = new EventService(this.__apiAdapter)

@@ -23,11 +23,8 @@ export class TickeTing{
   public session: SessionManager;
   public venues: VenueService;
 
-  constructor(config: {apiKey: string, sandbox: boolean}){
-    this.__apiAdapter = new APIAdapter(
-      config.apiKey,
-      config.sandbox?config.sandbox:false
-    )
+  constructor(config: {apiKey: string}){
+    this.__apiAdapter = new APIAdapter(config.apiKey)
 
     this.session = new SessionManager(this.__apiAdapter)
     this.accounts = new AccountService(this.__apiAdapter)

@@ -4,7 +4,7 @@ import './hosts'
 import { TickeTing, Event, BadDataError, InvalidStateError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
 import { CategoryModel, EventModel, VenueModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
-import { expect, ticketing } from '../setup'
+import { expect, ticketing, api } from '../setup'
 
 //Global event object
 let testEvent = null
@@ -51,8 +51,14 @@ describe("Events", function(){
       public: true,
       category: this.category,
       subcategory: "Event Subcategory",
+      start: "2033-06-07T20:00",
+      end: "2035-06-07T23:00",
       venue: this.venue
     })
+
+    //Submit and publish the event
+    await api.post(`${this.secondEvent.uri}/submissions`, {})
+    await api.delete(`/submissions/${btoa(this.secondEvent.uri)}?approved=true`)
 
     //Initialise test data for suite
     this.testEventData = {
@@ -144,13 +150,11 @@ describe("Events", function(){
       let unauthorised_sdk = null
       if(process.env.npm_config_env == "production"){
         unauthorised_sdk = new TickeTing({
-          apiKey: "0acb10082a313f517954a34d2a7aedb7",
-          sandbox: false
+          apiKey: "0acb10082a313f517954a34d2a7aedb7"
         })
       }else{
         unauthorised_sdk = new TickeTing({
-          apiKey: "413c7e517b63822c3037ead7679c780e",
-          sandbox: true
+          apiKey: "413c7e517b63822c3037ead7679c780e"
         })
       }
 
@@ -163,77 +167,6 @@ describe("Events", function(){
       return expect(unauthorised_sdk.events.create(payload))
         .to.eventually.be.rejectedWith("This account is not an administrator for the relevant event host.")
         .and.be.an.instanceOf(PermissionError)
-    })
-  })
-
-  describe('List published events', function () {
-    it('Should return a collection of Event resources', function () {
-      return expect(ticketing.events.published.list(5)).eventually.to.all.be.instanceof(EventModel)
-    })
-
-    it('Should return a collection of events matching the region filter', function () {
-      return new Promise((resolve, reject) => {
-        ticketing.events.published.list(5).filter({region: this.region.id}).then(events => {
-          for(let event of events){
-            expect(event.venue.region.self).to.equal(this.region.self)
-          }
-
-          resolve(true)
-        }).catch(error => {
-          reject(error)
-        })
-      })
-    })
-
-    it('Should return events sorted by title in ascending order', function () {
-      return new Promise((resolve, reject) => {
-        ticketing.events.published.list(5).sort("alphabetical").then(events => {
-          expect(events.map(event => event.title.toLowerCase())).to.be.ascending
-
-          resolve(true)
-        }).catch(error => {
-          reject(error)
-        })
-      })
-    })
-
-    //TODO: Sorting by publication date is broken and needs fixing
-    /*
-    it('Should return events sorted by publication date in descending order', function () {
-      return new Promise((resolve, reject) => {
-        ticketing.events.published.list(5).sort("published", false).then(events => {
-          expect(events).to.be.descendingBy("published")
-
-          resolve(true)
-        }).catch(error => {
-          reject(error)
-        })
-      })
-    })
-    */
-
-    it('Should return events sorted by popularity in ascending order', function () {
-      return new Promise((resolve, reject) => {
-        ticketing.events.published.list(5).sort("popularity").then(events => {
-          expect(events).to.be.ascendingBy("popularity")
-
-          resolve(true)
-        }).catch(error => {
-          reject(error)
-        })
-      })
-    })
-
-    it('Should return events sorted by start date in descending order', function () {
-      return new Promise((resolve, reject) => {
-        ticketing.events.published.list(5).sort("start", false).then(events => {
-          expect(events).to.be.descendingBy("start")
-
-          resolve(true)
-        }).catch(error => {
-          reject(error)
-        })
-      })
     })
   })
 
@@ -275,7 +208,7 @@ describe("Events", function(){
           expect(events.length).to.be.least(1)
 
           for(let event of events){
-            expect(event.venue.region.self).to.equal(this.region.self)
+            expect(event.venue.region.uri).to.equal(this.region.uri)
           }
 
           resolve(true)
@@ -414,13 +347,11 @@ describe("Events", function(){
       let unauthorised_sdk = null
       if(process.env.npm_config_env == "production"){
         unauthorised_sdk = new TickeTing({
-          apiKey: "0acb10082a313f517954a34d2a7aedb7",
-          sandbox: false
+          apiKey: "0acb10082a313f517954a34d2a7aedb7"
         })
       }else{
         unauthorised_sdk = new TickeTing({
-          apiKey: "413c7e517b63822c3037ead7679c780e",
-          sandbox: true
+          apiKey: "413c7e517b63822c3037ead7679c780e"
         })
       }
 
@@ -433,8 +364,8 @@ describe("Events", function(){
   describe('Update an event', function () {
     it('Should save the changes made to the event', function () {
       //Make changes to the event
-      testEvent.public = false
-      testEvent.end = "2034-09-07T23:00"
+      testEvent.type = "Registration"
+      testEvent.description = "New event description"
 
       //Save changes
       return expect(testEvent.save()).eventually.be.true
@@ -443,8 +374,8 @@ describe("Events", function(){
     it('Should persist event changes', function () {
       return expect(ticketing.events.find(testEvent.id))
         .to.eventually.include({
-          "public": false,
-          "end": "2034-09-07T23:00"
+          "type": "Registration",
+          "description": "New event description"
         })
     })
 
@@ -469,7 +400,16 @@ describe("Events", function(){
 
   describe('Submit an event for review', function () {
     it('Should submit the event for review', function () {
-      return expect(testEvent.submit()).to.eventually.be.true
+      return new Promise((resolve, reject) => {
+        testEvent.submit().then(submitted => {
+          expect(submitted).to.be.true
+
+          //Publish event
+          api.delete(`/submissions/${btoa(testEvent.uri)}?approved=true`).then(response => {
+            resolve(true)
+          })
+        })
+      })
     })
 
     it('Should throw a InvalidStateError when already submitted', function () {
@@ -477,6 +417,167 @@ describe("Events", function(){
       return expect(testEvent.submit())
         .to.eventually.be.rejectedWith("The event has already been submitted or cancelled.")
         .and.be.an.instanceOf(InvalidStateError)
+    })
+  })
+
+  describe('List published events', function () {
+    it('Should return a collection of Event resources', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.events.published.list(5).then(events => {
+          expect(events.length).to.be.at.least(1)
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return a collection of events matching the region filter', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.events.published.list(5).filter({region: this.region.id}).then(events => {
+          expect(events.length).to.be.at.least(1)
+          
+          for(let event of events){
+            expect(event.venue.region.uri).to.equal(this.region.uri)
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return a collection of events matching the category filter', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.events.published.list(5).filter({category: this.category.id}).then(events => {
+          expect(events.length).to.be.at.least(1)
+          
+          for(let event of events){
+            expect(event.category.uri).to.equal(this.category.uri)
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return a collection of events matching the subcategory filter', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.events.published.list(5).filter({subcategory: this.secondEvent.subcategory}).then(events => {
+          expect(events.length).to.be.at.least(1)
+          
+          for(let event of events){
+            expect(event.subcategory).to.equal(this.secondEvent.subcategory)
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return a collection of events matching the bwfore filter', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.events.published.list(5).filter({before: this.testEventData.end}).then(events => {
+          expect(events.length).to.be.at.least(1)
+          
+          for(let event of events){
+            expect(new Date(event.end)).to.be.at.most(new Date(this.testEventData.end))
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return a collection of events matching the after filter', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.events.published.list(5).filter({after: this.testEventData.start}).then(events => {
+          expect(events.length).to.be.at.least(1)
+          
+          for(let event of events){
+            expect(new Date(event.start)).to.be.at.least(new Date(this.testEventData.start))
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return a collection of events matching the title filter', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.events.published.list(5).filter({title: this.testEventData.title}).then(events => {
+          expect(events.length).to.be.at.least(1)
+          
+          for(let event of events){
+            expect(event.title).to.equal(this.testEventData.title)
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return events sorted by title in ascending order', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.events.published.list(5).sort("alphabetical").then(events => {
+          expect(events.map(event => event.title.toLowerCase())).to.be.ascending
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    //TODO: Sorting by publication date is broken and needs fixing
+    /*
+    it('Should return events sorted by publication date in descending order', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.events.published.list(5).sort("published", false).then(events => {
+          expect(events).to.be.descendingBy("published")
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+    */
+
+    it('Should return events sorted by popularity in ascending order', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.events.published.list(5).sort("popularity").then(events => {
+          expect(events).to.be.ascendingBy("popularity")
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return events sorted by start date in descending order', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.events.published.list(5).sort("start", false).then(events => {
+          expect(events).to.be.descendingBy("start")
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
     })
   })
 

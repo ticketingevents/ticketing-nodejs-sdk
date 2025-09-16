@@ -1,4 +1,5 @@
 import axios, { AxiosResponse } from 'axios'
+import { environment } from '../environment/environment'
 import { constants } from './constants'
 import { TickeTingError, UnauthorisedError } from '../errors'
 
@@ -6,14 +7,16 @@ export class APIAdapter{
   private __originalKey;
   private __currentKey;
   private __requester;
-  private __sandbox;
+  private __baseURL;
+  private __mediaURL;
 
-  constructor(apiKey: string, sandbox: boolean){
+  constructor(apiKey: string){
     this.__originalKey = apiKey
+    this.__baseURL = environment.baseURL
+    this.__mediaURL = environment.mediaURL
+
     this.__requester = axios.create({
-      baseURL: sandbox?
-          "https://qa.ticketingevents.com/v3/":
-          "https://api.ticketingevents.com/v3/",
+      baseURL: this.__baseURL,
       headers:{
         "X-Client-Version": constants.CLIENT_VERSION
       },
@@ -21,7 +24,6 @@ export class APIAdapter{
     })
 
     this.key = apiKey
-    this.__sandbox = sandbox
   }
 
   get key(): string{
@@ -33,20 +35,12 @@ export class APIAdapter{
     this.__requester.defaults.headers.common['X-API-Key'] = this.__currentKey;
   }
 
-  get sandbox(): boolean{
-    return this.__sandbox
-  }
-
   get base(): string{
-    return this.__sandbox?
-      "https://qa.ticketingevents.com/v3":
-      "https://api.ticketingevents.com/v3"
+    return this.__baseURL
   }
 
   get media(): string{
-    return this.__sandbox?
-      "https://qa.ticketingevents.com/media":
-      "https://api.ticketingevents.com/media"
+    return this.__mediaURL
   }
 
   reset(){

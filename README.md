@@ -23,7 +23,7 @@
 The TickeTing Javscript SDK is available as a public package via npm.
 
 ```bash
-npm install @ticketingevents/ticketing-sdk
+npm install @ticketing/ticketing-nodejs-sdk
 ```
 
 # Quick Start
@@ -53,22 +53,20 @@ ticketing.events.published.list()
     console.log(error.message)
   })
 ```
-# Sandbox Mode
+# UAT Environment
 
-If you need to test your application before releasing to production, the TickeTing SDK
-supports a sandbox mode. When in sandbox mode, the SDK will interface with the QA API, and
-any changes you make won't affect the live TickeTing Platform. Note that you will
+If you need to test your application before releasing to production, there is a published
+version of the TickeTing SDK built against its UAT environment. This version of the SDK
+does not interface with the Production API, and any changes you make won't affect the live
+TickeTing Platform. Note that you will
 <a target='_blank' href='mailto:dev@ticketingevents.com' subject='RE: API Key Request'>
   need to request
 </a>
-a seperate <code>SANDBOX_API_KEY</code> to work in sandbox mode. To enter sandbox mode, instantiate the
-TickeTing class with the <code>sandbox</code> argument set to <code>true</code>.
+a seperate <code>UAT_API_KEY</code> to work with this version of the SDK. The UAT version
+of the SDK can be installed as follows:
 
-```javascript
-const ticketing = new TickeTing({
-  apiKey: "SANDBOX_API_KEY",
-  sandbox: true
-});
+```bash
+npm install @ticketing/ticketing-nodejs-sdk@uat
 ```
 
 # Integrating with Angular
@@ -1028,13 +1026,17 @@ Operations for working with events in the TickeTing system.
 
 ### List published events
 
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/list_published_events)
+[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/list_published_events)
 
 ```javascript
   ticketing.events.published.list()
     // Supported filters with examples
     .filter({
       region: 19290238432215,
+      category: 16878141745207,
+      subcategory: "Premier",
+      after: "2025-01-01T00:00",
+      before: "2025-12-31T23:59",
       title: "Dawn of the Seven Premier"
     })
     // Supported sort fields

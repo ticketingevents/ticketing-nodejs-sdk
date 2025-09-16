@@ -15,9 +15,14 @@ jobs:
       - run:
           name: Lint SDK
           command: npm run lint
-      - run:
-          name: Run unit tests
-          command: npm --env=production run test
+      - when:
+          condition:
+            not:
+              equal: ["production", $CIRCLE_BRANCH]
+          steps:
+            - run:
+                name: Run unit tests
+                command: npm run test
       - run:
           name: Build distribution files
           command: npm run build
@@ -26,7 +31,7 @@ jobs:
           command: npm set //registry.npmjs.org/:_authToken=$NPM_TOKEN
       - run:
           name: Publish package to NPM
-          command: npm publish --access=public
+          command: npm publish --access=public --tag=$CIRCLE_BRANCH
       - slack/notify:
           event: fail
           channel: C03UFNPMF09

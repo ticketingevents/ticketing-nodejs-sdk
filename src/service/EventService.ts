@@ -79,7 +79,7 @@ export class EventService extends BaseService<EventData, Event>{
 class PublishedEventService extends BaseService<EventData, Event>{
   constructor(apiAdapter: APIAdapter){
     super(apiAdapter, "/published-events", EventModel,
-      ["region", "title"],
+      ["region", "category", "subcategory", "before", "after", "title"],
       ["alphabetical","published","popularity","start"]
     )
   }

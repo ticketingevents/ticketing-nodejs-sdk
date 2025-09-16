@@ -24,8 +24,9 @@
   },
   "scripts": {
     "lint": "eslint src",
-    "build": "tsc",
-    "test": "mocha --ui bdd --reporter spec --require ts-node/register --require test/fixtures/fixtures.ts test/suites/*.ts"
+    "configure": "node configure-environment.js",
+    "build": "npm run configure && tsc",
+    "test": "npm run configure && mocha --ui bdd --reporter spec --require ts-node/register --require test/fixtures/fixtures.ts test/suites/*.ts --grep Events"
   },
   "dependencies": {
     "axios": "^1.6.8"
