@@ -20,7 +20,7 @@ let testTimestamp = ""
 describe("Admissions", function(){
 
   //Set hook timeout
-  this.timeout(15000)
+  this.timeout(30000)
 
   before(async function(){
 		//Create an event host

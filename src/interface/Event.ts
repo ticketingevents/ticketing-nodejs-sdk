@@ -4,6 +4,7 @@ import { Category } from './Category'
 import { Section } from './Section'
 import { Token } from './Token'
 import { Venue } from './Venue'
+import { Host } from './Host'
 import { EventStatistics } from './reporting/EventStatistics'
 import { SectionModel, TokenModel } from '../model'
 
@@ -17,6 +18,7 @@ export interface Event extends Base{
   start: string
   end: string
   venue: Venue
+  host: Host
   disclaimer: string
   tags: Array<string>
   banner: string

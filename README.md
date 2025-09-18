@@ -1072,7 +1072,7 @@ Operations for working with events in the TickeTing system.
 
 ### List all events (Admin Only)
 
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/list_events)
+[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/list_events)
 
 ```javascript
   ticketing.events.list()
@@ -1110,7 +1110,7 @@ Operations for working with events in the TickeTing system.
 
 ### Register an event
 
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/register_event)
+[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/register_event)
 
 ```javascript
   let host = ticketing.hosts.find(16951985851389)
@@ -1156,7 +1156,7 @@ Operations for working with events in the TickeTing system.
 
 ### Fetch an event
 
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/retrieve_event)
+[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/retrieve_event)
 
 ```javascript
   //Retrieve a specific event using its ID
@@ -1178,7 +1178,7 @@ Operations for working with events in the TickeTing system.
 
 ### Update an event
 
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/update_event)
+[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/update_event)
 
 ```javascript
   //Retrieve a specific event using its ID
@@ -1211,7 +1211,7 @@ Operations for working with events in the TickeTing system.
 
 ### Delete an event
 
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/delete_event)
+[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/delete_event)
 
 ```javascript
   //Retrieve a specific event using its ID
@@ -1238,7 +1238,7 @@ Operations for working with events in the TickeTing system.
 
 ### Submit an event for review
 
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/submit_event)
+[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/submit_event)
 
 ```javascript
   //Retrieve a specific event using its ID

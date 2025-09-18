@@ -1,16 +1,11 @@
 import { APIAdapter, Collection } from '../util'
 import { TokenService } from '../service'
 import { BadDataError, InvalidStateError, PermissionError } from '../errors'
+import { Event, EventData, Section, Token } from '../interface'
 import { BaseModel } from './BaseModel'
-import { CategoryModel } from './CategoryModel'
-import { Event } from '../interface/Event'
-import { EventData } from '../interface/data/EventData'
-import { Section } from '../interface/Section'
-import { SectionModel } from './SectionModel'
-import { Token } from '../interface/Token'
-import { TokenModel } from './TokenModel'
-import { VenueModel } from './VenueModel'
-import { EventStatisticsModel } from './reporting/EventStatisticsModel'
+import { 
+  CategoryModel, EventStatisticsModel, HostModel, SectionModel, TokenModel, VenueModel 
+} from '.'
 
 export class EventModel extends BaseModel implements Event{
   public published: string
@@ -24,6 +19,7 @@ export class EventModel extends BaseModel implements Event{
   public start: string
   public end: string
   public venue: VenueModel
+  public host: HostModel
   public disclaimer: string
   public tags: Array<string>
   public popularity: number
@@ -49,6 +45,7 @@ export class EventModel extends BaseModel implements Event{
     this.start = event.start
     this.end = event.end
     this.venue = new VenueModel(event.venue, adapter)
+    this.host = new HostModel(event.host, adapter)
     this.disclaimer = event.disclaimer
     this.tags = event.tags
     this.popularity = event.popularity

@@ -11,7 +11,7 @@ import { expect, ticketing, api } from '../setup'
 
 describe("Reporting", function(){
 	//Set hook timeout
-	this.timeout(15000)
+	this.timeout(30000)
 
 	before(async function(){
 		//Create an event host

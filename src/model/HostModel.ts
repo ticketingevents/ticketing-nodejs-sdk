@@ -1,21 +1,8 @@
 import { APIAdapter, Collection } from '../util'
-import { BaseService } from '../service/BaseService'
 import { BaseModel } from './BaseModel'
-import { Host } from '../interface/Host'
-import { HostData } from '../interface/data/HostData'
-import { Event } from '../interface/Event'
-import { EventModel } from './EventModel'
-import { EventData } from '../interface/data/EventData'
+import { Event, Host, HostData } from '../interface'
 import { HostStatisticsModel } from './reporting/HostStatisticsModel'
-
-class HostedEventService extends BaseService<EventData, Event>{
-  constructor(apiAdapter: APIAdapter, host: Host){
-    super(apiAdapter, `${host.uri}/events`, EventModel,
-      ["region", "host", "title", "status", "active", "public", "section"],
-      ["alphabetical","published","popularity","start"]
-    )
-  }
-}
+import { HostedEventService } from '../service/HostedEventService'
 
 export class HostModel extends BaseModel implements Host{
   public name: string

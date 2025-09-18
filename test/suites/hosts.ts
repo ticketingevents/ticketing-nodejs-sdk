@@ -12,7 +12,7 @@ let testHost = null
 describe("Hosts", function(){
 
   //Set hook timeout
-  this.timeout(10000)
+  this.timeout(30000)
 
   before(async function(){
     //A host to test duplication

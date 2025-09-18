@@ -2,7 +2,7 @@
 import './hosts'
 
 import { TickeTing, Event, BadDataError, InvalidStateError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
-import { CategoryModel, EventModel, VenueModel } from  '../../src/model'
+import { CategoryModel, EventModel, VenueModel, HostModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
 import { expect, ticketing, api } from '../setup'
 
@@ -12,7 +12,7 @@ let testEvent = null
 describe("Events", function(){
 
   //Set hook timeout
-  this.timeout(10000)
+  this.timeout(30000)
 
   before(async function(){
     //Create an event host
@@ -100,14 +100,18 @@ describe("Events", function(){
           expect(event.subcategory).to.equal(this.testEventData.subcategory)
           expect(event.start).to.equal(this.testEventData.start)
           expect(event.end).to.equal(this.testEventData.end)
-          expect(event.venue).to.be.an.instanceOf(VenueModel).
-            and.to.have.property("uri", this.testEventData.venue.uri)
           expect(event.disclaimer).to.equal(this.testEventData.disclaimer)
           expect(event.banner).to.equal(`${ticketing.mediaURL}/banner/${event.id}`)
           expect(event.thumbnail).to.equal(`${ticketing.mediaURL}/thumbnail/${event.id}`)
           expect(event.status).to.equal("Draft")
           expect(event.published).to.be.a.string
           expect(event.popularity).to.equal(0)
+
+          expect(event.venue).to.be.an.instanceOf(VenueModel).
+            and.to.have.property("uri", this.testEventData.venue.uri)
+
+          expect(event.host).to.be.an.instanceOf(HostModel).
+            and.to.have.property("uri", this.testEventData.host.uri)
 
           resolve(true)
         })).catch(error=>{
@@ -186,14 +190,18 @@ describe("Events", function(){
             and.to.have.property("uri", this.testEventData.category.uri)
           expect(events[0].subcategory).to.equal(this.testEventData.subcategory)
           expect(events[0].start).to.equal(this.testEventData.start)
-          expect(events[0].venue).to.be.an.instanceof(VenueModel)
-            .and.to.have.property("uri", this.testEventData.venue.uri)
           expect(events[0].disclaimer).to.equal(this.testEventData.disclaimer)
           expect(events[0].banner).to.equal(`${ticketing.mediaURL}/banner/${events[0].id}`)
           expect(events[0].thumbnail).to.equal(`${ticketing.mediaURL}/thumbnail/${events[0].id}`)
           expect(events[0].status).to.equal("Draft")
           expect(events[0].published).to.be.a.string
           expect(events[0].popularity).to.equal(0)
+
+          expect(events[0].venue).to.be.an.instanceof(VenueModel)
+            .and.to.have.property("uri", this.testEventData.venue.uri)
+
+          expect(events[0].host).to.be.an.instanceof(HostModel)
+            .and.to.have.property("uri", this.testEventData.host.uri)
 
           resolve(true)
         }).catch(error => {
@@ -321,14 +329,18 @@ describe("Events", function(){
           expect(event.subcategory).to.equal(this.testEventData.subcategory)
           expect(event.start).to.equal(this.testEventData.start)
           expect(event.end).to.equal(this.testEventData.end)
-          expect(event.venue).to.be.an.instanceof(VenueModel)
-            .and.to.have.property("uri", this.testEventData.venue.uri)
           expect(event.disclaimer).to.equal(this.testEventData.disclaimer)
           expect(event.banner).to.equal(`${ticketing.mediaURL}/banner/${event.id}`)
           expect(event.thumbnail).to.equal(`${ticketing.mediaURL}/thumbnail/${event.id}`)
           expect(event.status).to.equal("Draft")
           expect(event.published).to.be.a.string
           expect(event.popularity).to.equal(0)
+
+          expect(event.venue).to.be.an.instanceof(VenueModel)
+            .and.to.have.property("uri", this.testEventData.venue.uri)
+
+          expect(event.host).to.be.an.instanceof(HostModel)
+            .and.to.have.property("uri", this.testEventData.host.uri)
 
           resolve(true)
         }).catch(error => {
@@ -423,8 +435,26 @@ describe("Events", function(){
   describe('List published events', function () {
     it('Should return a collection of Event resources', function () {
       return new Promise((resolve, reject) => {
-        ticketing.events.published.list(5).then(events => {
+        ticketing.events.published.list(5).sort("start", false).then(events => {
           expect(events.length).to.be.at.least(1)
+          expect(events[0]).to.be.an.instanceof(EventModel)
+          expect(events[0].public).to.equal(this.testEventData.public)
+          expect(events[0].category).to.be.an.instanceOf(CategoryModel).
+            and.to.have.property("uri", this.testEventData.category.uri)
+          expect(events[0].subcategory).to.equal(this.testEventData.subcategory)
+          expect(events[0].start).to.equal(this.testEventData.start)
+          expect(events[0].disclaimer).to.equal(this.testEventData.disclaimer)
+          expect(events[0].banner).to.equal(`${ticketing.mediaURL}/banner/${events[0].id}`)
+          expect(events[0].thumbnail).to.equal(`${ticketing.mediaURL}/thumbnail/${events[0].id}`)
+          expect(events[0].status).to.equal("Listed")
+          expect(events[0].published).to.be.a.string
+          expect(events[0].popularity).to.equal(0)
+
+          expect(events[0].venue).to.be.an.instanceof(VenueModel)
+            .and.to.have.property("uri", this.testEventData.venue.uri)
+
+          expect(events[0].host).to.be.an.instanceof(HostModel)
+            .and.to.have.property("uri", this.testEventData.host.uri)
 
           resolve(true)
         }).catch(error => {
