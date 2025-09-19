@@ -6,10 +6,23 @@ import type { Event } from '../interface/Event'
 import type { Host } from '../interface/Host'
 
 export class HostedEventService extends BaseService<EventData, Event>{
+  private __apiAdapter: APIAdapter
+  private __host: Host
+
   constructor(apiAdapter: APIAdapter, host: Host){
     super(apiAdapter, `${host.uri}/events`, BaseEventModel,
       ["region", "host", "title", "status", "active", "public", "section"],
       ["alphabetical","published","popularity","start"]
     )
+
+    this.__apiAdapter = apiAdapter
+    this.__host = host
+  }
+
+  protected _instantiateModel(data: any){
+    const event: Event = new BaseEventModel(data, this.__apiAdapter)
+    event.host = this.__host
+
+    return event
   }
 }
