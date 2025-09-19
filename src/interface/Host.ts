@@ -1,6 +1,6 @@
 import { Base } from './Base'
-import { Collection } from '../util'
-import { Event } from './Event'
+import { Collection } from '../util/Collection'
+import type { Event } from './Event'
 import { HostStatistics } from './reporting/HostStatistics'
 
 export interface Host extends Base{

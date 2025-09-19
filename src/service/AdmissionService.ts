@@ -1,8 +1,10 @@
 import { BaseService } from './BaseService'
 
-import { APIAdapter } from '../util'
-import { AdmissionData, Admission } from '../interface'
-import { AdmissionModel, EventModel } from '../model'
+import { APIAdapter } from '../util/APIAdapter'
+import type { AdmissionData } from '../interface/data/AdmissionData'
+import type { Admission } from '../interface/Admission'
+import { AdmissionModel } from '../model/AdmissionModel'
+import { EventModel } from '../model/EventModel'
 
 export class AdmissionService extends BaseService<AdmissionData, Admission>{
   private __apiAdapter: APIAdapter

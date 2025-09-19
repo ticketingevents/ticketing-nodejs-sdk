@@ -1,7 +1,7 @@
-import { APIAdapter } from '../util'
+import { APIAdapter } from '../util/APIAdapter'
 import { BaseModel } from './BaseModel'
-import { AccountPreferences } from '../interface/AccountPreferences'
-import { AccountPreferencesData } from '../interface/data/AccountPreferencesData'
+import type { AccountPreferences } from '../interface/AccountPreferences'
+import type { AccountPreferencesData } from '../interface/data/AccountPreferencesData'
 import { RegionModel } from './RegionModel'
 
 export class AccountPreferencesModel extends BaseModel implements AccountPreferences{

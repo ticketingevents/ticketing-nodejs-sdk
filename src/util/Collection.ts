@@ -1,4 +1,4 @@
-import { Collection as CollectionInterface } from '../interface'
+import { Collection as CollectionInterface } from '../interface/Collection'
 
 export class Collection<T> extends Promise<Array<T>> implements CollectionInterface<T>{
   private __executor: (resolve, reject) => void

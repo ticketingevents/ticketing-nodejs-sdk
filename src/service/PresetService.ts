@@ -1,4 +1,4 @@
-import { APIAdapter } from '../util'
+import { APIAdapter } from '../util/APIAdapter'
 
 export class PresetService{
   private __adapter: APIAdapter

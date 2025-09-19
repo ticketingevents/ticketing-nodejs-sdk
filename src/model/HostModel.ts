@@ -1,6 +1,9 @@
-import { APIAdapter, Collection } from '../util'
+import { APIAdapter } from '../util/APIAdapter'
+import { Collection } from '../util/Collection'
 import { BaseModel } from './BaseModel'
-import { Event, Host, HostData } from '../interface'
+import type { Event } from '../interface/Event'
+import type { Host } from '../interface/Host'
+import type { HostData } from '../interface/data/HostData'
 import { HostStatisticsModel } from './reporting/HostStatisticsModel'
 import { HostedEventService } from '../service/HostedEventService'
 

@@ -1,4 +1,4 @@
-import { APIAdapter } from '../../util'
+import { APIAdapter } from '../../util/APIAdapter'
 import { BaseModel } from '../BaseModel'
 import { HostStatistics } from '../../interface/reporting/HostStatistics'
 

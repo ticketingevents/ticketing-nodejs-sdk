@@ -1,9 +1,16 @@
 import { BaseService } from './BaseService'
 
 import { BadDataError, PermissionError, ResourceNotFoundError } from '../errors'
-import { APIAdapter } from '../util'
-import { AccountData, Account, AccountVerification, LookupData, Lookup, PasswordReset } from '../interface'
-import { AccountModel, AccountVerificationModel, PasswordResetModel } from '../model'
+import { APIAdapter } from '../util/APIAdapter'
+import type { AccountData } from '../interface/data/AccountData'
+import type { Account } from '../interface/Account'
+import type { AccountVerification } from '../interface/AccountVerification'
+import type { LookupData } from '../interface/data/LookupData'
+import type { Lookup } from '../interface/Lookup'
+import type { PasswordReset } from '../interface/PasswordReset'
+import { AccountModel } from '../model/AccountModel'
+import { AccountVerificationModel } from '../model/AccountVerificationModel'
+import { PasswordResetModel } from '../model/PasswordResetModel'
 
 export class AccountService extends BaseService<AccountData, Account>{
   private __apiAdapter: APIAdapter

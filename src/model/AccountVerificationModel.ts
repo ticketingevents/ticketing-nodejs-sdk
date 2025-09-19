@@ -1,7 +1,7 @@
-import { APIAdapter } from '../util'
+import { APIAdapter } from '../util/APIAdapter'
 import { BadDataError } from '../errors'
 import { BaseModel } from './BaseModel'
-import { AccountVerification } from '../interface/AccountVerification'
+import type { AccountVerification } from '../interface/AccountVerification'
 
 export class AccountVerificationModel extends BaseModel implements AccountVerification{
   public email: string

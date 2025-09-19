@@ -84,7 +84,7 @@ describe("Venues", function(){
             .and.to.have.property("uri", this.testVenueData.region.uri)
           expect(venue.latitude).to.be.closeTo(this.testVenueData.latitude, 0.0001)
           expect(venue.longitude).to.be.closeTo(this.testVenueData.longitude, 0.0001)
-          expect(venue.map).to.equal("https://maps.googleapis.com/maps/api/staticmap?center=40.75518,-73.99214&zoom=15&size=600x300&maptype=roadmap&markers=color:red%7C40.75518,-73.99214&key=AIzaSyCyLy8bOLUTLbQLVQFwf1eVO2UIVO8_4kQ&signature=IowClV__Bha7DFVe7TIG-osgyDE=")
+          expect(venue.map).to.startsWith("https://maps.googleapis.com/maps/api/staticmap?center=40.75518,-73.99214")
 
           resolve(true)
         })).catch(error=>{

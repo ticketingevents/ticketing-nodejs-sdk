@@ -1,7 +1,7 @@
-import { APIAdapter } from '../util'
+import { APIAdapter } from '../util/APIAdapter'
 import { BadDataError } from '../errors'
 import { BaseModel } from './BaseModel'
-import { PasswordReset } from '../interface/PasswordReset'
+import type { PasswordReset } from '../interface/PasswordReset'
 
 export class PasswordResetModel extends BaseModel implements PasswordReset{
   public email: string

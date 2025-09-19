@@ -1,9 +1,11 @@
 import { BaseService } from './BaseService'
 
-import { APIAdapter } from '../util'
+import { APIAdapter } from '../util/APIAdapter'
 import { BadDataError } from '../errors'
-import { VenueData, Venue } from '../interface'
-import { RegionModel, VenueModel } from '../model'
+import type { VenueData } from '../interface/data/VenueData'
+import type { Venue } from '../interface/Venue'
+import { RegionModel } from '../model/RegionModel'
+import { VenueModel } from '../model/VenueModel'
 
 export class VenueService extends BaseService<VenueData, Venue>{
   private __apiAdapter: APIAdapter

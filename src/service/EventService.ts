@@ -1,9 +1,13 @@
 import { BaseService } from './BaseService'
 
 import { BadDataError, PermissionError } from '../errors'
-import { APIAdapter } from '../util'
-import { EventData, Event } from '../interface'
-import { EventModel, HostModel, CategoryModel, VenueModel } from '../model'
+import { APIAdapter } from '../util/APIAdapter'
+import { EventData } from '../interface/data/EventData'
+import type { Event } from '../interface/Event'
+import { EventModel} from '../model/EventModel'
+import { HostModel } from '../model/HostModel'
+import { CategoryModel } from '../model/CategoryModel'
+import { VenueModel } from '../model/VenueModel'
 import { UnsupportedOperationError } from '../errors'
 
 export class EventService extends BaseService<EventData, Event>{

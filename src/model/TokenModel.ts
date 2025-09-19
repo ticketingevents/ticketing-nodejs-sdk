@@ -1,20 +1,20 @@
-import { APIAdapter } from '../util'
+import { APIAdapter } from '../util/APIAdapter'
 import { ResourceImmutableError } from '../errors'
 import { BaseModel } from './BaseModel'
-import { EventModel } from './EventModel'
-import { Section } from '../interface/Section'
-import { Token } from '../interface/Token'
-import { TokenData } from '../interface/data/TokenData'
+import type { Event } from '../interface/Event'
+import type { Section } from '../interface/Section'
+import type { Token } from '../interface/Token'
+import type { TokenData } from '../interface/data/TokenData'
 
 export class TokenModel extends BaseModel implements Token{
   public code: string
   public global: boolean
   public sections: Array<Section>
 
-  private __event: EventModel
+  private __event: Event
   private __original_sections: Array<Section>
 
-  constructor(token: any, event: EventModel, adapter: APIAdapter){
+  constructor(token: any, event: Event, adapter: APIAdapter){
     super(token.self, adapter)
 
     this.code = token.code

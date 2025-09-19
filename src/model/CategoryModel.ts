@@ -1,7 +1,7 @@
-import { APIAdapter } from '../util'
+import { APIAdapter } from '../util/APIAdapter'
 import { BaseModel } from './BaseModel'
-import { Category } from '../interface/Category'
-import { CategoryData } from '../interface/data/CategoryData'
+import type { Category } from '../interface/Category'
+import type { CategoryData } from '../interface/data/CategoryData'
 
 export class CategoryModel extends BaseModel implements Category{
   public name: string

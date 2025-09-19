@@ -1,12 +1,13 @@
 import { Base } from './Base'
-import { Collection } from '../util'
+import { Collection } from '../util/Collection'
 import { Category } from './Category'
 import { Section } from './Section'
 import { Token } from './Token'
 import { Venue } from './Venue'
-import { Host } from './Host'
+import type { Host } from './Host'
 import { EventStatistics } from './reporting/EventStatistics'
-import { SectionModel, TokenModel } from '../model'
+import { SectionModel } from '../model/SectionModel'
+import { TokenModel } from '../model/TokenModel'
 
 export interface Event extends Base{
   title: string
@@ -18,7 +19,6 @@ export interface Event extends Base{
   start: string
   end: string
   venue: Venue
-  host: Host
   disclaimer: string
   tags: Array<string>
   banner: string
@@ -28,6 +28,7 @@ export interface Event extends Base{
   popularity: number
   sections: Array<Section>
   tokens: Collection<Token>
+  host?: Host
 
   statistics(): Promise<EventStatistics>
   submit(): Promise<boolean>

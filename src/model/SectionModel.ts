@@ -1,7 +1,7 @@
-import { APIAdapter } from '../util'
+import { APIAdapter } from '../util/APIAdapter'
 import { BaseModel } from './BaseModel'
-import { Section } from '../interface/Section'
-import { SectionData } from '../interface/data/SectionData'
+import type { Section } from '../interface/Section'
+import type { SectionData } from '../interface/data/SectionData'
 
 export class SectionModel extends BaseModel implements Section{
   public name: string

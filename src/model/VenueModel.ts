@@ -1,7 +1,7 @@
-import { APIAdapter } from '../util'
+import { APIAdapter } from '../util/APIAdapter'
 import { BaseModel } from './BaseModel'
-import { Venue } from '../interface/Venue'
-import { VenueData } from '../interface/data/VenueData'
+import type { Venue } from '../interface/Venue'
+import type { VenueData } from '../interface/data/VenueData'
 import { RegionModel } from './RegionModel'
 
 export class VenueModel extends BaseModel implements Venue{

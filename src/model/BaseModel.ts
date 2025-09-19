@@ -1,5 +1,5 @@
-import { APIAdapter } from '../util'
-import { Base } from '../interface/Base'
+import { APIAdapter } from '../util/APIAdapter'
+import type { Base } from '../interface/Base'
 import { BadDataError, ResourceExistsError, ResourceIndelibleError } from '../errors'
 
 export class BaseModel implements Base{

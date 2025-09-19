@@ -3,6 +3,7 @@ import { APIAdapter } from  '../src/util'
 
 //Setup chai for assertions
 let chai = require("chai")
+chai.use(require('chai-string'))
 chai.use(require('chai-things'))
 chai.use(require("chai-as-promised"))
 chai.use(require("chai-sorted"))

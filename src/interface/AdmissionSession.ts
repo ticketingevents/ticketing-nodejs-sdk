@@ -1,4 +1,4 @@
-import { Collection } from '../util'
+import { Collection } from '../util/Collection'
 import { Admission } from './Admission'
 import { Event } from './Event'
 import { Section } from './Section'

@@ -1,4 +1,5 @@
-import { APIAdapter, Collection } from '../util'
+import { APIAdapter } from '../util/APIAdapter'
+import { Collection } from '../util/Collection'
 import { 
   BadDataError, ResourceExistsError, ResourceNotFoundError, 
   PageAccessError, UnsupportedCriteriaError, UnsupportedSortError

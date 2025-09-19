@@ -2,7 +2,7 @@
 import './venues'
 
 import { TickeTing, Host, BadDataError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
-import { HostModel, EventModel, CategoryModel, VenueModel } from  '../../src/model'
+import { HostModel, BaseEventModel, CategoryModel, VenueModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
 import { expect, ticketing } from '../setup'
 
@@ -207,7 +207,7 @@ describe("Hosts", function(){
 
   describe('List hosted events', function () {
     it('Should return a collection of Event resources', function () {
-      return expect(this.secondHost.events).eventually.to.all.be.instanceof(EventModel)
+      return expect(this.secondHost.events).eventually.to.all.be.instanceof(BaseEventModel)
     })
 
     it('Should contain a single hosted event', function () {
@@ -215,7 +215,7 @@ describe("Hosts", function(){
         this.secondHost.events.then(events => {
           expect(events.length).to.equal(1)
 
-          expect(events[0]).to.be.an.instanceof(EventModel)
+          expect(events[0]).to.be.an.instanceof(BaseEventModel)
           expect(events[0].description).to.equal(this.hostedEvent.description)
           expect(events[0].type).to.equal(this.hostedEvent.type)
           expect(events[0].public).to.equal(this.hostedEvent.public)

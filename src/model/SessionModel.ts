@@ -1,6 +1,6 @@
-import { APIAdapter } from '../util'
+import { APIAdapter } from '../util/APIAdapter'
 import { BaseModel } from './BaseModel'
-import { Session } from '../interface/Session'
+import type { Session } from '../interface/Session'
 import { AccountModel } from './AccountModel'
 
 export class SessionModel extends BaseModel implements Session{
