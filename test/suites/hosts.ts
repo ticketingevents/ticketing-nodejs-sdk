@@ -19,7 +19,8 @@ describe("Hosts", function(){
     this.secondHost = await ticketing.hosts.create({
       name: "Host "+Math.floor(Math.random() * 999999),
       contact: "Second Contact",
-      email: "test@second.com"
+      email: "test@second.com",
+      country: "Vietnam"
     })
 
     //Add an event to test hosted events collection
@@ -110,22 +111,59 @@ describe("Hosts", function(){
 
   describe('List event hosts', function () {
     it('Should return a collection of Host resources', function () {
-      return expect(ticketing.hosts.list()).eventually.to.all.be.instanceof(HostModel)
+      return new Promise((resolve, reject) => {
+        ticketing.hosts.list(5).then(hosts => {
+          expect(hosts.length).to.be.at.least(1)
+          expect(hosts).to.all.be.instanceof(HostModel)
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
     })
 
-    it('Should contain the newly created host as its last resource', function () {
+    it('Should return a collection of hosts matching the name filter', function () {
       return new Promise((resolve, reject) => {
-        let collection = ticketing.hosts.list(1)
-        collection.pages.then(pages => {
-          collection.goto(pages).then(hosts => {
-            expect(hosts[0])
-              .to.be.an.instanceof(HostModel)
-              .and.to.deep.include(this.testHostData)
+        ticketing.hosts.list(5).filter({name: this.testHostData.name}).then(hosts => {
+          expect(hosts.length).to.be.at.least(1)
+          
+          for(let host of hosts){
+            expect(host.name).to.equal(this.testHostData.name)
+          }
 
-            resolve(true)
-          }).catch(error => {
-            reject(error)
-          })
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return a collection of hosts matching the country filter', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.hosts.list(5).filter({country: this.secondHost.country}).then(hosts => {
+          expect(hosts.length).to.be.at.least(1)
+          
+          for(let host of hosts){
+            expect(host.country).to.equal(this.secondHost.country)
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return hosts sorted by name in ascending order', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.hosts.list(5).sort("alphabetical").then(hosts => {
+          expect(hosts).to.have.lengthOf.at.least(1)
+          expect(hosts.map(host => host.name.toLowerCase())).to.be.ascending
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
         })
       })
     })

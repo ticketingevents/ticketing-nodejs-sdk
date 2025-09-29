@@ -849,10 +849,20 @@ add-on services through TickeTing
 
 ### List event hosts
 
-[API Reference](https://ticketing.redocly.app/docs/api_reference/api_reference/managing-host-accounts/list_hosts)
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/list_hosts)
 
 ```javascript
   ticketing.hosts.list()
+    // Supported filters with examples
+    .filter({
+      name: "Vought Entertainment",
+      country: "Antigua and Barbuda"
+    })
+    // Supported sort fields
+    .sort(
+      "alphabetical", //Only "alphabetical" supported
+      true //Set true for ascending sort (default), or false for descending order
+    )
     .then(hosts => {
       //Do something with the collection of hosts
     })
@@ -868,11 +878,11 @@ add-on services through TickeTing
 
 ### Create an event host
 
-[API Reference](https://ticketing.redocly.app/docs/api_reference/api_reference/managing-host-accounts/create_host)
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/create_host)
 
 ```javascript
   let hostData = {
-    "name": "The Boys Entertainment",
+    "name": "Vought Entertainment",
     "contact": "Billy Butcher",
     "email": "billy.butcher@fbsa.gov",
     "description": "Premier events for supes of all ages",
@@ -904,7 +914,7 @@ add-on services through TickeTing
 
 ### Fetch an event host
 
-[API Reference](https://ticketing.redocly.app/docs/api_reference/api_reference/managing-host-accounts/retrieve_host)
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/retrieve_host)
 
 ```javascript
   //Retrieve a specific host using its ID
@@ -924,7 +934,7 @@ add-on services through TickeTing
 
 ### Update an event host
 
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/update_eventhttps://ticketing.redocly.app/docs/api_reference/api_reference/managing-host-accounts/update_account)
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/update_host)
 
 ```javascript
   //Retrieve a specific host using its ID
@@ -957,7 +967,7 @@ add-on services through TickeTing
 
 ### Delete an event host
 
-[API Reference](https://ticketing.redocly.app/docs/api_reference/api_reference/managing-host-accounts/delete_host)
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/delete_host)
 
 ```javascript
   //Retrieve a specific host using its ID

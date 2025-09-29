@@ -162,13 +162,7 @@ describe("Events", function(){
         })
       }
 
-      let payload = JSON.parse(JSON.stringify(this.testEventData))
-      payload.title = "Test Event "+Math.floor(Math.random() * 999999)
-      payload.host = this.host
-      payload.category = this.category
-      payload.venue = this.venue
-
-      return expect(unauthorised_sdk.events.create(payload))
+      return expect(unauthorised_sdk.events.create(this.testEventData))
         .to.eventually.be.rejectedWith("This account is not an administrator for the relevant event host.")
         .and.be.an.instanceOf(PermissionError)
     })
