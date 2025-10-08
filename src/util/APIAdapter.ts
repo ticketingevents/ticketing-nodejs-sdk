@@ -20,7 +20,7 @@ export class APIAdapter{
       headers:{
         "X-Client-Version": constants.CLIENT_VERSION
       },
-      timeout: 10000
+      timeout: 20000
     })
 
     this.key = apiKey

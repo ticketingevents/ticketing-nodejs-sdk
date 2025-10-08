@@ -132,6 +132,19 @@ export class TickeTingService extends TickeTing{
   * [Update an event](#update-an-event)
   * [Delete an event](#delete-an-event)
   * [Submit an event for review](#submit-an-event-for-review)
+- [Purchasing Tickets](#purchasing-tickets)
+  * [Shopping carts](#shopping-carts)
+    * [Create a shopping cart](#create-a-shopping-cart)
+    * [Add items to cart](#add-items-to-cart)
+    * [Remove items from cart](#remove-items-from-cart)
+    * [Retrieve cart summary](#retrieve-cart-summary)
+  * [Orders](#orders)
+    * [List orders](#list-orders)
+    * [Place an order](#place-an-order)
+    * [Retrieve an order](#retrieve-an-order)
+    * [Cancel an order](#cancel-an-order)
+    * [Settle an order](#settle-an-order)
+    * [Refund an order](#refund-an-order)
 - [Reporting](#reporting)
   * [View host statistics](#view-host-statistics)
   * [View event statistics](#view-event-statistics)
@@ -1192,7 +1205,7 @@ Operations for working with events in the TickeTing system.
 
 ```javascript
   //Retrieve a specific event using its ID
-  event = await ticketing.events.find(16993717817996)
+  let event = await ticketing.events.find(16993717817996)
 
   //Make changes to the resource
   event.public = false
@@ -1225,7 +1238,7 @@ Operations for working with events in the TickeTing system.
 
 ```javascript
   //Retrieve a specific event using its ID
-  event = await ticketing.events.find(16993717817996)
+  let event = await ticketing.events.find(16993717817996)
 
   //Delete the event
   event.delete().then(deleted => {
@@ -1252,7 +1265,7 @@ Operations for working with events in the TickeTing system.
 
 ```javascript
   //Retrieve a specific event using its ID
-  event = await ticketing.events.find(16993717817996)
+  let event = await ticketing.events.find(16993717817996)
 
   //Delete the event
   event.submit().then(submitted => {
@@ -1273,12 +1286,124 @@ Operations for working with events in the TickeTing system.
   })
 ```
 
+## Purchasing tickets
+
+SDK functionality related to shopping cart management and checkout.
+
+### Shopping carts
+
+### Create a shopping cart
+
+```javascript
+  ticketing.orders.start().then(cart => {
+    //Do something with the shopping cart (see below)
+  }).catch(error => {
+    console.log(`${typeof error} (${error.code}): ${error.message}`)
+  })
+```
+
+### Add items to cart
+
+```javascript
+  //Create a new shopping cart
+  let cart = await ticketing.orders.start()
+
+  //Retrieve a specific event using its ID
+  let event = await ticketing.events.find(16993717817996)
+
+  //Add one item to the shopping cart
+  cart.add(event.sections[1]).then(summary => {
+    console.log(summary) //Cart information after adding the item
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("You must indicate a valid section to add to the cart.")
+    }else if(error instanceof UnsupportedOperationError){
+      console.log("The number of items in this cart exceed the tickets remaining for this section.")
+    }{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+
+  //Add multiple items to the shopping cart
+  cart.add(event.sections[0], 3).then(summary => {
+    console.log(summary) //Cart information after adding the item
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("The number of items to be added to the cart must be a positive integer.")
+    }else if(error instanceof UnsupportedOperationError){
+      console.log("The number of items in this cart exceed the tickets remaining for this section.")
+    }{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Remove items from cart
+
+```javascript
+  //Create a new shopping cart
+  let cart = await ticketing.orders.start()
+
+  //Retrieve a specific event using its ID
+  let event = await ticketing.events.find(16993717817996)
+
+  //Remove one item from the shopping cart
+  cart.remove(event.sections[1]).then(summary => {
+    console.log(summary) //Cart information after removing the item
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("You must indicate a valid section to add to the cart.")
+    }else if(error instanceof UnsupportedOperationError){
+      console.log("The order has no line items containing the specified section.")
+    }{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+
+  //Remove multiple items from the shopping cart
+  cart.remove(event.sections[0], 3).then(summary => {
+    console.log(summary) //Cart information after adding the item
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("The number of items to be removed from the cart must be a positive integer.")
+    }else if(error instanceof UnsupportedOperationError){
+      console.log("The number of line items containing the specified section is less than the specified quantity.")
+    }{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Retrieve cart summary
+
+```javascript
+  //Create a new shopping cart
+  let cart = await ticketing.orders.start()
+
+  cart.summary().then(summary => {
+    let started = summary.started //Date and time that the cart was created
+    let subtotal = summary.subtotal //The total cost of all items in the cart before fees
+    let fees = summary.fees //The total fees applicable on the items in the cart
+    let total = summary.total //The total cost of all items in the cart inclusive of fees
+    let items = summary.items //Map of line items with the associated section ID as keys, and the unit quantity as values.
+  }).catch(error => {
+    //Handle errors
+    console.log(`${typeof error} (${error.code}): ${error.message}`)
+  })
+```
+
 ## Reporting
 
 The TickeTing SDK provides a set of functionality that let you report on hosts, events,
 users, advertisements and more. These features are documented below.
-
----
 
 ### View host statistics
 
