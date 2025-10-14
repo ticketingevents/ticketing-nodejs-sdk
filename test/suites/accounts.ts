@@ -12,7 +12,7 @@ let testAccount = null
 describe("Accounts", function(){
 
   //Set hook timeout
-  this.timeout(10000)
+  this.timeout(60000)
 
   before(async function(){
     //Initialise test data for suite

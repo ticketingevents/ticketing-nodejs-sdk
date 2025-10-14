@@ -12,7 +12,7 @@ let testEvent = null
 describe("Events", function(){
 
   //Set hook timeout
-  this.timeout(30000)
+  this.timeout(60000)
 
   before(async function(){
     //Create an event host

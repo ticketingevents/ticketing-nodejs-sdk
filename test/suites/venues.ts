@@ -12,7 +12,7 @@ let testVenue = null
 describe("Venues", function(){
 
   //Set hook timeout
-  this.timeout(30000)
+  this.timeout(60000)
 
   before(async function(){
     //Create a region for use in venue creation

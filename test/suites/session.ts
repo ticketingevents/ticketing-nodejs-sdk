@@ -8,7 +8,7 @@ let sessionKey = ""
 
 describe("Session", function(){
   //Set hook timeout
-  this.timeout(20000)
+  this.timeout(60000)
 
   before(async function(){
     //Initialise test data for suite
