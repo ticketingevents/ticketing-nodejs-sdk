@@ -4,7 +4,7 @@ import './hosts'
 import { TickeTing, Event, BadDataError, InvalidStateError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
 import { CategoryModel, EventModel, VenueModel, HostModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
-import { expect, ticketing, api } from '../setup'
+import { expect, ticketing, api, unauthorised_sdk } from '../setup'
 
 //Global event object
 let testEvent = null
@@ -151,17 +151,6 @@ describe("Events", function(){
     })
 
     it('Should throw a PermissionError when not a host administrator', function () {
-      let unauthorised_sdk = null
-      if(process.env.npm_config_env == "production"){
-        unauthorised_sdk = new TickeTing({
-          apiKey: "0acb10082a313f517954a34d2a7aedb7"
-        })
-      }else{
-        unauthorised_sdk = new TickeTing({
-          apiKey: "413c7e517b63822c3037ead7679c780e"
-        })
-      }
-
       return expect(unauthorised_sdk.events.create(this.testEventData))
         .to.eventually.be.rejectedWith("This account is not an administrator for the relevant event host.")
         .and.be.an.instanceOf(PermissionError)
@@ -188,7 +177,7 @@ describe("Events", function(){
           expect(events[0].banner).to.equal(`${ticketing.mediaURL}/banner/${events[0].id}`)
           expect(events[0].thumbnail).to.equal(`${ticketing.mediaURL}/thumbnail/${events[0].id}`)
           expect(events[0].status).to.equal("Draft")
-          expect(events[0].published).to.be.a.string
+          expect(events[0].published).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}/)
           expect(events[0].popularity).to.equal(0)
 
           expect(events[0].venue).to.be.an.instanceof(VenueModel)

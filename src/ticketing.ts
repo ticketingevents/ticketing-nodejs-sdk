@@ -4,6 +4,7 @@ import {
   CategoryService,
   EventService,
   HostService,
+  OrderService,
   PresetService,
   RegionService,
   VenueService
@@ -18,6 +19,7 @@ export class TickeTing{
   public categories: CategoryService;
   public events: EventService;
   public hosts: HostService;
+  public orders: OrderService;
   public presets: PresetService;
   public regions: RegionService;;
   public session: SessionManager;
@@ -31,6 +33,7 @@ export class TickeTing{
     this.categories = new CategoryService(this.__apiAdapter)
     this.events = new EventService(this.__apiAdapter)
     this.hosts = new HostService(this.__apiAdapter)
+    this.orders = new OrderService(this.__apiAdapter)
     this.presets = new PresetService(this.__apiAdapter)
     this.regions = new RegionService(this.__apiAdapter)
     this.venues = new VenueService(this.__apiAdapter)

@@ -1,7 +1,7 @@
 export { TickeTing } from './ticketing'
 
 export {
-  Account, AccountPreferences, Admission, Category, Collection, Event, Host,
+  Account, AccountPreferences, Admission, Cart, Category, Collection, Event, Host,
   Lookup, PasswordReset, Region, Section, Session, Ticket, Token, Venue,
   HostStatistics, EventStatistics //Reporting
 } from './interface'

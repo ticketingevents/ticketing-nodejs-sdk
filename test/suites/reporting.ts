@@ -1,5 +1,5 @@
 //Control execution order
-import './events'
+import './orders'
 
 import { 
 	TickeTing, BadDataError, InvalidStateError, ResourceImmutableError,
@@ -11,9 +11,25 @@ import { expect, ticketing, api } from '../setup'
 
 describe("Reporting", function(){
 	//Set hook timeout
-	this.timeout(30000)
+	this.timeout(60000)
 
 	before(async function(){
+		//Create a customer
+		this.customer = await ticketing.accounts.create({
+		  username: "mothers.milk",
+		  password: "WuT4NGcl4n",
+		  email: "marvin.milk@usmc.gov",
+		  firstName: "Marvin",
+		  lastName: "Milk",
+		  title: "Mr",
+		  dateOfBirth: "1974-09-14",
+		  phone: "+1 (268) 555 0123",
+		  country: "Antigua and Barbuda",
+		  firstAddressLine: "Jennings New Extension",
+		  city: "Jennings",
+		  state: "Saint Mary's"
+		})
+
 		//Create an event host
 		this.host = await ticketing.hosts.create({
 			name: "Host "+Math.floor(Math.random() * 999999),
@@ -83,18 +99,12 @@ describe("Reporting", function(){
 		this.testEvent.sections.push(this.secondSection)
 
 		//Place first ticket order
-		await api.post("/orders", {
-			items: {
-				[this.testSection.uri]: 5
-			}
-		})
+		let cart = await ticketing.orders.start()
+		cart.add(this.testSection, 5)
+		this.firstOrder = await cart.checkout(this.customer)
 
 		//Place second ticket order
-		await api.post("/orders", {
-			items: {
-				[this.secondSection.uri]: 5,
-			}
-		})
+		this.secondOrder = await cart.checkout(this.customer)
 	})
 
 	after(async function(){
@@ -105,6 +115,7 @@ describe("Reporting", function(){
 		await this.host.delete()
 		await this.venue.delete()
 		await this.region.delete()
+		await this.customer.delete()
 	})
 
 	describe('View host statistics', function () {

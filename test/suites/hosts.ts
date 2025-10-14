@@ -4,7 +4,7 @@ import './venues'
 import { TickeTing, Host, BadDataError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
 import { HostModel, BaseEventModel, CategoryModel, VenueModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
-import { expect, ticketing } from '../setup'
+import { expect, ticketing, unauthorised_sdk } from '../setup'
 
 //Global host object
 let testHost = null

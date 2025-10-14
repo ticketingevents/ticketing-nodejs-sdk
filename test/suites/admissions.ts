@@ -18,11 +18,26 @@ let testSerials = []
 let testTimestamp = ""
 
 describe("Admissions", function(){
-
   //Set hook timeout
-  this.timeout(30000)
+  this.timeout(60000)
 
   before(async function(){
+		//Create a customer
+		this.customer = await ticketing.accounts.create({
+		  username: "mothers.milk",
+		  password: "WuT4NGcl4n",
+		  email: "marvin.milk@usmc.gov",
+		  firstName: "Marvin",
+		  lastName: "Milk",
+		  title: "Mr",
+		  dateOfBirth: "1974-09-14",
+		  phone: "+1 (268) 555 0123",
+		  country: "Antigua and Barbuda",
+		  firstAddressLine: "Jennings New Extension",
+		  city: "Jennings",
+		  state: "Saint Mary's"
+		})
+
 		//Create an event host
 		this.host = await ticketing.hosts.create({
 		  name: "Host "+Math.floor(Math.random() * 999999),
@@ -92,20 +107,17 @@ describe("Admissions", function(){
 		this.testEvent.sections.push(this.secondSection)
 
 		//Place first ticket order
-    await api.post("/orders", {
-        items: {
-        	[this.testSection.uri]: 5
-        }
-    })
+		let firstCart = await ticketing.orders.start()
+		firstCart.add(this.testSection, 5)
+		this.firstOrder = await firstCart.checkout(this.customer)
 
     //Place second ticket order
     setTimeout(async () => {
     	testTimestamp = (new Date()).toISOString()
-	    await api.post("/orders", {
-	        items: {
-	        	[this.secondSection.uri]: 5,
-	        }
-	    })
+
+			let secondCart = await ticketing.orders.start()
+			secondCart.add(this.secondSection, 5)
+			this.secondOrder = await secondCart.checkout(this.customer)
     }, 5000)
 	})
 
@@ -117,6 +129,7 @@ describe("Admissions", function(){
 		await this.host.delete()
 		await this.venue.delete()
 		await this.region.delete()
+		await this.customer.delete()
   })
 
   describe('Issue admissions token', function () {

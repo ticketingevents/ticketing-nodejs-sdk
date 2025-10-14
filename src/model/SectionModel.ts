@@ -25,9 +25,23 @@ export class SectionModel extends BaseModel implements Section{
     this.salesEnd = section.salesEnd
     this.active = section.active
     this.capacity = section.capacity
-    this.sold = section.sold
-    this.remaining = section.remaining
-    this.reserved = section.reserved
+    this.sold = section.sold?section.sold:0
+    this.remaining = section.remaining?section.remaining:section.capacity
+    this.reserved = section.reserved?section.reserved:0
+  }
+
+  get fees(): number{
+    if(this.price.base <= 50){
+      return 0.99
+    }else if(this.price.base <= 100){
+      return 1.99
+    }else if(this.price.base <= 150){
+      return 2.99
+    }else if(this.price.base <= 200){
+      return 3.99
+    }else{
+      return 4.99
+    }
   }
 
   serialise(): SectionData{

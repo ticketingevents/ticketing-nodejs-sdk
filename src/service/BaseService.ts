@@ -1,7 +1,7 @@
 import { APIAdapter } from '../util/APIAdapter'
 import { Collection } from '../util/Collection'
 import { 
-  BadDataError, ResourceExistsError, ResourceNotFoundError, 
+  BadDataError, PermissionError, ResourceExistsError, ResourceNotFoundError, 
   PageAccessError, UnsupportedCriteriaError, UnsupportedSortError
 } from '../errors'
 
@@ -122,7 +122,9 @@ export class BaseService<RequestType, ResponseType>{
       ).then(response => {
         resolve(this._instantiateModel(response.data))
       }).catch(error => {
-        if(error.code == 404){
+        if(error.code == 403){
+          error = new PermissionError(error.code, error.message)
+        }else if(error.code == 404){
           error = new ResourceNotFoundError(error.code, error.message)
         }
 

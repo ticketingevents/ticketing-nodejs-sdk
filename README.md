@@ -133,15 +133,14 @@ export class TickeTingService extends TickeTing{
   * [Delete an event](#delete-an-event)
   * [Submit an event for review](#submit-an-event-for-review)
 - [Purchasing Tickets](#purchasing-tickets)
-  * [Shopping carts](#shopping-carts)
-    * [Create a shopping cart](#create-a-shopping-cart)
-    * [Add items to cart](#add-items-to-cart)
-    * [Remove items from cart](#remove-items-from-cart)
-    * [Retrieve cart summary](#retrieve-cart-summary)
-  * [Orders](#orders)
+  * [Create a shopping cart](#create-a-shopping-cart)
+  * [Add items to cart](#add-items-to-cart)
+  * [Remove items from cart](#remove-items-from-cart)
+  * [Set item quantity in cart](#set-item-quantity-in-cart)
+  * [Checkout cart](#checkout-cart)
+- [Order Settlement](#order-settlement)
     * [List orders](#list-orders)
-    * [Place an order](#place-an-order)
-    * [Retrieve an order](#retrieve-an-order)
+    * [Fetch an order](#retrieve-an-order)
     * [Cancel an order](#cancel-an-order)
     * [Settle an order](#settle-an-order)
     * [Refund an order](#refund-an-order)
@@ -1290,13 +1289,16 @@ Operations for working with events in the TickeTing system.
 
 SDK functionality related to shopping cart management and checkout.
 
-### Shopping carts
-
 ### Create a shopping cart
 
 ```javascript
   ticketing.orders.start().then(cart => {
-    //Do something with the shopping cart (see below)
+    //Retrieve cart information
+    let created = cart.created //Date and time that the cart was created
+    let subtotal = cart.subtotal //The total cost of all items in the cart before fees
+    let fees = cart.fees //The total fees applicable on the items in the cart
+    let total = cart.total //The total cost of all items in the cart inclusive of fees
+    let items = cart.items //Array of items in cart including the section, quantity and subtotal of each.
   }).catch(error => {
     console.log(`${typeof error} (${error.code}): ${error.message}`)
   })
@@ -1311,31 +1313,23 @@ SDK functionality related to shopping cart management and checkout.
   //Retrieve a specific event using its ID
   let event = await ticketing.events.find(16993717817996)
 
-  //Add one item to the shopping cart
-  cart.add(event.sections[1]).then(summary => {
-    console.log(summary) //Cart information after adding the item
-  })
-  .catch(error => {
-    //Handle errors
-    if(error instanceof BadDataError){
-      console.log("You must indicate a valid section to add to the cart.")
-    }else if(error instanceof UnsupportedOperationError){
-      console.log("The number of items in this cart exceed the tickets remaining for this section.")
-    }{
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
+  //Add items to the shopping cart
+  cart.add(
+    event.sections[0], //Add tickets for this section to the cart
+    2 //Default to 1 if omitted
+  ).then(success => {
+    if(success){
+      //Do something on success
+    }else{
+      //Do something on failure
     }
-  })
-
-  //Add multiple items to the shopping cart
-  cart.add(event.sections[0], 3).then(summary => {
-    console.log(summary) //Cart information after adding the item
   })
   .catch(error => {
     //Handle errors
     if(error instanceof BadDataError){
       console.log("The number of items to be added to the cart must be a positive integer.")
     }else if(error instanceof UnsupportedOperationError){
-      console.log("The number of items in this cart exceed the tickets remaining for this section.")
+      console.log("Adding the specified quantity of this item would exceed the section capacity.")
     }{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
@@ -1351,52 +1345,248 @@ SDK functionality related to shopping cart management and checkout.
   //Retrieve a specific event using its ID
   let event = await ticketing.events.find(16993717817996)
 
-  //Remove one item from the shopping cart
-  cart.remove(event.sections[1]).then(summary => {
-    console.log(summary) //Cart information after removing the item
-  })
-  .catch(error => {
-    //Handle errors
-    if(error instanceof BadDataError){
-      console.log("You must indicate a valid section to add to the cart.")
-    }else if(error instanceof UnsupportedOperationError){
-      console.log("The order has no line items containing the specified section.")
-    }{
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
+  //Remove items from the shopping cart
+  cart.remove(
+    event.sections[0], //Remove tickets for this section from the cart
+    3 //Default to 1 if omitted
+  ).then(success => {
+    if(success){
+      //Do something on success
+    }else{
+      //Do something on failure
     }
-  })
-
-  //Remove multiple items from the shopping cart
-  cart.remove(event.sections[0], 3).then(summary => {
-    console.log(summary) //Cart information after adding the item
   })
   .catch(error => {
     //Handle errors
     if(error instanceof BadDataError){
       console.log("The number of items to be removed from the cart must be a positive integer.")
     }else if(error instanceof UnsupportedOperationError){
-      console.log("The number of line items containing the specified section is less than the specified quantity.")
+      console.log("The cart contains fewer items than the quantity to be removed.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Set item quantity in cart
+
+```javascript
+  //Create a new shopping cart
+  let cart =  ticketing.orders.start()
+
+  //Retrieve a specific event using its ID
+  let event = await ticketing.events.find(16993717817996)
+
+  //Set the number of items in the shopping cart to a particular quantity
+  cart.set(
+    event.sections[2], //Set the number of tickets for this section in the cart
+    5
+  ).then(success => {
+    if(success){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("The item quantity must be a positive integer.")
+    }else if(error instanceof UnsupportedOperationError){
+      console.log("Setting the item quantity to the specified value would exceed the section capacity.")
     }{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
   })
 ```
 
-### Retrieve cart summary
+### Checkout cart
+
+[API Reference](https://docs.ticketingevents.com/openapi/placing-an-order/place_order)
 
 ```javascript
   //Create a new shopping cart
   let cart = await ticketing.orders.start()
 
-  cart.summary().then(summary => {
-    let started = summary.started //Date and time that the cart was created
-    let subtotal = summary.subtotal //The total cost of all items in the cart before fees
-    let fees = summary.fees //The total fees applicable on the items in the cart
-    let total = summary.total //The total cost of all items in the cart inclusive of fees
-    let items = summary.items //Map of line items with the associated section ID as keys, and the unit quantity as values.
+  //Add items to cart
+  let event = await ticketing.events.find(16993717817996)
+  await cart.add(event.sections[0], 2)
+
+  //Checkout cart (Requires an account)
+  let account (await ticketing.session.info()).account
+  
+  cart.checkout(account).then(order => {
+    //See order settlement for details on settling or cancelling the order
+  }).catch(error => {
+    if(error instanceof PermissionError){
+      console.log("The authenticated user is not permtited to manage orders for this account.")
+    }else if(error instanceof BadDataError){
+      console.log("One or more of the requested sections does not have sufficient capacity to fulfil the order.")
+    }else{
+      //Handle errors
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+## Order Settlement
+
+SDK functionality allowing for manipulating and settling ticket orders.
+
+### List all orders (Admin Only)
+
+[API Reference](https://docs.ticketingevents.com/openapi/placing-an-order/list_orders)
+
+```javascript
+  //Retrieve a specific account using its account number
+  let account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  ticketing.orders.list()
+    // Supported filters with examples
+    .filter({
+      customer: account.number,
+      status: "Cancelled" //One of "Placed", "Cancelled", "Timed Out", "Fulfilled", "Voided", "Returned"
+    })
+    // Supported sort fields
+    .sort(
+      "date", //One of "date"
+      false //Set true for ascending sort (default), or false for descending order
+    )
+    .then(orders => {
+      //Do something with the collection of orders
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof UnsupportedSortError){
+        //Handle unsupported sort field error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch an order
+
+[API Reference](https://docs.ticketingevents.com/openapi/placing-an-order/retrieve_order)
+
+```javascript
+  //Retrieve a specific order using its number
+  ticketing.orders.find("E8D946240203")
+    .then(order => {
+      //Do something with the order resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no order identified by the given number")
+      }else if(error instanceof PermissionError){
+        console.log("The authenticating user is not authorised to manage orders on behalf of the ordering customer.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Cancel an order
+
+[API Reference](https://docs.ticketingevents.com/openapi/placing-an-order/cancel_order)
+
+```javascript
+  //Retrieve a specific order using its number
+  let order = await ticketing.orders.find("E8D946240203")
+
+  //Cancel the order
+  order.cancel().then(cancelled => {
+    if(cancelled){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
   }).catch(error => {
     //Handle errors
-    console.log(`${typeof error} (${error.code}): ${error.message}`)
+     if(error instanceof PermissionError){
+      console.log("The authenticating user is not authorised to manage orders on behalf of the ordering customer.")
+    }else if(error instanceof ResourceIndelibleError){
+      console.log("The order has already timed out, been settled or was cancelled previously.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Settle an order
+
+[API Reference](https://docs.ticketingevents.com/openapi/order-settlement/settle_order)
+
+```javascript
+  //Retrieve a specific order using its number
+  let order = await ticketing.orders.find("E8D946240203")
+
+  let paymentDetails = {
+    "number": "5555555555555555",
+    "cvv": 123,
+    "expiryDate": "12/30",
+    "name": "Marvin M. Milk",
+    "email": "marvin.milk@usmc.gov",
+    "phone": "+1 (268) 555 0123",
+    "address1": "Hermitage Rd.",
+    "address2": "Jennings New Extension",
+    "city": "Jennings",
+    "district": "Saint Mary'\''s",
+    "country": "Antigua and Barbuda"
+  }
+
+  //Settle the order
+  order.settle(paymentDetails).then(settled => {
+    if(settled){
+      //Do something on payment success
+    }else{
+      //Do something on payment failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("Required payment details were missing or invalid")
+    }else if(error instanceof PermissionError){
+      console.log("The authenticating user is not authorised to settle orders on behalf of the ordering customer.")
+    }else if(error instanceof InvalidStateError){
+      console.log("The order has already timed out, been cancelled or was settled previously.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Refund an order (Admin Only)
+
+[API Reference](https://docs.ticketingevents.com/openapi/order-settlement/refund_order)
+
+```javascript
+  //Retrieve a specific order using its number
+  let order = await ticketing.orders.find("E8D946240203")
+
+  //Settle the order
+  order.refund(
+    "Event host requested an order for this customer." //Reason for the refund
+  ).then(refunded => {
+    if(refunded){
+      //Do something on payment success
+    }else{
+      //Do something on payment failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("The reason for the refund was not provided.")
+    }else if(error instanceof InvalidStateError){
+      console.log("The order has already timed out, been cancelled or was refunded previously.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
   })
 ```
 
