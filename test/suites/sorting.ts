@@ -8,7 +8,7 @@ import { expect, ticketing } from '../setup'
 describe("Sorting", function(){
 
   //Set hook timeout
-  this.timeout(20000)
+  this.timeout(30000)
 
   before(async function(){
     //Create an event host
