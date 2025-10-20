@@ -43,4 +43,9 @@ export class OrderService extends BaseService<OrderData, Order>{
     const customer = new AccountModel(data.customer, this.__apiAdapter)
     return new OrderModel(data, customer, this.__apiAdapter)
   }
+
+  protected _preprocessCriteria(criteria: {[key: string]: any}){
+    criteria.customer = criteria.customer?criteria.customer.number:null
+    return criteria
+  }
 }

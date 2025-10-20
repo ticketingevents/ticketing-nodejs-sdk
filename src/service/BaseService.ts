@@ -90,6 +90,7 @@ export class BaseService<RequestType, ResponseType>{
     })
 
     this.__listCollection.onFilter((criteria: {[key: string]: string}) => {
+      criteria = this._preprocessCriteria(criteria)
       for(const criterion in criteria){
         if(!(criterion in this.__listCriteria)){
           this.__listCriteria[criterion] = criteria[criterion]
@@ -135,6 +136,10 @@ export class BaseService<RequestType, ResponseType>{
 
   protected _instantiateModel(data: any){
     return new this.__modelClass(data, this.__adapter)
+  }
+
+  protected _preprocessCriteria(criteria: {[key: string]: any}){
+    return criteria
   }
 
   private __listQuery(resolve, reject){

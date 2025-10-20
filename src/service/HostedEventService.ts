@@ -19,6 +19,11 @@ export class HostedEventService extends BaseService<EventData, Event>{
     this.__host = host
   }
 
+  protected _preprocessCriteria(criteria: {[key: string]: any}){
+    criteria.region = criteria.region?criteria.region.id:null
+    return criteria
+  }
+
   protected _instantiateModel(data: any){
     const event: Event = new BaseEventModel(data, this.__apiAdapter)
     event.host = this.__host

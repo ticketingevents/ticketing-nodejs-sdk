@@ -118,7 +118,7 @@ describe("Venues", function(){
     })
 
     it('Should return a collection of venues matching the region filter', function () {return new Promise((resolve, reject) => {
-        ticketing.venues.list(5).filter({region: this.venueRegion.id}).then(venues => {
+        ticketing.venues.list(5).filter({region: this.venueRegion}).then(venues => {
           for(let venue of venues){
             expect(venue.region).to.be.an.instanceOf(RegionModel)
               .and.to.have.property("uri", this.testVenueData.region.uri)

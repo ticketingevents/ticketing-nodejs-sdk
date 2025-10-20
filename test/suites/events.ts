@@ -195,11 +195,27 @@ describe("Events", function(){
 
     it('Should return a collection of events matching the region filter', function () {
       return new Promise((resolve, reject) => {
-        ticketing.events.list(5).filter({region: this.region.id}).then(events => {
+        ticketing.events.list(5).filter({region: this.region}).then(events => {
           expect(events.length).to.be.least(1)
 
           for(let event of events){
             expect(event.venue.region.uri).to.equal(this.region.uri)
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return a collection of events matching the host filter', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.events.list(5).filter({host: this.host}).then(events => {
+          expect(events.length).to.be.least(1)
+
+          for(let event of events){
+            expect(event.host.uri).to.equal(this.host.uri)
           }
 
           resolve(true)
@@ -256,8 +272,6 @@ describe("Events", function(){
       })
     })
 
-    //TODO: Sorting by publication date is broken and needs fixing
-    /*
     it('Should return events sorted by publication date in descending order', function () {
       return new Promise((resolve, reject) => {
         ticketing.events.list(5).sort("published", false).then(events => {
@@ -270,7 +284,6 @@ describe("Events", function(){
         })
       })
     })
-    */
 
     it('Should return events sorted by popularity in ascending order', function () {
       return new Promise((resolve, reject) => {
@@ -448,7 +461,7 @@ describe("Events", function(){
 
     it('Should return a collection of events matching the region filter', function () {
       return new Promise((resolve, reject) => {
-        ticketing.events.published.list(5).filter({region: this.region.id}).then(events => {
+        ticketing.events.published.list(5).filter({region: this.region}).then(events => {
           expect(events.length).to.be.at.least(1)
           
           for(let event of events){
@@ -462,9 +475,25 @@ describe("Events", function(){
       })
     })
 
+    it('Should return a collection of events matching the host filter', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.events.published.list(5).filter({host: this.host}).then(events => {
+          expect(events.length).to.be.least(1)
+
+          for(let event of events){
+            expect(event.host.uri).to.equal(this.host.uri)
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
     it('Should return a collection of events matching the category filter', function () {
       return new Promise((resolve, reject) => {
-        ticketing.events.published.list(5).filter({category: this.category.id}).then(events => {
+        ticketing.events.published.list(5).filter({category: this.category}).then(events => {
           expect(events.length).to.be.at.least(1)
           
           for(let event of events){
@@ -542,6 +571,22 @@ describe("Events", function(){
       })
     })
 
+    it('Should return a collection of events matching the active filter', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.events.published.list(5).filter({active: true}).then(events => {
+          expect(events.length).to.be.least(1)
+
+          for(let event of events){
+            expect(new Date(event.end)).to.be.least(new Date())
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
     it('Should return events sorted by title in ascending order', function () {
       return new Promise((resolve, reject) => {
         ticketing.events.published.list(5).sort("alphabetical").then(events => {
@@ -554,8 +599,6 @@ describe("Events", function(){
       })
     })
 
-    //TODO: Sorting by publication date is broken and needs fixing
-    /*
     it('Should return events sorted by publication date in descending order', function () {
       return new Promise((resolve, reject) => {
         ticketing.events.published.list(5).sort("published", false).then(events => {
@@ -567,7 +610,6 @@ describe("Events", function(){
         })
       })
     })
-    */
 
     it('Should return events sorted by popularity in ascending order', function () {
       return new Promise((resolve, reject) => {

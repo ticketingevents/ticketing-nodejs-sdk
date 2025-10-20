@@ -1010,10 +1010,13 @@ add-on services through TickeTing
   //Retrieve a specific host using its ID
   let host = await ticketing.hosts.find(17327135633743)
 
+  //Retrieve a specific region using its ID
+  let region = await ticketing.regions.find(19290238432215)
+
   host.events
     // Supported filters with examples
     .filter({
-      region: 19290238432215,
+      region: region,
       title: "Dawn of the Seven Premier",
       status: "Scheduled",
       active: true,
@@ -1051,15 +1054,26 @@ Operations for working with events in the TickeTing system.
 [API Reference](https://docs.ticketingevents.com/openapi/working-with-events/list_published_events)
 
 ```javascript
+  //Retrieve a specific region using its ID
+  let region = await ticketing.regions.find(19290238432215)
+
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific category using its ID
+  let category = await ticketing.categories.find(16878141745207)
+
   ticketing.events.published.list()
     // Supported filters with examples
     .filter({
-      region: 19290238432215,
-      category: 16878141745207,
+      region: region,
+      host: host,
+      category: category,
       subcategory: "Premier",
       after: "2025-01-01T00:00",
       before: "2025-12-31T23:59",
-      title: "Dawn of the Seven Premier"
+      title: "Dawn of the Seven Premier",
+      active: true
     })
     // Supported sort fields
     .sort(
@@ -1097,16 +1111,25 @@ Operations for working with events in the TickeTing system.
 [API Reference](https://docs.ticketingevents.com/openapi/working-with-events/list_events)
 
 ```javascript
+  //Retrieve a specific region using its ID
+  let region = await ticketing.regions.find(19290238432215)
+
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific section using its ID
+  let section = (await ticketing.events.find(16993717817996)).sections[0]
+
   ticketing.events.list()
     // Supported filters with examples
     .filter({
-      region: 19290238432215,
-      host: 16951985851389,
+      region: region,
+      host: host,
       title: "Dawn of the Seven Premier",
       status: "Scheduled",
       active: true,
       public: false,
-      section: 16993964783416
+      section: section
     })
     // Supported sort fields
     .sort(
@@ -1444,7 +1467,7 @@ SDK functionality allowing for manipulating and settling ticket orders.
   ticketing.orders.list()
     // Supported filters with examples
     .filter({
-      customer: account.number,
+      customer: account,
       status: "Cancelled" //One of "Placed", "Cancelled", "Timed Out", "Fulfilled", "Voided", "Returned"
     })
     // Supported sort fields
@@ -1866,14 +1889,19 @@ This is done by providing an admissions token which is linked to a specific even
 
 ```javascript
   let session = await ticketing.session.admission("A0F9GG8D", "Name", "Device")
+
+  let ticket = await ticketing.tickets.find("DAWIER-BACK75580348")
+  let patron = await ticketing.accounts.find("AZ-4918SF92")
+  let section = (await ticketing.events.find(16993717817996)).sections[0]
+
   session.admissions(25 //page size) // The admissions() method returns a standard collection
     // Supported filters with examples
     .filter({
       redeemer: "Billy Butcher", //Only return admissions granted by this redeemer
       device: "Google Pixel Pro 6", //Only return admissions granted from this device
-      ticket: "DAWIER-BACK75580348", //Only return the admission granted on this ticket
-      patron: "AZ-4918SF92", //Only return admissions granted to the specified patron
-      section: "16993964783416" //Only return admissions granted to this event section
+      ticket: ticket, //Only return the admission granted on this ticket
+      patron: patron, //Only return admissions granted to the specified patron
+      section: section //Only return admissions granted to this event section
     })
     .then(admissions => {
       //Do something with the admissions collection
@@ -2178,10 +2206,12 @@ Operations for managing the venues at which event can be staged
 [API Reference](https://ticketing.redoc.ly/tag/Venue-Management#operation/list_venues)
 
 ```javascript
+  let region = await ticketing.regions.find(19290238432215)
+
   ticketing.venues.list()
     // Supported filters with examples
     .filter({
-      region: 19290238432215,
+      region: region,
       name: "Vought Tower"
     })
     .then(venues => {

@@ -346,7 +346,7 @@ describe("Orders", function(){
 
 		it('Should return a collection of orders matching the customer filter', function () {
 			return new Promise((resolve, reject) => {
-				ticketing.orders.list(5).filter({customer: this.customer.number}).then(orders => {
+				ticketing.orders.list(5).filter({customer: this.customer}).then(orders => {
 					expect(orders.length).to.be.least(1)
 
 					for(let order of orders){

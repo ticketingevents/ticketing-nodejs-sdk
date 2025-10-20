@@ -36,4 +36,9 @@ export class VenueService extends BaseService<VenueData, Venue>{
     data.region = {self: data.region}
     return new VenueModel(data, this.__apiAdapter)
   }
+
+  protected _preprocessCriteria(criteria: {[key: string]: any}){
+    criteria.region = criteria.region?criteria.region.id:null
+    return criteria
+  }
 }

@@ -441,7 +441,7 @@ describe("Admissions", function(){
 
 		it('Should return a collection of admissions matching the ticket filter', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.admissions().filter({ticket: testTicket.serial}).then(admissions => {
+				testSession.admissions().filter({ticket: testTicket}).then(admissions => {
 				  expect(admissions.length).to.be.at.least(1)
 
 				  for(let admission of admissions){
@@ -457,7 +457,7 @@ describe("Admissions", function(){
 
 		it('Should return a collection of admissions matching the patron filter', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.admissions().filter({patron: testTicket.owner.uri}).then(admissions => {
+				testSession.admissions().filter({patron: testTicket.owner}).then(admissions => {
 				  expect(admissions.length).to.be.at.least(1)
 
 				  for(let admission of admissions){
@@ -473,7 +473,7 @@ describe("Admissions", function(){
 
 		it('Should return a collection of admissions matching the section filter', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.admissions().filter({section: this.testSection.id}).then(admissions => {
+				testSession.admissions().filter({section: this.testSection}).then(admissions => {
 				  expect(admissions.length).to.be.at.least(1)
 
 				  for(let admission of admissions){

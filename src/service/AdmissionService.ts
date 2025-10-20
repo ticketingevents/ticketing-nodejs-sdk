@@ -23,4 +23,11 @@ export class AdmissionService extends BaseService<AdmissionData, Admission>{
   protected _instantiateModel(data: any){
     return new AdmissionModel(data, this.__event, this.__apiAdapter)
   }
+
+  protected _preprocessCriteria(criteria: {[key: string]: any}){
+    criteria.ticket = criteria.ticket?criteria.ticket.serial:null
+    criteria.patron = criteria.patron?criteria.patron.uri:null
+    criteria.section = criteria.section?criteria.section.id:null
+    return criteria
+  }
 }

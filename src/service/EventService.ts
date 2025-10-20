@@ -78,12 +78,20 @@ export class EventService extends BaseService<EventData, Event>{
       })
     })
   }
+
+  protected _preprocessCriteria(criteria: {[key: string]: any}){
+    criteria.region = criteria.region?criteria.region.id:null
+    criteria.host = criteria.host?criteria.host.id:null
+    criteria.section = criteria.section?criteria.section.id:null
+
+    return criteria
+  }
 }
 
 class PublishedEventService extends BaseService<EventData, Event>{
   constructor(apiAdapter: APIAdapter){
     super(apiAdapter, "/published-events", EventModel,
-      ["region", "category", "subcategory", "before", "after", "title"],
+      ["region", "host", "active", "category", "subcategory", "before", "after", "title"],
       ["alphabetical","published","popularity","start"]
     )
   }
@@ -98,5 +106,13 @@ class PublishedEventService extends BaseService<EventData, Event>{
     return new Promise<Event>((resolve, reject) => {
       reject(new UnsupportedOperationError(0, "Operation not supported"))
     })
+  }
+
+  protected _preprocessCriteria(criteria: {[key: string]: any}){
+    criteria.region = criteria.region?criteria.region.id:null
+    criteria.host = criteria.host?criteria.host.id:null
+    criteria.category = criteria.category?criteria.category.id:null
+
+    return criteria
   }
 }
