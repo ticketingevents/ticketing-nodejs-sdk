@@ -893,7 +893,7 @@ Operations for accessing collections of resources linked to a user's account
     .filter({
       event: event, //Return tickets for the given event
       section: section, //Return tickets for the given section
-      serial: "DAWIER-VIPV37536946", //Return tickets with a matching serial number
+      serial: "DAWIER", //Return tickets with a serial number matching the pattern
       status: "Held" //Return tickets with a matching status
     })
     .then(tickets => {
