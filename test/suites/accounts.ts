@@ -37,21 +37,10 @@ describe("Accounts", function(){
       "name": "Preferred Region "+Math.floor(Math.random() * 999999),
       "country": "Antigua and Barbuda"
     })
-
-    //Initialise test host data
-    this.managedHostData = {
-      "name": "Test Host "+Math.floor(Math.random() * 999999),
-      "contact": "Host Contact",
-      "email": "contact@email.com"
-    }
-
-    // Add host to test managed hosts retrieval
-    this.managedHost = await ticketing.hosts.create(this.managedHostData)
   })
 
   after(async function(){
     await this.preferredRegion.delete()
-    await this.managedHost.delete()
   })
 
   describe('Register an account', function () {
@@ -237,12 +226,6 @@ describe("Accounts", function(){
       testAccount.firstName = "New First"
       testAccount.lastName = "New Last"
 
-      //Make new account an administrator of the test host
-      api.post(`${this.managedHost.uri}/administrators`, {
-          "account": testAccount.number
-      }).then(response => {
-      })
-
       //Save changes
       return expect(testAccount.save()).eventually.be.true
     })
@@ -375,26 +358,6 @@ describe("Accounts", function(){
           expect(preferences.save())
             .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: region.")
             .and.be.an.instanceOf(BadDataError)
-
-          resolve(true)
-        }).catch(error => {
-          reject(error)
-        })
-      })
-    })
-  })
-
-  describe('List managed hosts', function () {
-    it('Should return a collection of Host resources', function () {
-      return expect(testAccount.hosts).eventually.to.all.be.instanceof(HostModel)
-    })
-
-    it('Should contain the test host', function () {
-      return new Promise((resolve, reject) => {
-        testAccount.hosts.then(hosts => {
-          expect(hosts[0])
-            .to.be.an.instanceof(HostModel)
-            .and.to.deep.include(this.managedHostData)
 
           resolve(true)
         }).catch(error => {

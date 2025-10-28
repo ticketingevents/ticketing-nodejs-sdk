@@ -6,7 +6,7 @@ export interface Ticket extends Base{
   serial: string
   status: string
   section: Section
-  owner: Account
   issued: string
   redeemed: string
+  owner?: Account
 }

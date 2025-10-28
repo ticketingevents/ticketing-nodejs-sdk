@@ -56,7 +56,6 @@ export class BaseEventModel extends BaseModel implements Event{
     this.sections = []
 
     for(const section of event.sections){
-      section.self = `${this.uri}${section.self}`
       this.sections.push(new SectionModel(section, adapter))
     }
 

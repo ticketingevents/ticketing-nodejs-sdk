@@ -14,6 +14,7 @@ export { RegionModel } from './RegionModel'
 export { SectionModel } from './SectionModel'
 export { SessionModel } from './SessionModel'
 export { TicketModel } from './TicketModel'
+export { WalletTicketModel } from './WalletTicketModel'
 export { TokenModel } from './TokenModel'
 export { VenueModel } from './VenueModel'
 

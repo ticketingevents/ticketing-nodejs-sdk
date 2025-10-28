@@ -1,20 +1,16 @@
 import { APIAdapter } from '../util/APIAdapter'
 import { Collection } from '../util/Collection'
-import { BaseService } from '../service/BaseService'
+import { ItineraryService } from '../service/ItineraryService'
+import { WalletService } from '../service/WalletService'
+import { ManagedHostService } from '../service/ManagedHostService'
 import { BaseModel } from './BaseModel'
 import type { Account } from '../interface/Account'
 import type { AccountData } from '../interface/data/AccountData'
 import type { AccountPreferences } from '../interface/AccountPreferences'
 import { AccountPreferencesModel } from './AccountPreferencesModel'
 import type { Host } from '../interface/Host'
-import type { HostData } from '../interface/data/HostData'
-import { HostModel } from './HostModel'
-
-class ManagedHostService extends BaseService<HostData, Host>{
-  constructor(apiAdapter: APIAdapter, account: Account){
-    super(apiAdapter, `${account.uri}/hosts`, HostModel)
-  }
-}
+import type { Event } from '../interface/Event'
+import type { Ticket } from '../interface/Ticket'
 
 export class AccountModel extends BaseModel implements Account{
   public number: string
@@ -35,6 +31,8 @@ export class AccountModel extends BaseModel implements Account{
   public state: string
 
   private __preferences: string
+  private __itineraryService: ItineraryService
+  private __walletService: WalletService
   private __managedHostService: ManagedHostService
 
   constructor(account: any, adapter: APIAdapter){
@@ -58,6 +56,8 @@ export class AccountModel extends BaseModel implements Account{
     this.state = account.state
 
     this.__preferences = account.preferences
+    this.__itineraryService = new ItineraryService(this._apiAdapter, this)
+    this.__walletService = new WalletService(this._apiAdapter, this)
     this.__managedHostService = new ManagedHostService(this._apiAdapter, this)
   }
 
@@ -69,6 +69,14 @@ export class AccountModel extends BaseModel implements Account{
         reject(error)
       })
     })
+  }
+
+  get itinerary(): Collection<Event>{
+    return this.__itineraryService.list()
+  }
+
+  get wallet(): Collection<Ticket>{
+    return this.__walletService.list()
   }
 
   get hosts(): Collection<Host>{

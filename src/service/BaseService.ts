@@ -13,7 +13,7 @@ export class BaseService<RequestType, ResponseType>{
   private __listCollection: Collection<ResponseType>
   private __listFilters: Array<string>
   private __listSortFields: Array<string>
-  private __listCriteria: {[key: string]: string|number}
+  private __listCriteria: {[key: string]: string | number}
   private __listResult: {entries: Array<ResponseType>, page: number, records: number, total: number}
 
   constructor(
@@ -89,7 +89,7 @@ export class BaseService<RequestType, ResponseType>{
       return Math.ceil(this.__listResult.total / this.__listResult.records)
     })
 
-    this.__listCollection.onFilter((criteria: {[key: string]: string}) => {
+    this.__listCollection.onFilter((criteria: {[key: string]: any}) => {
       criteria = this._preprocessCriteria(criteria)
       for(const criterion in criteria){
         if(!(criterion in this.__listCriteria)){

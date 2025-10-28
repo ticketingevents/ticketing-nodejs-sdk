@@ -1,5 +1,5 @@
 //Control execution order
-import './accounts'
+import './account_resources'
 
 import { Category, BadDataError,  ResourceExistsError, ResourceNotFoundError, ResourceIndelibleError } from '../../src'
 import { CategoryModel } from  '../../src/model'

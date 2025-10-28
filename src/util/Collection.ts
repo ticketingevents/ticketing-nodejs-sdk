@@ -3,7 +3,7 @@ import { Collection as CollectionInterface } from '../interface/Collection'
 export class Collection<T> extends Promise<Array<T>> implements CollectionInterface<T>{
   private __executor: (resolve, reject) => void
   private __onPages: () => number = () => {return 0}
-  private __onFilter: (criteria: {[key: string]: string | number}) => void = () => {}
+  private __onFilter: (criteria: {[key: string]: any}) => void = () => {}
   private __onSort: (field: string, ascending: string) => void = () => {}
   private __onCurrent: () => number = () => {return 0}
   private __onPageChange: (page: number) => void = () => {}
@@ -46,7 +46,7 @@ export class Collection<T> extends Promise<Array<T>> implements CollectionInterf
     })
   }
 
-  filter(criteria: {[key: string]: string|number}): Collection<T>{
+  filter(criteria: {[key: string]: any}): Collection<T>{
     return this.__copy((resolve, reject)=>{
       this.__onFilter(criteria)
       this.__executor(resolve, reject)
@@ -108,7 +108,7 @@ export class Collection<T> extends Promise<Array<T>> implements CollectionInterf
     this.__onPages = callback
   }
 
-  onFilter(callback: (criteria: {[key: string]: string}) => void){
+  onFilter(callback: (criteria: {[key: string]: any}) => void){
     this.__onFilter = callback
   }
 

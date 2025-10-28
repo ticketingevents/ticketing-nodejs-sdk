@@ -101,43 +101,46 @@ export class TickeTingService extends TickeTing{
   * [Chaining operations](#chaining-operations)
 - [Error handling](#error-handling)
 - [Session Management](#sessions)
-  * [Start a new session](#start-a-new-session)
-  * [Resume an active session](#resume-an-active-session)
-  * [End a session](#end-a-session)
-  * [Retrieve session information](#retrieve-session-information)
+    * [Start a new session](#start-a-new-session)
+    * [Resume an active session](#resume-an-active-session)
+    * [End a session](#end-a-session)
+    * [Retrieve session information](#retrieve-session-information)
 - [Accounts](#accounts)
-  * [List all accounts](#list-all-accounts)
-  * [Register an account](#register-an-account)
-  * [Fetch an account](#fetch-an-account)
-  * [Update an account](#update-an-account)
-  * [Delete an account](#delete-an-account)
-  * [Verify an account](#verify-an-account)
-  * [Fetch account preferences](#fetch-account-preferences)
-  * [Update account preferences](#update-account-preferences)
-  * [Retrieve managed hosts](#retrieve-managed-hosts)
-  * [Reset account password](#reset-account-password)
-  * [Lookup an account](#lookup-an-account)
+    * [List all accounts](#list-all-accounts)
+    * [Register an account](#register-an-account)
+    * [Fetch an account](#fetch-an-account)
+    * [Update an account](#update-an-account)
+    * [Delete an account](#delete-an-account)
+    * [Verify an account](#verify-an-account)
+    * [Fetch account preferences](#fetch-account-preferences)
+    * [Update account preferences](#update-account-preferences)
+    * [Reset account password](#reset-account-password)
+    * [Lookup an account](#lookup-an-account)
+- [Account Resources](#account-resources)
+    * [Retrieve event itinerary](#retrieve-event-itinerary)
+    * [Retrieve ticket wallet](#retrieve-ticket-wallet)
+    * [Retrieve managed hosts](#retrieve-managed-hosts)
 - [Hosts](#hosts)
-  * [List event hosts](#list-event-hosts)
-  * [Create an event host](#create-an-event-host)
-  * [Fetch an event host](#fetch-an-event-host)
-  * [Update an event host](#update-an-event-host)
-  * [Delete an event host](#delete-an-event-host)
-  * [List hosted events](#list-hosted-events)
+    * [List event hosts](#list-event-hosts)
+    * [Create an event host](#create-an-event-host)
+    * [Fetch an event host](#fetch-an-event-host)
+    * [Update an event host](#update-an-event-host)
+    * [Delete an event host](#delete-an-event-host)
+    * [List hosted events](#list-hosted-events)
 - [Events](#events)
-  * [List published events](#list-published-events)
-  * [List all events](#list-all-events)
-  * [Register an event](#register-an-event)
-  * [Fetch an event](#fetch-an-event)
-  * [Update an event](#update-an-event)
-  * [Delete an event](#delete-an-event)
-  * [Submit an event for review](#submit-an-event-for-review)
+    * [List published events](#list-published-events)
+    * [List all events](#list-all-events)
+    * [Register an event](#register-an-event)
+    * [Fetch an event](#fetch-an-event)
+    * [Update an event](#update-an-event)
+    * [Delete an event](#delete-an-event)
+    * [Submit an event for review](#submit-an-event-for-review)
 - [Purchasing Tickets](#purchasing-tickets)
-  * [Create a shopping cart](#create-a-shopping-cart)
-  * [Add items to cart](#add-items-to-cart)
-  * [Remove items from cart](#remove-items-from-cart)
-  * [Set item quantity in cart](#set-item-quantity-in-cart)
-  * [Checkout cart](#checkout-cart)
+    * [Create a shopping cart](#create-a-shopping-cart)
+    * [Add items to cart](#add-items-to-cart)
+    * [Remove items from cart](#remove-items-from-cart)
+    * [Set item quantity in cart](#set-item-quantity-in-cart)
+    * [Checkout cart](#checkout-cart)
 - [Order Settlement](#order-settlement)
     * [List orders](#list-orders)
     * [Fetch an order](#retrieve-an-order)
@@ -145,40 +148,40 @@ export class TickeTingService extends TickeTing{
     * [Settle an order](#settle-an-order)
     * [Refund an order](#refund-an-order)
 - [Reporting](#reporting)
-  * [View host statistics](#view-host-statistics)
-  * [View event statistics](#view-event-statistics)
+    * [View host statistics](#view-host-statistics)
+    * [View event statistics](#view-event-statistics)
 - [Admissions](#admissions)
-  * [Admissions tokens](#admissions-tokens)
-    * [List admissions tokens](#list-admissions-tokens)
-    * [Issue admissions token](#issue-admissions-token)
-    * [Update admissions token sections](#update-admissions-token-sections)
-    * [Invalidate an admissions token](#invalidate-an-admissions-token)
-  * [Admitting patrons](#admitting-patrons)
-    * [Start admission session](#start-admission-session)
-    * [List valid tickets](#list-valid-tickets)
-    * [Grant admission to event](#grant-admission-to-event)
-    * [List event admissions](#list-admissions-to-event)
-    * [End admission session](#end-admission-session)
+    * [Admissions tokens](#admissions-tokens)
+        * [List admissions tokens](#list-admissions-tokens)
+        * [Issue admissions token](#issue-admissions-token)
+        * [Update admissions token sections](#update-admissions-token-sections)
+        * [Invalidate an admissions token](#invalidate-an-admissions-token)
+    * [Admitting patrons](#admitting-patrons)
+        * [Start admission session](#start-admission-session)
+        * [List valid tickets](#list-valid-tickets)
+        * [Grant admission to event](#grant-admission-to-event)
+        * [List event admissions](#list-admissions-to-event)
+        * [End admission session](#end-admission-session)
 - [Categories](#categories)
-  * [List event categories](#list-event-categories)
-  * [Add new category](#add-new-category)
-  * [Fetch a category](#fetch-a-category)
-  * [Update a category](#update-a-category)
-  * [Delete a category](#delete-a-category)
+    * [List event categories](#list-event-categories)
+    * [Add new category](#add-new-category)
+    * [Fetch a category](#fetch-a-category)
+    * [Update a category](#update-a-category)
+    * [Delete a category](#delete-a-category)
 - [Regions](#regions)
-  * [List all regions](#list-all-regions)
-  * [Add new region](#add-new-region)
-  * [Fetch a region](#fetch-a-region)
-  * [Update a region](#update-a-region)
-  * [Delete a region](#delete-a-region)
+    * [List all regions](#list-all-regions)
+    * [Add new region](#add-new-region)
+    * [Fetch a region](#fetch-a-region)
+    * [Update a region](#update-a-region)
+    * [Delete a region](#delete-a-region)
 - [Venues](#venues)
-  * [List event venues](#list-event-venues)
-  * [Create an event venue](#create-an-event-venue)
-  * [Fetch a venue](#fetch-a-venue)
-  * [Update a venue](#update-a-venue)
-  * [Delete an event venue](#delete-an-event-venue)
+    * [List event venues](#list-event-venues)
+    * [Create an event venue](#create-an-event-venue)
+    * [Fetch a venue](#fetch-a-venue)
+    * [Update a venue](#update-a-venue)
+    * [Delete an event venue](#delete-an-event-venue)
 - [Presets](#presets)
-  * [Retrieve a list of countries](#retrieve-a-list-of-countries)
+    * [Retrieve a list of countries](#retrieve-a-list-of-countries)
 
 ## Collections
 
@@ -775,28 +778,6 @@ preferences.
   })
 ```
 
-### Retrieve managed hosts
-
-[API Reference](https://docs.ticketingevents.com/openapi/account-management/list_account_hosts)
-
-```javascript
-  //Retrieve a specific account using its account number
-  account = await ticketing.accounts.find("MO-6A39EE8D")
-
-  account.hosts
-    .then(hosts => {
-      //Do something with the collection of hosts
-    })
-    .catch(error => {
-      //Handle errors
-      if(error instanceof PageAccessError){
-        //Handle non-existant page error
-      }else{
-        console.log(`${typeof error} (${error.code}): ${error.message}`)
-      }
-    })
-```
-
 ### Reset account password
 
 [API Reference](https://docs.ticketingevents.com/openapi/password-reset)
@@ -852,6 +833,104 @@ preferences.
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
   })
+```
+
+## Account Resources
+
+Operations for accessing collections of resources linked to a user's account
+
+### Retrieve event itinerary
+
+[API Reference](https://docs.ticketingevents.com/openapi/account-activity/view_event_itinerary)
+
+```javascript
+  //Retrieve a specific account using its account number
+  account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  account.itinerary
+    // Supported filters with examples
+    .filter({
+      active: true //Return only future events
+    })
+    // Supported sort fields
+    .sort(
+      "start", //One of "alphabetical" "published" "popularity" "start"
+      true //Set true for ascending sort (default), or false for descending order
+    )
+    .then(events => {
+      //Do something with the collection of events
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof UnsupportedSortError){
+        //Handle unsupported sort field error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Retrieve ticket wallet
+
+[API Reference](https://docs.ticketingevents.com/openapi/account-activity/list_ticket_wallet)
+
+```javascript
+  //Retrieve a specific account using its account number
+  let account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  //Load event by ID
+  let event = await ticketing.events.find(16993717817996)
+
+  //Load section by ID
+  let section = (await ticketing.events.find(16993717817996)).sections[0]
+
+  account.wallet
+    // Supported filters with examples
+    .filter({
+      event: event, //Return tickets for the given event
+      section: section, //Return tickets for the given section
+      serial: "DAWIER-VIPV37536946", //Return tickets with a matching serial number
+      status: "Held" //Return tickets with a matching status
+    })
+    .then(tickets => {
+      //Do something with the collection of tickets
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Retrieve managed hosts
+
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/list_account_hosts)
+
+```javascript
+  //Retrieve a specific account using its account number
+  account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  account.hosts
+    .then(hosts => {
+      //Do something with the collection of hosts
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
 ```
 
 ## Hosts
