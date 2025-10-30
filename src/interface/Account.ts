@@ -1,7 +1,9 @@
 import { Base } from './Base'
 import { Collection } from '../util/Collection'
-import { AccountPreferences } from './AccountPreferences'
-import { Host } from './Host'
+import type { AccountPreferences } from './AccountPreferences'
+import type { Event } from './Event'
+import type { Ticket } from './Ticket'
+import type { Host } from './Host'
 
 export interface Account extends Base{
   number: string
@@ -22,5 +24,7 @@ export interface Account extends Base{
   state: string
 
   preferences: Promise<AccountPreferences>
+  itinerary: Collection<Event>
+  wallet: Collection<Ticket>
   hosts: Collection<Host>
 }
