@@ -119,6 +119,7 @@ export class TickeTingService extends TickeTing{
 - [Account Resources](#account-resources)
     * [Retrieve event itinerary](#retrieve-event-itinerary)
     * [Retrieve ticket wallet](#retrieve-ticket-wallet)
+    * [Retrieve transfer history](#retrieve-transfer-history)
     * [Retrieve managed hosts](#retrieve-managed-hosts)
 - [Hosts](#hosts)
     * [List event hosts](#list-event-hosts)
@@ -147,6 +148,15 @@ export class TickeTingService extends TickeTing{
     * [Cancel an order](#cancel-an-order)
     * [Settle an order](#settle-an-order)
     * [Refund an order](#refund-an-order)
+- [Transferring Tickets](#purchasing-tickets)
+    * [Initiate a transfer](#initiate-a-transfer)
+    * [Add tickets to transfer](#add-items-to-transfer)
+    * [Remove tickets from transfer](#remove-items-from-transfer)
+    * [Set tickets to be transferred](#set-item-quantity-to-transfer)
+    * [Send a transfer](#send-a-transfer)
+    * [Fetch a transfer](#fetch-a-transfer)
+    * [Cancel a transfer](#cancel-a-transfer)
+    * [Claim a transfer](#claim-a-transfer)
 - [Reporting](#reporting)
     * [View host statistics](#view-host-statistics)
     * [View event statistics](#view-event-statistics)
@@ -338,6 +348,9 @@ avoid page access errors.
 ```javascript
   //Return the current page number
   console.log(await collection.current)
+
+  //Return the number of total elements in the collection
+  console.log(await collection.total)
 
   //Return the number of available pages in the collection
   console.log(await collection.pages)
@@ -911,6 +924,61 @@ Operations for accessing collections of resources linked to a user's account
     })
 ```
 
+### Retrieve transfer history
+
+[API Reference](https://docs.ticketingevents.com/openapi/account-activity/view_transfer_history)
+
+```javascript
+  //Retrieve a specific account using its account number
+  let account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  //Load event by ID
+  let event = await ticketing.events.find(16993717817996)
+
+  //Load section by ID
+  let section = (await ticketing.events.find(16993717817996)).sections[0]
+
+  //Retrieve transfers received by the customer
+  account.inbox
+    // Supported filters with examples
+    .filter({
+      status: "Pending" //Return transfers with the given status
+    })
+    .then(transfers => {
+      //Do something with the collection of transfers
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+
+    //Retrieve transfers sent by the customer
+    account.outbox
+      // Supported filters with examples
+      .filter({
+        status: "Pending" //Return transfers with the given status
+      })
+      .then(transfers => {
+        //Do something with the collection of transfers
+      })
+      .catch(error => {
+        //Handle errors
+        if(error instanceof UnsupportedCriteriaError){
+          //Handle unsupported criteria error
+        }else if(error instanceof PageAccessError){
+          //Handle non-existant page error
+        }else{
+          console.log(`${typeof error} (${error.code}): ${error.message}`)
+        }
+      })
+```
+
 ### Retrieve managed hosts
 
 [API Reference](https://docs.ticketingevents.com/openapi/account-management/list_account_hosts)
@@ -1432,7 +1500,7 @@ SDK functionality related to shopping cart management and checkout.
       console.log("The number of items to be added to the cart must be a positive integer.")
     }else if(error instanceof UnsupportedOperationError){
       console.log("Adding the specified quantity of this item would exceed the section capacity.")
-    }{
+    }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
   })
@@ -1687,6 +1755,252 @@ SDK functionality allowing for manipulating and settling ticket orders.
     }else if(error instanceof InvalidStateError){
       console.log("The order has already timed out, been cancelled or was refunded previously.")
     }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+## Transferring tickets
+
+SDK functionality for transferring tickets in the customer's wallet to another user.
+
+### Inititate a transfer
+
+```javascript
+  let sender = await ticketing.accounts.find("MO-6A39EE8D")
+  let recipient = await ticketing.accounts.find("AZ-4918SF92")
+
+  sender.transfer(recipient).then(transfer => {
+    //Retrieve transfer information
+    let initiated = transfer.initiated //Date and time that the cart was created
+    let status = transfer.status //Current status of the transfer
+    let tickets = transfer.tickets //Details of tickets being transferred grouped by section.
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("An account holder cannot transfer tickets to themselves.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Add tickets to transfer
+
+```javascript
+  //Inititate a transfer
+  let sender = await ticketing.accounts.find("MO-6A39EE8D")
+  let recipient = await ticketing.accounts.find("AZ-4918SF92")
+  let transfer = await sender.transfer(recipient)
+
+  //Retrieve the sender's upcoming itinerary
+  let itinerary = await sender.itinerary.filter({active: true}).sort("start")
+
+  //Add all tickets from the first event in the itinerary to the transfer
+  let tickets = await sender.wallet.filter({event: itinerary[0]})
+  transfer.add(
+    tickets //Add all tickets held for the event to the transfer
+  ).then(success => {
+    if(success){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("The sender does not own one or more of the specified tickets.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Remove tickets from transfer
+
+```javascript
+  //Inititate a transfer
+  let sender = await ticketing.accounts.find("MO-6A39EE8D")
+  let recipient = await ticketing.accounts.find("AZ-4918SF92")
+  let transfer = await sender.transfer(recipient)
+
+  //Retrieve the sender's upcoming itinerary
+  let itinerary = await sender.itinerary.filter({active: true}).sort("start")
+
+  //Add all tickets from the first event in the itinerary to the transfer
+  let tickets = await sender.wallet.filter({event: itinerary[0]})
+  await transfer.add(tickets)
+
+  //Remove tickets from the transfer
+  transfer.remove(
+    tickets[0] //Remove a specific ticket from the transfer
+  ).then(success => {
+    if(success){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("The sender does not own one or more of the specified tickets.")
+    }else if(error instanceof ResourceNotFoundError){
+      console.log("The specified Ticket is not a part of the transfer and cannot be removed.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Set tickets to be transferred
+
+```javascript
+  //Inititate a transfer
+  let sender = await ticketing.accounts.find("MO-6A39EE8D")
+  let recipient = await ticketing.accounts.find("AZ-4918SF92")
+  let transfer = await sender.transfer(recipient)
+
+  //Retrieve the sender's upcoming itinerary
+  let itinerary = await sender.itinerary.filter({active: true}).sort("start")
+
+  //Add all tickets from the first event in the itinerary to the transfer
+  let tickets = await sender.wallet.filter({event: itinerary[0]})
+  await transfer.add(tickets)
+
+  //Replace queued tickets with a new collection
+  let newTickets = await sender.wallet.filter({event: itinerary[1]})
+  cart.set(
+    newTickets //Override the list of queued tickets with a new one
+  ).then(success => {
+    if(success){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("The sender does not own one or more of the specified tickets.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Send a transfer
+
+[API Reference](https://docs.ticketingevents.com/openapi/ticket-transfers/initiate_transfer)
+
+```javascript
+  //Inititate a transfer
+  let sender = await ticketing.accounts.find("MO-6A39EE8D")
+  let recipient = await ticketing.accounts.find("AZ-4918SF92")
+  let transfer = await sender.transfer(recipient)
+
+  //Retrieve the sender's upcoming itinerary
+  let itinerary = await sender.itinerary.filter({active: true}).sort("start")
+
+  //Add all tickets from the first event in the itinerary to the transfer
+  let tickets = await sender.wallet.filter({event: itinerary[0]})
+  await transfer.add(tickets)
+
+  //Send transfer
+  transfer.send().then(sent => {
+    if(sent){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    if(error instanceof PermissionError){
+      console.log("The authenticated user is not permitted to initiate transfers on behalf of the sender.")
+    }else if(error instanceof BadDataError){
+      console.log("The sender does not own one or more of the tickets being transferred.")
+    }else if(error instanceof InvalidStateError){
+      console.log("This transfer has already been sent.")
+    }else{
+      //Handle errors
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Fetch a transfer
+
+[API Reference](https://docs.ticketingevents.com/openapi/ticket-transfers/retrieve_transfer)
+
+```javascript
+  //Retrieve a specific transfer using its ID
+  ticketing.transfers.find("17096551195817")
+    .then(transfer => {
+      //Do something with the transfer resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no transfer identified by the given ID")
+      }else if(error instanceof PermissionError){
+        console.log("The authenticating user is not authorised to retrieve transfers on behalf of the sender.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Cancel a transfer
+
+[API Reference](https://docs.ticketingevents.com/openapi/ticket-transfers/cancel_transfer)
+
+```javascript
+  //Retrieve a list of pending transfers the customer has sent
+  let customer = await ticketing.accounts.find("MO-6A39EE8D")
+  let transfers = await customer.outbox().filter({status: "Pending"})
+
+  //Cancel transfer
+  transfers[0].cancel().then(cancelled => {
+    if(cancelled){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    if(error instanceof PermissionError){
+      console.log("The authenticated user is not permitted to manage transfers on behalf of the sender.")
+    }else if(error instanceof InvalidStateError){
+      console.log("Only pending transfers can be cancelled.")
+    }else{
+      //Handle errors
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Claim a transfer
+
+[API Reference](https://docs.ticketingevents.com/openapi/ticket-transfers/claim_transfer)
+
+```javascript
+  //Retrieve a list of pending transfers the customer has received
+  let customer = await ticketing.accounts.find("MO-6A39EE8D")
+  let transfers = await customer.inbox().filter({status: "Pending"})
+
+  //Claim transfer
+  transfers[0].claim().then(claimed => {
+    if(claimed){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    if(error instanceof PermissionError){
+      console.log("The authenticated user is not permitted to manage transfers on behalf of the sender.")
+    }else if(error instanceof InvalidStateError){
+      console.log("Only a pending transfer can be claimed.")
+    }else{
+      //Handle errors
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
   })

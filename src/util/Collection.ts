@@ -2,6 +2,7 @@ import { Collection as CollectionInterface } from '../interface/Collection'
 
 export class Collection<T> extends Promise<Array<T>> implements CollectionInterface<T>{
   private __executor: (resolve, reject) => void
+  private __onTotal: () => number = () => {return 0}
   private __onPages: () => number = () => {return 0}
   private __onFilter: (criteria: {[key: string]: any}) => void = () => {}
   private __onSort: (field: string, ascending: string) => void = () => {}
@@ -35,6 +36,14 @@ export class Collection<T> extends Promise<Array<T>> implements CollectionInterf
   get current(): Promise<number>{
     return new Promise((resolve) => {
       resolve(this.__cursor)
+    })
+  }
+
+  get total(): Promise<number>{
+    return new Promise((resolve) => {
+      this.then(() => {
+        resolve(this.__onTotal())
+      })
     })
   }
 
@@ -104,6 +113,10 @@ export class Collection<T> extends Promise<Array<T>> implements CollectionInterf
     this.__onCurrent = callback
   }
 
+  onTotal(callback: () => number){
+    this.__onTotal = callback
+  }
+
   onPages(callback: () => number){
     this.__onPages = callback
   }
@@ -131,6 +144,7 @@ export class Collection<T> extends Promise<Array<T>> implements CollectionInterf
 
     const collection = new Collection<T>(executor, false, cursor)
     collection.onCurrent(this.__onCurrent)
+    collection.onTotal(this.__onTotal)
     collection.onPages(this.__onPages)
     collection.onFilter(this.__onFilter)
     collection.onSort(this.__onSort)

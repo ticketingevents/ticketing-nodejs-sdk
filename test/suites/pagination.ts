@@ -128,4 +128,11 @@ describe("Pagination", function(){
         .to.eventually.be.false
     })
   })
+
+  describe('#total()', function () {
+    it("Should return the total number of resources", function(){
+      return expect(this.collection.total)
+        .to.eventually.equal(5)
+    })
+  })
 })

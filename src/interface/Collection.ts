@@ -17,6 +17,7 @@ export interface Collection<T>{
 	hasPrevious(): Promise<boolean>
 
 	onCurrent(callback: () => number): void
+	onTotal(callback: () => number): void
 	onPages(callback: () => number): void
 	onFilter(callback: (criteria: {[key: string]: any}) => void): void
 	onSort(callback: (field: string, ascending: string) => void): void

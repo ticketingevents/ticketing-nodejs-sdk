@@ -85,6 +85,10 @@ export class BaseService<RequestType, ResponseType>{
       return this.__listResult.page
     })
 
+    this.__listCollection.onTotal(() => {
+      return this.__listResult.total
+    })
+
     this.__listCollection.onPages(() => {
       return Math.ceil(this.__listResult.total / this.__listResult.records)
     })
