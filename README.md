@@ -1770,7 +1770,7 @@ SDK functionality for transferring tickets in the customer's wallet to another u
   ticketing.transfers.start().then(parcel => {
     //Retrieve parcel information.
     let created = parcel.created //Date and time that the parcel was created
-    let items = parcel.items //Array of tickets in the parcel including the section and quantity of each.
+    let tickets = parcel.tickets //Array of tickets in the parcel including the section and quantity of each.
   }).catch(error => {
     console.log(`${typeof error} (${error.code}): ${error.message}`)
   })
@@ -1799,7 +1799,7 @@ SDK functionality for transferring tickets in the customer's wallet to another u
   .catch(error => {
     //Handle errors
     if(error instanceof BadDataError){
-      console.log("The number of items to be added to the parcel must be a positive integer.")
+      console.log("The number of tickets to be added to the parcel must be a positive integer.")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
@@ -1829,9 +1829,9 @@ SDK functionality for transferring tickets in the customer's wallet to another u
   .catch(error => {
     //Handle errors
     if(error instanceof BadDataError){
-      console.log("The number of items to be removed from the parcel must be a positive integer.")
+      console.log("The number of tickets to be removed from the parcel must be a positive integer.")
     }else if(error instanceof UnsupportedOperationError){
-      console.log("The parcel contains fewer items than the quantity to be removed.")
+      console.log("The parcel contains fewer tickets than the quantity to be removed.")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }

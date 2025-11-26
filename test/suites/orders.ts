@@ -298,7 +298,7 @@ describe("Orders", function(){
 			return new Promise((resolve, reject) => {
 				unauthorised_sdk.orders.start().then(unauthorised_cart => {
 					unauthorised_cart.add(this.section, 5)
-					expect(testCart.checkout(this.customer))
+					expect(unauthorised_cart.checkout(this.customer))
 					  .to.eventually.be.rejectedWith("The authenticated user is not permtited to manage orders for this account.")
 					  .and.be.an.instanceOf(PermissionError)
 

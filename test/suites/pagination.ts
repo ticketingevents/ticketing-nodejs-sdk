@@ -29,6 +29,9 @@ describe("Pagination", function(){
 
     // Initialise collection handle for testing
     this.collection = ticketing.regions.list(1)
+
+    //Count all regions
+    this.total = (await ticketing.regions.list(9999)).length
   })
 
   after(async function(){
@@ -132,7 +135,7 @@ describe("Pagination", function(){
   describe('#total()', function () {
     it("Should return the total number of resources", function(){
       return expect(this.collection.total)
-        .to.eventually.equal(5)
+        .to.eventually.equal(this.total)
     })
   })
 })

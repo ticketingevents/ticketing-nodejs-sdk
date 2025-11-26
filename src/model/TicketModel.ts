@@ -1,39 +1,35 @@
 import { BaseModel } from './BaseModel'
 import { APIAdapter } from '../util/APIAdapter'
+import type { Account } from '../interface/Account'
+import type { Section } from '../interface/Section'
 import type { Ticket } from '../interface/Ticket'
 import type { TicketData } from '../interface/data/TicketData'
-import { AccountModel } from './AccountModel'
-import { EventModel } from './EventModel'
 import { SectionModel } from './SectionModel'
 
 export class TicketModel extends BaseModel implements Ticket{
   public serial: string
   public status: string
-  public section: SectionModel
-  public owner: AccountModel
+  public section: Section
+  public owner: Account | string
   public issued: string
   public redeemed: string
-  
-  private __event: EventModel
 
-  constructor(ticket: any, event: EventModel, adapter: APIAdapter){
+  constructor(ticket: any, owner: Account | string, adapter: APIAdapter){
     super(ticket.self, adapter)
 
     this.serial = ticket.serial
     this.status = ticket.status
-    this.owner = new AccountModel(ticket.owner, adapter)
+    this.owner = owner
     this.section = new SectionModel(ticket.section, adapter)
     this.issued = ticket.issued
     this.redeemed = ticket.redeemed
-
-    this.__event = event
   }
 
   serialise(): TicketData{
     const data: TicketData = {
       serial: this.serial,
       status: this.status,
-      owner: this.owner.uri,
+      owner: (typeof this.owner == "object")?this.owner.uri:this.owner,
       section: this.section.uri,
       issued: this.issued,
       redeemed: this.redeemed

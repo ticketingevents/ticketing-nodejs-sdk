@@ -4,6 +4,7 @@ import type { AccountPreferences } from './AccountPreferences'
 import type { Event } from './Event'
 import type { Ticket } from './Ticket'
 import type { Host } from './Host'
+import type { Transfer } from './Transfer'
 
 export interface Account extends Base{
   number: string
@@ -27,4 +28,6 @@ export interface Account extends Base{
   itinerary: Collection<Event>
   wallet: Collection<Ticket>
   hosts: Collection<Host>
+  inbox: Collection<Transfer>
+  outbox: Collection<Transfer>
 }

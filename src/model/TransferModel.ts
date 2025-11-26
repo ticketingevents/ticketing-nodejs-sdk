@@ -1,0 +1,80 @@
+import { APIAdapter } from '../util/APIAdapter'
+import { BaseModel } from './BaseModel'
+import type { Account } from '../interface/Account'
+import type { Transfer } from '../interface/Transfer'
+import type { TransferData } from '../interface/data/TransferData'
+import { BadDataError, InvalidStateError, PermissionError } from '../errors'
+
+export class TransferModel extends BaseModel implements Transfer{
+  public status: string
+  public initiated: string
+  public tickets: Array<{
+    section: string,
+  	name: string,
+  	description: string,
+  	quantity: number
+  }>
+  public sender: Account | string
+  public recipient: Account | string
+
+  private __claimsURI: string
+
+  constructor(transfer: any, sender: Account | string, recipient: Account | string, adapter: APIAdapter){
+    super(transfer.self, adapter)
+
+    this.status = transfer.status
+    this.initiated = transfer.initiated
+    this.tickets = transfer.tickets
+    this.sender = sender
+    this.recipient = recipient
+
+    this.__claimsURI = transfer.claims
+  }
+
+  cancel(): Promise<boolean>{
+  	return new Promise((resolve, reject) => {
+  		this.delete().then(deleted => {
+  			this.status = "Cancelled"
+  			resolve(deleted)
+  		}).catch(error => {
+			if(error.code == 409){
+				error = new InvalidStateError(error.code, error.message)
+			}
+
+			reject(error)
+  		})
+  	})
+  }
+
+  claim(): Promise<boolean>{
+    return new Promise((resolve, reject) => {
+      this._apiAdapter.post(this.__claimsURI, {}).then(response => {
+      	this.status = "Claimed"
+    	resolve(response.data.success)
+      }).catch(error => {
+        if(error.code == 400){
+          error = new BadDataError(error.code, error.message)
+        }else if(error.code == 403){
+          error = new PermissionError(error.code, error.message)
+        }else if(error.code == 409){
+          error = new InvalidStateError(error.code, error.message)
+        }
+
+        reject(error)
+      })
+    })
+  }
+
+  serialise(): TransferData{
+  	const tickets = {}
+  	for(const ticket of this.tickets){
+  		tickets[ticket.section] = ticket.quantity
+  	}
+
+    return {
+      sender: (typeof this.sender == "object")?this.sender.number:this.sender,
+      recipient: (typeof this.recipient == "object")?this.recipient.number:this.recipient,
+      tickets: tickets
+    }
+  }
+}

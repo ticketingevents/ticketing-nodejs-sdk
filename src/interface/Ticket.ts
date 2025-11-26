@@ -8,5 +8,5 @@ export interface Ticket extends Base{
   section: Section
   issued: string
   redeemed: string
-  owner?: Account
+  owner: Account | string
 }

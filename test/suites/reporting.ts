@@ -1,5 +1,5 @@
 //Control execution order
-import './orders'
+import './transfers'
 
 import { 
 	TickeTing, BadDataError, InvalidStateError, ResourceImmutableError,

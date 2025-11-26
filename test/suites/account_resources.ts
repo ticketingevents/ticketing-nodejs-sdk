@@ -2,7 +2,8 @@
 import './accounts'
 
 import { TickeTing, BadDataError } from '../../src'
-import { HostModel, CategoryModel, VenueModel, EventModel, SectionModel, WalletTicketModel } from  '../../src/model'
+import { HostModel, CategoryModel, VenueModel, EventModel, SectionModel,
+          TicketModel, TransferModel } from  '../../src/model'
 import { expect, ticketing, api, public_ticketing } from '../setup'
 
 // Global account object
@@ -30,6 +31,23 @@ describe("Account Resources", function(){
   		city: "Jennings",
   		state: "Saint Mary's"
   	})
+
+    //Create a transfer recipient
+    this.recipient = await ticketing.accounts.create({
+          username: "transfer.recipient"+Math.floor(Math.random() * 999999),
+          password: "WuT4NGcl4n",
+          email: "transfer.recipient"+Math.floor(Math.random() * 999999)+"@usmc.gov",
+          firstName: "Transfer",
+          lastName: "Recipient",
+          title: "Mr",
+          dateOfBirth: "1974-09-14",
+          phone: "+1 (268) 555 0123",
+          country: "Antigua and Barbuda",
+          firstAddressLine: "Jennings New Extension",
+          secondAddressLine: "",
+          city: "Jennings",
+          state: "Saint Mary's"
+    })
 
   	//Create an event host
   	this.host = await ticketing.hosts.create({
@@ -89,6 +107,13 @@ describe("Account Resources", function(){
   	let cart = await ticketing.orders.start()
   	cart.add(this.section, 5)
   	this.order = await cart.checkout(this.customer)
+    this.secondOrder = await cart.checkout(this.recipient)
+
+    //Create incoming and outgoing transfers for history tests
+    let parcel = await ticketing.transfers.start()
+    parcel.add(this.section, 3)
+    this.transfer = await parcel.send(this.customer, this.recipient)
+    this.secondTransfer = await parcel.send(this.recipient, this.customer)
 
   	//Make new account an administrator of the test host
   	await api.post(`${this.host.uri}/administrators`, {
@@ -97,6 +122,9 @@ describe("Account Resources", function(){
   })
 
   after(async function(){
+    await this.secondTransfer.cancel()
+    await this.transfer.cancel()
+    await this.secondOrder.refund("Test")
     await this.order.refund("Test")
   	await this.section.delete()
   	await this.event.delete()
@@ -104,7 +132,8 @@ describe("Account Resources", function(){
   	await this.venue.delete()
   	await this.region.delete()
     await this.host.delete()
-	 await this.customer.delete()
+    await this.recipient.delete()
+    await this.customer.delete()
   })
 
   describe('List event itinerary', function () {
@@ -211,27 +240,28 @@ describe("Account Resources", function(){
   })
 
   describe('List ticket wallet', function () {
-	it('Should return a collection of Ticket resources', function () {
-	  return expect(this.customer.wallet).eventually.to.all.be.instanceof(WalletTicketModel)
-	})
+  	it('Should return a collection of Ticket resources', function () {
+      return expect(this.customer.wallet).eventually.to.all.be.an.instanceof(TicketModel)
+  	})
 
-	it('Should contain valid Ticket resources', function () {
-	  return new Promise((resolve, reject) => {
-		this.customer.wallet.then(tickets => {
-		  let sample = tickets[Math.floor(Math.random()*tickets.length)]
-		  expect(sample).to.be.an.instanceof(WalletTicketModel)
-		  expect(sample.serial).to.match(/[0-9A-Z]{6}\-[0-9A-Z]{12}/)
-		  expect(sample.status).to.eq("Issued")
-		  expect(sample.section.uri).to.eq(this.section.uri)
-		  expect(sample.issued).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+00:00/)
-		  expect(sample.redeemed).to.eq("N/A")
+  	it('Should contain valid Ticket resources', function () {
+  	  return new Promise((resolve, reject) => {
+    		this.customer.wallet.then(tickets => {
+    		  let sample = tickets[Math.floor(Math.random()*tickets.length)]
+          expect(sample).to.be.an.instanceof(TicketModel)
+    		  expect(sample.serial).to.match(/[0-9A-Z]{6}\-[0-9A-Z]{12}/)
+    		  expect(sample.status).to.be.oneOf(["Issued", "Pending"])
+    		  expect(sample.section.uri).to.eq(this.section.uri)
+    		  expect(sample.issued).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+00:00/)
+    		  expect(sample.redeemed).to.eq("N/A")
+          expect(sample.owner).to.eq(`${this.customer.firstName} ${this.customer.lastName} (${this.customer.username})`)
 
-		  resolve(true)
-		}).catch(error => {
-		  reject(error)
-		})
-	  })
-	})
+    		  resolve(true)
+    		}).catch(error => {
+    		  reject(error)
+    		})
+  	  })
+  	})
 
     it('Should return a collection of tickets matching the event filter', function () {
       return new Promise((resolve, reject) => {
@@ -288,6 +318,94 @@ describe("Account Resources", function(){
 
           for(let ticket of tickets){
             expect(ticket.status).to.eq("Issued")
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+  })
+
+  describe('Retrieve incoming transfer history', function () {
+    it('Should return a collection of Transfer resources', function () {
+      return expect(this.customer.inbox).eventually.to.all.be.an.instanceof(TransferModel)
+    })
+
+    it('Should contain valid Transfer resources', function () {
+      return new Promise((resolve, reject) => {
+        this.customer.inbox.then(transfers => {
+          let sample = transfers[Math.floor(Math.random()*transfers.length)]
+          expect(sample).to.be.an.instanceof(TransferModel)
+          expect(sample.status).to.eq("Pending")
+          expect(sample.initiated).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}/)
+          expect(sample.sender).to.eq(`${this.recipient.firstName} ${this.recipient.lastName} (${this.recipient.username})`)
+          expect(sample.recipient).to.eq(`${this.customer.firstName} ${this.customer.lastName} (${this.customer.username})`)
+
+          expect(sample.tickets.length).to.eq(1)
+          expect(sample.tickets[0].name).to.equal(`${this.event.title}: ${this.section.name}`)
+          expect(sample.tickets[0].description).to.equal(`${this.section.description}`)
+          expect(sample.tickets[0].quantity).to.eq(3)
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return a collection of transfers matching the status filter', function () {
+      return new Promise((resolve, reject) => {
+        this.customer.inbox.filter({status: "Pending"}).then(transfers => {
+          expect(transfers.length).to.be.least(1)
+
+          for(let transfer of transfers){
+            expect(transfer.status).to.eq("Pending")
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+  })
+
+  describe('Retrieve outgoing transfer history', function () {
+    it('Should return a collection of Transfer resources', function () {
+      return expect(this.customer.outbox).eventually.to.all.be.an.instanceof(TransferModel)
+    })
+
+    it('Should contain valid Transfer resources', function () {
+      return new Promise((resolve, reject) => {
+        this.customer.outbox.then(transfers => {
+          let sample = transfers[Math.floor(Math.random()*transfers.length)]
+          expect(sample).to.be.an.instanceof(TransferModel)
+          expect(sample.status).to.eq("Pending")
+          expect(sample.initiated).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}/)
+          expect(sample.recipient).to.eq(`${this.recipient.firstName} ${this.recipient.lastName} (${this.recipient.username})`)
+          expect(sample.sender).to.eq(`${this.customer.firstName} ${this.customer.lastName} (${this.customer.username})`)
+
+          expect(sample.tickets.length).to.eq(1)
+          expect(sample.tickets[0].name).to.equal(`${this.event.title}: ${this.section.name}`)
+          expect(sample.tickets[0].description).to.equal(`${this.section.description}`)
+          expect(sample.tickets[0].quantity).to.eq(3)
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return a collection of transfers matching the status filter', function () {
+      return new Promise((resolve, reject) => {
+        this.customer.outbox.filter({status: "Pending"}).then(transfers => {
+          expect(transfers.length).to.be.least(1)
+
+          for(let transfer of transfers){
+            expect(transfer.status).to.eq("Pending")
           }
 
           resolve(true)

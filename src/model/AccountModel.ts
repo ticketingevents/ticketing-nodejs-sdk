@@ -3,6 +3,7 @@ import { Collection } from '../util/Collection'
 import { ItineraryService } from '../service/ItineraryService'
 import { WalletService } from '../service/WalletService'
 import { ManagedHostService } from '../service/ManagedHostService'
+import { TransferHistoryService } from '../service/TransferHistoryService'
 import { BaseModel } from './BaseModel'
 import type { Account } from '../interface/Account'
 import type { AccountData } from '../interface/data/AccountData'
@@ -11,6 +12,7 @@ import { AccountPreferencesModel } from './AccountPreferencesModel'
 import type { Host } from '../interface/Host'
 import type { Event } from '../interface/Event'
 import type { Ticket } from '../interface/Ticket'
+import type { Transfer } from '../interface/Transfer'
 
 export class AccountModel extends BaseModel implements Account{
   public number: string
@@ -34,6 +36,7 @@ export class AccountModel extends BaseModel implements Account{
   private __itineraryService: ItineraryService
   private __walletService: WalletService
   private __managedHostService: ManagedHostService
+  private __transferHistoryService: TransferHistoryService
 
   constructor(account: any, adapter: APIAdapter){
     super(account.self, adapter)
@@ -59,6 +62,7 @@ export class AccountModel extends BaseModel implements Account{
     this.__itineraryService = new ItineraryService(this._apiAdapter, this)
     this.__walletService = new WalletService(this._apiAdapter, this)
     this.__managedHostService = new ManagedHostService(this._apiAdapter, this)
+    this.__transferHistoryService = new TransferHistoryService(this._apiAdapter, this)
   }
 
   get preferences(): Promise<AccountPreferences>{
@@ -81,6 +85,14 @@ export class AccountModel extends BaseModel implements Account{
 
   get hosts(): Collection<Host>{
     return this.__managedHostService.list()
+  }
+
+  get inbox(): Collection<Transfer>{
+    return this.__transferHistoryService.list().filter({role: "recipient"})
+  }
+
+  get outbox(): Collection<Transfer>{
+    return this.__transferHistoryService.list().filter({role: "sender"})
   }
 
   serialise(): AccountData{
