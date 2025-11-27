@@ -1,6 +1,7 @@
 export interface Collection<T>{
 	current: Promise<number>
 	pages: Promise<number>
+	total: Promise<number>
 
 	then<TResult1 = T[], TResult2 = never>(
 		onfulfilled?: (value: T[]) => TResult1 | PromiseLike<TResult1>,

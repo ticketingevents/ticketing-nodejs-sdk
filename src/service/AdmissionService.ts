@@ -12,9 +12,11 @@ export class AdmissionService extends BaseService<AdmissionData, Admission>{
   private __event: EventModel
 
   constructor(apiAdapter: APIAdapter, event: EventModel){
-    super(apiAdapter, `${event.uri}/admissions`, AdmissionModel, [
-    	"redeemer", "device", "ticket", "patron", "section"
-    ])
+    super(apiAdapter, `${event.uri}/admissions`, AdmissionModel,
+      ["redeemer", "device", "ticket", "patron", "section"],
+      [],
+      {ticket: "serial", patron: "uri", section: "id"}
+    )
 
     this.__apiAdapter = apiAdapter
     this.__event = event
@@ -22,12 +24,5 @@ export class AdmissionService extends BaseService<AdmissionData, Admission>{
 
   protected _instantiateModel(data: any){
     return new AdmissionModel(data, this.__event, this.__apiAdapter)
-  }
-
-  protected _preprocessCriteria(criteria: {[key: string]: any}){
-    criteria.ticket = criteria.ticket?criteria.ticket.serial:null
-    criteria.patron = criteria.patron?criteria.patron.uri:null
-    criteria.section = criteria.section?criteria.section.id:null
-    return criteria
   }
 }

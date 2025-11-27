@@ -13,6 +13,7 @@ export class BaseService<RequestType, ResponseType>{
   private __listCollection: Collection<ResponseType>
   private __listFilters: Array<string>
   private __listSortFields: Array<string>
+  private __filterMappings: {[key: string]: string}
   private __listCriteria: {[key: string]: string | number}
   private __listResult: {entries: Array<ResponseType>, page: number, records: number, total: number}
 
@@ -21,7 +22,8 @@ export class BaseService<RequestType, ResponseType>{
     baseUrl: string,
     modelClass: any,
     supportedFilters: Array<string> = [],
-    supportedSortFields: Array<string> = []
+    supportedSortFields: Array<string> = [],
+    filterMappings: {[key: string]: string} = {}
   ){
     this.__adapter = apiAdapter
     this.__baseUrl = baseUrl
@@ -33,6 +35,7 @@ export class BaseService<RequestType, ResponseType>{
 
     this.__listFilters = ['page','records','sort','order'].concat(supportedFilters)
     this.__listSortFields = supportedSortFields
+    this.__filterMappings = filterMappings
     this.__listCriteria = {}
     this.__listResult = {entries: [], page: 0, records: 0, total: 0}
   }
@@ -94,10 +97,13 @@ export class BaseService<RequestType, ResponseType>{
     })
 
     this.__listCollection.onFilter((criteria: {[key: string]: any}) => {
-      criteria = this._preprocessCriteria(criteria)
       for(const criterion in criteria){
         if(!(criterion in this.__listCriteria)){
-          this.__listCriteria[criterion] = criteria[criterion]
+          if(criterion in this.__filterMappings){
+            this.__listCriteria[criterion] = criteria[criterion][this.__filterMappings[criterion]]
+          }else{
+            this.__listCriteria[criterion] = criteria[criterion] 
+          }
         }
       }
     })
@@ -140,10 +146,6 @@ export class BaseService<RequestType, ResponseType>{
 
   protected _instantiateModel(data: any){
     return new this.__modelClass(data, this.__adapter)
-  }
-
-  protected _preprocessCriteria(criteria: {[key: string]: any}){
-    return criteria
   }
 
   private __listQuery(resolve, reject){

@@ -15,7 +15,8 @@ export class OrderService extends BaseService<OrderData, Order>{
   constructor(apiAdapter: APIAdapter){
     super(apiAdapter, "/orders", OrderModel,
       ["customer", "status"],
-      ["date"]
+      ["date"],
+      {customer: "number"}
     )
 
     this.__apiAdapter = apiAdapter
@@ -42,10 +43,5 @@ export class OrderService extends BaseService<OrderData, Order>{
   protected _instantiateModel(data: any){
     const customer = new AccountModel(data.customer, this.__apiAdapter)
     return new OrderModel(data, customer, this.__apiAdapter)
-  }
-
-  protected _preprocessCriteria(criteria: {[key: string]: any}){
-    criteria.customer = criteria.customer?criteria.customer.number:null
-    return criteria
   }
 }

@@ -11,17 +11,12 @@ export class WalletService extends BaseService<TicketData, Ticket>{
 
   constructor(apiAdapter: APIAdapter, account: Account){
     super(apiAdapter, `${account.uri}/tickets`, TicketModel,
-      ["event", "section", "serial", "status"]
+      ["event", "section", "serial", "status"],
+      [],
+      {event: "id", section: "id"}
     )
 
     this.__apiAdapter = apiAdapter
-  }
-
-  protected _preprocessCriteria(criteria: {[key: string]: any}){
-    criteria.event = criteria.event?criteria.event.id:null
-    criteria.section = criteria.section?criteria.section.id:null
-
-    return criteria
   }
 
   protected _instantiateModel(data: any){

@@ -11,7 +11,11 @@ export class VenueService extends BaseService<VenueData, Venue>{
   private __apiAdapter: APIAdapter
 
   constructor(apiAdapter: APIAdapter){
-    super(apiAdapter, "/venues", VenueModel, ["region", "name"])
+    super(apiAdapter, "/venues", VenueModel,
+      ["region", "name"],
+      [],
+      {region: "id"}
+    )
 
     this.__apiAdapter = apiAdapter
   }
@@ -35,10 +39,5 @@ export class VenueService extends BaseService<VenueData, Venue>{
   protected _instantiateModel(data: any){
     data.region = {self: data.region}
     return new VenueModel(data, this.__apiAdapter)
-  }
-
-  protected _preprocessCriteria(criteria: {[key: string]: any}){
-    criteria.region = criteria.region?criteria.region.id:null
-    return criteria
   }
 }

@@ -12,16 +12,12 @@ export class HostedEventService extends BaseService<EventData, Event>{
   constructor(apiAdapter: APIAdapter, host: Host){
     super(apiAdapter, `${host.uri}/events`, BaseEventModel,
       ["region", "host", "title", "status", "active", "public", "section"],
-      ["alphabetical","published","popularity","start"]
+      ["alphabetical","published","popularity","start"],
+      {region: "id"}
     )
 
     this.__apiAdapter = apiAdapter
     this.__host = host
-  }
-
-  protected _preprocessCriteria(criteria: {[key: string]: any}){
-    criteria.region = criteria.region?criteria.region.id:null
-    return criteria
   }
 
   protected _instantiateModel(data: any){
