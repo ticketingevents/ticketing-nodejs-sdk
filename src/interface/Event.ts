@@ -14,6 +14,7 @@ export interface Event extends Base{
   description: string
   type: string
   public: boolean
+  featured: boolean
   category: Category
   subcategory: string
   start: string

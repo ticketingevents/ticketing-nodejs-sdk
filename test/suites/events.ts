@@ -45,20 +45,41 @@ describe("Events", function(){
     //An event to test duplication
     this.secondEvent = await ticketing.events.create({
       host: this.host,
-      title: "Second Event",
+      title: "Second Event "+Math.floor(Math.random() * 999999),
       description: "Event Description",
       type: "Standard",
       public: true,
       category: this.category,
       subcategory: "Event Subcategory",
-      start: "2033-06-07T20:00",
-      end: "2035-06-07T23:00",
+      start: "3033-06-07T20:00",
+      end: "3035-06-07T23:00",
       venue: this.venue
     })
 
     //Submit and publish the event
     await api.post(`${this.secondEvent.uri}/submissions`, {})
     await api.delete(`/submissions/${btoa(this.secondEvent.uri)}?approved=true`)
+
+    //Create advertisement for the event
+    this.zone = (await api.post("/zones", {
+        name: "Ad Zone "+Math.floor(Math.random() * 999999),
+        description: "Ad Zone for testing",
+        width: 1024,
+        height: 800
+    })).data
+
+    this.advertisement = (await api.post("/advertisements", {
+      name: "Test Ad "+Math.floor(Math.random() * 999999),
+      description: "Test Ad",
+      event: this.secondEvent.id,
+      zones: [this.zone.number],
+      schedule:[
+        {
+          start: (new Date(new Date().getTime())).toISOString().substring(0,16).replace(/T/, ' '),
+          end: "9999-12-31 23:59",
+        }
+      ]
+    })).data
 
     //Initialise test data for suite
     this.testEventData = {
@@ -69,8 +90,8 @@ describe("Events", function(){
       public: true,
       category: this.category,
       subcategory: "Event Subcategory",
-      start: "2034-06-07T20:00",
-      end: "2034-06-07T23:00",
+      start: "3034-06-07T20:00",
+      end: "3034-06-07T23:00",
       venue: this.venue,
       disclaimer: "Attend at your own risk",
       tags: ["homelander", "queen maeve", "the deep", "A-Train"]
@@ -78,6 +99,8 @@ describe("Events", function(){
   })
 
   after(async function(){
+    await api.delete(this.advertisement.self)
+    await api.delete(this.zone.self)
     await this.secondEvent.delete()
     await this.category.delete()
     await this.host.delete()
@@ -257,6 +280,12 @@ describe("Events", function(){
       return expect(ticketing.events.list(5).filter({public: true}))
         .to.eventually.have.lengthOf.at.least(1)
         .and.to.all.have.property("public", true)
+    })
+
+    it('Should return a collection of events matching the featured filter', function () {
+      return expect(ticketing.events.list(5).filter({featured: true}))
+        .to.eventually.have.lengthOf.at.least(1)
+        .and.to.all.have.property("featured", true)
     })
 
     it('Should return events sorted by title in ascending order', function () {
@@ -578,6 +607,22 @@ describe("Events", function(){
 
           for(let event of events){
             expect(new Date(event.end)).to.be.least(new Date())
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return a collection of events matching the featured filter', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.events.published.list(5).filter({featured: true}).then(events => {
+          expect(events.length).to.be.least(1)
+
+          for(let event of events){
+            expect(event.featured).to.be.true
           }
 
           resolve(true)

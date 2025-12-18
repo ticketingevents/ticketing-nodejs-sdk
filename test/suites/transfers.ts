@@ -20,9 +20,9 @@ describe("Transfers", function(){
 	before(async function(){
 		//Create a sender
 		this.sender = await ticketing.accounts.create({
-	        username: "transfer.sender"+Math.floor(Math.random() * 999999),
-	        password: "WuT4NGcl4n",
-	        email: "transfer.sender"+Math.floor(Math.random() * 999999)+"@usmc.gov",
+      username: "transfer.sender"+Math.floor(Math.random() * 999999),
+      password: "WuT4NGcl4n",
+      email: "transfer.sender"+Math.floor(Math.random() * 999999)+"@usmc.gov",
 			firstName: "Marvin",
 			lastName: "Milk",
 			title: "Mr",
@@ -111,11 +111,12 @@ describe("Transfers", function(){
 		cart.add(this.section, 10)
 		this.order = await cart.checkout(this.sender)
 
-        //Create a pending transfer
-        let parcel = await ticketing.transfers.start()
-        parcel.add(this.section, 5)
+    //Create a pending transfer
+    let parcel = await ticketing.transfers.start()
+    parcel.add(this.section, 5)
 
-        this.transfer = await parcel.send(this.sender, this.recipient)
+    let recipient = await ticketing.accounts.lookup({identification: this.recipient.email})
+    this.transfer = await parcel.send(this.sender, recipient)
 	})
 
 	after(async function(){
@@ -246,23 +247,27 @@ describe("Transfers", function(){
 	describe('Send a transfer', function () {
 		it('Should return a valid transfer object', function () {
 			return new Promise((resolve, reject) => {
-				testParcel.send(this.sender, this.recipient).then((transfer => {
-					testTransfer = transfer
+				//Verify recipient data
+				ticketing.accounts.lookup({identification: this.recipient.username}).then(recipient => {
+					//Send transfer to verified recipient
+					testParcel.send(this.sender, recipient).then((transfer => {
+						testTransfer = transfer
 
-					expect(transfer).to.be.an.instanceof(TransferModel)
-					expect(transfer.status).to.eq("Pending")
-					expect(transfer.initiated).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}/)
-					expect(transfer.sender).to.equal(this.sender)
-					expect(transfer.recipient).to.equal(this.recipient)
+						expect(transfer).to.be.an.instanceof(TransferModel)
+						expect(transfer.status).to.eq("Pending")
+						expect(transfer.initiated).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}/)
+						expect(transfer.sender).to.equal(this.sender)
+						expect(transfer.recipient.number).to.equal(this.recipient.number)
 
-					expect(transfer.tickets.length).to.eq(1)
-					expect(transfer.tickets[0].name).to.equal(`${this.event.title}: ${this.section.name}`)
-					expect(transfer.tickets[0].description).to.equal(`${this.section.description}`)
-					expect(transfer.tickets[0].quantity).to.eq(testParcel.tickets[0].quantity)
+						expect(transfer.tickets.length).to.eq(1)
+						expect(transfer.tickets[0].name).to.equal(`${this.event.title}: ${this.section.name}`)
+						expect(transfer.tickets[0].description).to.equal(`${this.section.description}`)
+						expect(transfer.tickets[0].quantity).to.eq(testParcel.tickets[0].quantity)
 
-					resolve(true)
-				})).catch(error=>{
-					reject(error)
+						resolve(true)
+					})).catch(error=>{
+						reject(error)
+					})
 				})
 			})
 		})
@@ -281,15 +286,27 @@ describe("Transfers", function(){
 		})
 
 		it('Should throw a BadDataError if the sender does not own sufficient tickets.', function () {
-			return expect(testParcel.send(this.sender, this.recipient))
-			  .to.eventually.be.rejectedWith("The sender does not hold sufficient itckets in their wallet to complete this transfer")
-			  .and.be.an.instanceOf(BadDataError)
+			return new Promise((resolve, reject) => {
+				ticketing.accounts.lookup({identification: this.recipient.username}).then(recipient => {
+					expect(testParcel.send(this.sender, recipient))
+					  .to.eventually.be.rejectedWith("The sender does not hold sufficient itckets in their wallet to complete this transfer")
+					  .and.be.an.instanceOf(BadDataError)
+				})
+
+				resolve(true)
+			})
 		})
 
 		it('Should throw an InvalidStateError if the sender attempts to transfer tickets to themselves.', function () {
-			return expect(testParcel.send(this.sender, this.sender))
-			  .to.eventually.be.rejectedWith("The sender cannot transfer tickets to themselves.")
-			  .and.be.an.instanceOf(InvalidStateError)
+			return new Promise((resolve, reject) => {
+				ticketing.accounts.lookup({identification: this.recipient.username}).then(recipient => {
+					expect(testParcel.send(this.sender, this.sender))
+					  .to.eventually.be.rejectedWith("The sender cannot transfer tickets to themselves.")
+					  .and.be.an.instanceOf(InvalidStateError)
+				})
+
+				resolve(true)
+			})
 		})
 	})
 

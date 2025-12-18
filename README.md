@@ -835,8 +835,13 @@ preferences.
     identification: "mothers.milk", //Required
     role: "customer" //Optional
   })
-  .then(account => {
-    //Do something with the new account resource
+  .then(lookup => {
+    //Do something with the lookup result resource
+    if(lookup.found){
+      let identification = lookup.identification //Identification used in the lookup
+      let role = lookup.role //Role used in the lookup if one was specified
+      let name = lookup.name //Name registered to the matched account, if one was found
+    }
   })
   .catch(error => {
     //Handle errors
@@ -1220,6 +1225,7 @@ Operations for working with events in the TickeTing system.
       after: "2025-01-01T00:00",
       before: "2025-12-31T23:59",
       title: "Dawn of the Seven Premier",
+      featured: true,
       active: true
     })
     // Supported sort fields
@@ -1276,6 +1282,7 @@ Operations for working with events in the TickeTing system.
       status: "Scheduled",
       active: true,
       public: false,
+      featured: false,
       section: section
     })
     // Supported sort fields
@@ -1882,7 +1889,7 @@ SDK functionality for transferring tickets in the customer's wallet to another u
 
   //Send the parcel (Requires sender and recipient to have accounts)
   let sender = (await ticketing.session.info()).account
-  let recipient = await ticketing.accounts.find("AZ-4918SF92")
+  let recipient = await ticketing.accounts.lookup({identification: "billy.butcher@fbsa.gov"})
   
   parcel.send(sender, recipient).then(transfer => {
     //Claim or cancel the transfer (see below)

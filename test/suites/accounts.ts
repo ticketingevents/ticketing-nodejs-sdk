@@ -432,6 +432,7 @@ describe("Accounts", function(){
         }).then((result => {
           expect(result.identification).to.equal(testAccount.username)
           expect(result.role).to.equal("")
+          expect(result.name).to.equal(`${testAccount.firstName} ${testAccount.lastName}`)
           expect(result.found).to.equal(true)
 
           resolve(true)
@@ -448,6 +449,7 @@ describe("Accounts", function(){
         }).then((result => {
           expect(result.identification).to.equal(testAccount.email)
           expect(result.role).to.equal("")
+          expect(result.name).to.equal(`${testAccount.firstName} ${testAccount.lastName}`)
           expect(result.found).to.equal(true)
 
           resolve(true)

@@ -20,6 +20,7 @@ export class BaseEventModel extends BaseModel implements Event{
   public status: string
   public type: string
   public public: boolean
+  public featured: boolean
   public category: CategoryModel
   public subcategory: string
   public start: string
@@ -45,6 +46,7 @@ export class BaseEventModel extends BaseModel implements Event{
     this.status = event.status
     this.type = event.type
     this.public = event.public
+    this.featured = event.featured
     this.category = new CategoryModel(event.category, adapter)
     this.subcategory = event.subcategory
     this.start = event.start

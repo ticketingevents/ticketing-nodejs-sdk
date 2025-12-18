@@ -15,7 +15,7 @@ export class EventService extends BaseService<EventData, Event>{
 
   constructor(apiAdapter: APIAdapter){
     super(apiAdapter, "/events", EventModel,
-      ["region", "host", "title", "status", "active", "public", "section"],
+      ["region", "host", "title", "status", "active", "public", "featured", "section"],
       ["alphabetical","published","popularity","start"],
       {region: "id", host: "id", section: "id"}
     )
@@ -84,7 +84,7 @@ export class EventService extends BaseService<EventData, Event>{
 class PublishedEventService extends BaseService<EventData, Event>{
   constructor(apiAdapter: APIAdapter){
     super(apiAdapter, "/published-events", EventModel,
-      ["region", "host", "active", "category", "subcategory", "before", "after", "title"],
+      ["region", "host", "active", "category", "subcategory", "before", "after", "title", "featured"],
       ["alphabetical","published","popularity","start"],
       {region: "id", host: "id", category: "id"}
     )

@@ -2,6 +2,8 @@ import { APIAdapter } from '../util/APIAdapter'
 import type { Account } from '../interface/Account'
 import type { Parcel } from '../interface/Parcel'
 import type { Transfer } from '../interface/Transfer'
+import type { Lookup } from '../interface/Lookup'
+import { AccountModel } from './AccountModel'
 import { TransferModel } from './TransferModel'
 import type { Section } from '../interface/Section'
 import { BadDataError, InvalidStateError, UnsupportedOperationError } from '../errors'
@@ -82,10 +84,10 @@ export class ParcelModel implements Parcel{
     })
   }
 
-  send(sender: Account, recipient: Account): Promise<Transfer>{
+  send(sender: Account, recipient: Lookup): Promise<Transfer>{
     return new Promise<Transfer>((resolve, reject) => {
-		if(sender.number == recipient.number){
-        	reject(new InvalidStateError(409, "The sender cannot transfer tickets to themselves."))
+		if(recipient.identification == sender.username || recipient.identification == sender.email){
+      reject(new InvalidStateError(409, "The sender cannot transfer tickets to themselves."))
 		}else{
 			const tickets = {}
 			for(const ticket of this.tickets){
@@ -94,10 +96,10 @@ export class ParcelModel implements Parcel{
 
 			this.__apiAdapter.post("/transfers", {
 				sender: sender.number,
-				recipient: recipient.number,
+				recipient: recipient.identification,
 				tickets: tickets
 			}).then(transfer => {
-				resolve(new TransferModel(transfer.data, sender, recipient, this.__apiAdapter))
+				resolve(new TransferModel(transfer.data, sender, new AccountModel(transfer.data.recipient, this.__apiAdapter), this.__apiAdapter))
 			}).catch(error => {
 				if(error.code == 400){
 			  		error = new BadDataError(error.code, error.message)

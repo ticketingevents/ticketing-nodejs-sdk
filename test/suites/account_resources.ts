@@ -112,8 +112,12 @@ describe("Account Resources", function(){
     //Create incoming and outgoing transfers for history tests
     let parcel = await ticketing.transfers.start()
     parcel.add(this.section, 3)
-    this.transfer = await parcel.send(this.customer, this.recipient)
-    this.secondTransfer = await parcel.send(this.recipient, this.customer)
+
+    let customer = await ticketing.accounts.lookup({identification: this.customer.username})
+    let recipient = await ticketing.accounts.lookup({identification: this.recipient.username})
+
+    this.transfer = await parcel.send(this.customer, recipient)
+    this.secondTransfer = await parcel.send(this.recipient, customer)
 
   	//Make new account an administrator of the test host
   	await api.post(`${this.host.uri}/administrators`, {
