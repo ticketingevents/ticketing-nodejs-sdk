@@ -25,9 +25,10 @@ export interface Account extends Base{
   state: string
 
   preferences: Promise<AccountPreferences>
-  itinerary: Collection<Event>
-  wallet: Collection<Ticket>
   hosts: Collection<Host>
   inbox: Collection<Transfer>
   outbox: Collection<Transfer>
+
+  itinerary(pageLength: number): Collection<Event>
+  wallet(pageLength: number): Collection<Ticket>
 }

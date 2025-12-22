@@ -142,12 +142,12 @@ describe("Account Resources", function(){
 
   describe('List event itinerary', function () {
     it('Should return a collection of Event resources', function () {
-      return expect(this.customer.itinerary).eventually.to.all.be.instanceof(EventModel)
+      return expect(this.customer.itinerary(25)).eventually.to.all.be.instanceof(EventModel)
     })
 
     it('Should contain the newly created event as its first resource', function () {
       return new Promise((resolve, reject) => {
-        this.customer.itinerary.first().then(events => {
+        this.customer.itinerary(25).first().then(events => {
           expect(events[0]).to.be.an.instanceof(EventModel)
           expect(events[0].title).to.equal(this.event.title)
           expect(events[0].description).to.equal(this.event.description)
@@ -176,7 +176,7 @@ describe("Account Resources", function(){
 
     it('Should return a collection of events matching the active filter', function () {
       return new Promise((resolve, reject) => {
-        this.customer.itinerary.filter({active: true}).then(events => {
+        this.customer.itinerary(25).filter({active: true}).then(events => {
           expect(events.length).to.be.least(1)
 
           for(let event of events){
@@ -192,7 +192,7 @@ describe("Account Resources", function(){
 
     it('Should return events sorted by title in ascending order', function () {
       return new Promise((resolve, reject) => {
-        this.customer.itinerary.sort("alphabetical").then(events => {
+        this.customer.itinerary(25).sort("alphabetical").then(events => {
           expect(events).to.have.lengthOf.at.least(1)
           expect(events.map(event => event.title.toLowerCase())).to.be.ascending
 
@@ -205,7 +205,7 @@ describe("Account Resources", function(){
 
     it('Should return events sorted by publication date in descending order', function () {
       return new Promise((resolve, reject) => {
-        this.customer.itinerary.sort("published", false).then(events => {
+        this.customer.itinerary(25).sort("published", false).then(events => {
           expect(events).to.have.lengthOf.at.least(1)
             .and.to.be.descendingBy("published")
 
@@ -218,7 +218,7 @@ describe("Account Resources", function(){
 
     it('Should return events sorted by popularity in ascending order', function () {
       return new Promise((resolve, reject) => {
-        this.customer.itinerary.sort("popularity").then(events => {
+        this.customer.itinerary(25).sort("popularity").then(events => {
           expect(events).to.have.lengthOf.at.least(1)
             .and.to.be.ascendingBy("popularity")
 
@@ -231,7 +231,7 @@ describe("Account Resources", function(){
 
     it('Should return events sorted by start date in descending order', function () {
       return new Promise((resolve, reject) => {
-        this.customer.itinerary.sort("start", false).then(events => {
+        this.customer.itinerary(25).sort("start", false).then(events => {
           expect(events).to.have.lengthOf.at.least(1)
             .and.to.be.descendingBy("start")
 
@@ -245,12 +245,12 @@ describe("Account Resources", function(){
 
   describe('List ticket wallet', function () {
   	it('Should return a collection of Ticket resources', function () {
-      return expect(this.customer.wallet).eventually.to.all.be.an.instanceof(TicketModel)
+      return expect(this.customer.wallet(25)).eventually.to.all.be.an.instanceof(TicketModel)
   	})
 
   	it('Should contain valid Ticket resources', function () {
   	  return new Promise((resolve, reject) => {
-    		this.customer.wallet.then(tickets => {
+    		this.customer.wallet(25).then(tickets => {
     		  let sample = tickets[Math.floor(Math.random()*tickets.length)]
           expect(sample).to.be.an.instanceof(TicketModel)
     		  expect(sample.serial).to.match(/[0-9A-Z]{6}\-[0-9A-Z]{12}/)
@@ -269,7 +269,7 @@ describe("Account Resources", function(){
 
     it('Should return a collection of tickets matching the event filter', function () {
       return new Promise((resolve, reject) => {
-        this.customer.wallet.filter({event: this.event}).then(tickets => {
+        this.customer.wallet(25).filter({event: this.event}).then(tickets => {
           expect(tickets.length).to.be.least(1)
 
           for(let ticket of tickets){
@@ -285,7 +285,7 @@ describe("Account Resources", function(){
 
     it('Should return a collection of tickets matching the section filter', function () {
       return new Promise((resolve, reject) => {
-        this.customer.wallet.filter({section: this.section}).then(tickets => {
+        this.customer.wallet(25).filter({section: this.section}).then(tickets => {
           expect(tickets.length).to.be.least(1)
 
           for(let ticket of tickets){
@@ -301,7 +301,7 @@ describe("Account Resources", function(){
 
     it('Should return a collection of tickets matching the serial filter', function () {
       return new Promise((resolve, reject) => {
-        this.customer.wallet.filter({serial: "TES"}).then(tickets => {
+        this.customer.wallet(25).filter({serial: "TES"}).then(tickets => {
           expect(tickets.length).to.be.least(1)
 
           for(let ticket of tickets){
@@ -317,7 +317,7 @@ describe("Account Resources", function(){
 
     it('Should return a collection of tickets matching the status filter', function () {
       return new Promise((resolve, reject) => {
-        this.customer.wallet.filter({status: "Issued"}).then(tickets => {
+        this.customer.wallet(25).filter({status: "Issued"}).then(tickets => {
           expect(tickets.length).to.be.least(1)
 
           for(let ticket of tickets){

@@ -75,14 +75,6 @@ export class AccountModel extends BaseModel implements Account{
     })
   }
 
-  get itinerary(): Collection<Event>{
-    return this.__itineraryService.list()
-  }
-
-  get wallet(): Collection<Ticket>{
-    return this.__walletService.list()
-  }
-
   get hosts(): Collection<Host>{
     return this.__managedHostService.list()
   }
@@ -93,6 +85,14 @@ export class AccountModel extends BaseModel implements Account{
 
   get outbox(): Collection<Transfer>{
     return this.__transferHistoryService.list().filter({role: "sender"})
+  }
+
+  itinerary(pageLength: number = 25): Collection<Event>{
+    return this.__itineraryService.list(pageLength)
+  }
+
+  wallet(pageLength: number = 25): Collection<Ticket>{
+    return this.__walletService.list(pageLength)
   }
 
   serialise(): AccountData{

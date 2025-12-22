@@ -865,7 +865,7 @@ Operations for accessing collections of resources linked to a user's account
   //Retrieve a specific account using its account number
   account = await ticketing.accounts.find("MO-6A39EE8D")
 
-  account.itinerary
+  account.itinerary(20) //Page length to use with the collection
     // Supported filters with examples
     .filter({
       active: true //Return only future events
@@ -906,7 +906,7 @@ Operations for accessing collections of resources linked to a user's account
   //Load section by ID
   let section = (await ticketing.events.find(16993717817996)).sections[0]
 
-  account.wallet
+  account.wallet(25) //Page length to use with collection
     // Supported filters with examples
     .filter({
       event: event, //Return tickets for the given event
