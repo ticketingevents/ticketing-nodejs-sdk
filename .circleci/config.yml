@@ -24,15 +24,13 @@ jobs:
       - run:
           name: Run unit tests
           command: |
-            source "$BASH_ENV"
-            if [ << parameters.environment >> != 'production' ]; then
+            if [ '<< parameters.environment >>' != 'production' ]; then
               npm run test
             fi
 
       - run:
           name: Build distribution files
           command: |
-            source "$BASH_ENV"
             npm run build
 
       - run:
@@ -42,7 +40,6 @@ jobs:
       - run:
           name: Publish package to NPM
           command: |
-            source "$BASH_ENV"
             npm publish --access=public --tag=<< parameters.environment >>
 
       - slack/notify:
