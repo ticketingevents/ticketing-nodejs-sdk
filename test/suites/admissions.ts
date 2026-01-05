@@ -118,7 +118,7 @@ describe("Admissions", function(){
 			let secondCart = await ticketing.orders.start()
 			secondCart.add(this.secondSection, 5)
 			this.secondOrder = await secondCart.checkout(this.customer)
-    }, 5000)
+    }, 2000)
 	})
 
 	after(async function(){
@@ -315,7 +315,7 @@ describe("Admissions", function(){
 		  })
 		})
 
-		it('Should return an empty collection usign the modified_since filter', function () {
+		it('Should return an empty collection using the modified_since filter', function () {
 		  return new Promise((resolve, reject) => {
 				testSession.tickets().filter({modified_since: testTimestamp}).then(tickets => {
 				  expect(tickets.length).to.be.at.least(1)
