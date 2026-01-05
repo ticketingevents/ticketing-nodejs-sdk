@@ -4,7 +4,7 @@ import './session'
 import { TickeTing, Region, BadDataError,  ResourceExistsError, ResourceNotFoundError, PermissionError } from '../../src'
 import { AccountModel, AccountPreferencesModel, RegionModel, HostModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
-import { expect, ticketing, api, public_ticketing } from '../setup'
+import { expect, ticketing, api, public_ticketing, unauthorised_sdk } from '../setup'
 
 // Global account object
 let testAccount = null
@@ -203,17 +203,6 @@ describe("Accounts", function(){
     })
 
     it('Should throw a PermissionError when accessed with another user', function () {
-      let unauthorised_sdk = null
-      if(process.env.npm_config_env == "production"){
-        unauthorised_sdk = new TickeTing({
-          apiKey: "0acb10082a313f517954a34d2a7aedb7"
-        })
-      }else{
-        unauthorised_sdk = new TickeTing({
-          apiKey: "413c7e517b63822c3037ead7679c780e"
-        })
-      }
-
       return expect(unauthorised_sdk.accounts.find(testAccount.number))
         .to.eventually.be.rejectedWith("You are not authorised to access or modify this account.")
         .and.be.an.instanceOf(PermissionError)

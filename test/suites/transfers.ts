@@ -373,7 +373,7 @@ describe("Transfers", function(){
 		it('Should complete the transfer', function () {
 			return new Promise((resolve, reject) => {
 				let recipient_sdk = new TickeTing({
-				  apiKey: "07b2f3b08810a4296ee19fc59dff48b0"
+				  apiKey: process.env.ADMINISTRATOR_KEY || '07b2f3b08810a4296ee19fc59dff48b0'
 				})
 
 				recipient_sdk.session.start({

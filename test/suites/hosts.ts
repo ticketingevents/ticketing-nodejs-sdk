@@ -211,17 +211,6 @@ describe("Hosts", function(){
     })
 
     it('Should throw a PermissionError when not a host administrator', function () {
-      let unauthorised_sdk = null
-      if(process.env.npm_config_env == "production"){
-        unauthorised_sdk = new TickeTing({
-          apiKey: "0acb10082a313f517954a34d2a7aedb7"
-        })
-      }else{
-        unauthorised_sdk = new TickeTing({
-          apiKey: "413c7e517b63822c3037ead7679c780e"
-        })
-      }
-
       return new Promise((resolve, reject) => {
         unauthorised_sdk.hosts.find(testHost.id).then(unauthorised_host => {
           expect(unauthorised_host.save())
@@ -280,17 +269,6 @@ describe("Hosts", function(){
 
   describe('Delete an event host', function () {
     it('Should throw a PermissionError when not a host administrator', function () {
-      let unauthorised_sdk = null
-      if(process.env.npm_config_env == "production"){
-        unauthorised_sdk = new TickeTing({
-          apiKey: "0acb10082a313f517954a34d2a7aedb7"
-        })
-      }else{
-        unauthorised_sdk = new TickeTing({
-          apiKey: "413c7e517b63822c3037ead7679c780e"
-        })
-      }
-
       return new Promise((resolve, reject) => {
         unauthorised_sdk.hosts.find(testHost.id).then(unauthorised_host => {
           expect(unauthorised_host.delete())
