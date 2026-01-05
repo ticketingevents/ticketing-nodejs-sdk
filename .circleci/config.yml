@@ -106,6 +106,7 @@ workflows:
           name: Publish QA
           environment: qa
           context:
+            - Build Secrets
             - NodeJS SDK QA
           filters:
             tags:
@@ -117,6 +118,7 @@ workflows:
           name: Publish UAT
           environment: uat
           context:
+            - Build Secrets
             - NodeJS SDK UAT
           filters:
             tags:
@@ -128,6 +130,7 @@ workflows:
           name: Publish PROD
           environment: production
           context:
+            - Build Secrets
             - NodeJS SDK PROD
           filters:
             tags:
