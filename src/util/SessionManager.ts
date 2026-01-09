@@ -49,7 +49,7 @@ export class SessionManager{
           resolve(true)
         }).catch(error => {
           this.__apiAdapter.reset()
-          if(error.code == 401){
+          if(error.code == 403){
             error = new InvalidStateError(error.code, "The session has ended or does not exist.")
           }
 
@@ -71,10 +71,8 @@ export class SessionManager{
 
             resolve(true)
           }).catch(error => {
-            if(error.code == 401){
-              error = new ResourceNotFoundError(error.code, "There is no session associated with the provided key.")
-            }else if(error.code == 403){
-              error = new InvalidStateError(error.code, "The session has already been ended.")
+            if(error.code == 403){
+              error = new InvalidStateError(error.code, "The session has ended or does not exist.")
             }
 
             reject(error)
