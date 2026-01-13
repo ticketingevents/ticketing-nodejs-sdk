@@ -8,6 +8,9 @@ export class EventModel extends BaseEventModel implements Event{
 
   constructor(event: any, adapter: APIAdapter){
     super(event, adapter)
-    this.host = new HostModel(event.host, adapter)
+
+    if(event.host){
+      this.host = new HostModel(event.host, adapter)
+    }
   }
 }

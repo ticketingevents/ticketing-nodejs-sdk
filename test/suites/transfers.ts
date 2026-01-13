@@ -260,8 +260,8 @@ describe("Transfers", function(){
 						expect(transfer.recipient.number).to.equal(this.recipient.number)
 
 						expect(transfer.tickets.length).to.eq(1)
-						expect(transfer.tickets[0].name).to.equal(`${this.event.title}: ${this.section.name}`)
-						expect(transfer.tickets[0].description).to.equal(`${this.section.description}`)
+						expect(transfer.tickets[0].event.uri).to.equal(this.event.uri)
+						expect(transfer.tickets[0].section.name).to.equal(this.section.name)
 						expect(transfer.tickets[0].quantity).to.eq(testParcel.tickets[0].quantity)
 
 						resolve(true)
@@ -323,7 +323,9 @@ describe("Transfers", function(){
 
 					expect(transfer.tickets.length).to.eq(testTransfer.tickets.length)
 					for(let i = 0; i < transfer.tickets.length; i++){
-						expect(transfer.tickets[i]).to.include(testTransfer.tickets[i])	
+						expect(transfer.tickets[i].event.uri).to.eq(testTransfer.tickets[i].event.uri)
+						expect(transfer.tickets[i].section.uri).to.eq(testTransfer.tickets[i].section.uri)	
+						expect(transfer.tickets[i].quantity).to.eq(testTransfer.tickets[i].quantity)
 					}
 
 					resolve(true)

@@ -1,17 +1,20 @@
 import { APIAdapter } from '../util/APIAdapter'
 import { BaseModel } from './BaseModel'
 import type { Account } from '../interface/Account'
+import type { Event } from '../interface/Event'
+import type { Section } from '../interface/Section'
 import type { Transfer } from '../interface/Transfer'
 import type { TransferData } from '../interface/data/TransferData'
+import { EventModel } from './EventModel'
+import { SectionModel } from './SectionModel'
 import { BadDataError, InvalidStateError, PermissionError } from '../errors'
 
 export class TransferModel extends BaseModel implements Transfer{
   public status: string
   public initiated: string
   public tickets: Array<{
-    section: string,
-  	name: string,
-  	description: string,
+    event: Event,
+    section: Section,
   	quantity: number
   }>
   public sender: Account | string
@@ -24,9 +27,18 @@ export class TransferModel extends BaseModel implements Transfer{
 
     this.status = transfer.status
     this.initiated = transfer.initiated
-    this.tickets = transfer.tickets
     this.sender = sender
     this.recipient = recipient
+
+
+    this.tickets = []
+    for(const ticket of transfer.tickets){
+      this.tickets.push({
+        event: new EventModel(ticket.event, adapter),
+        section: new SectionModel(ticket.section, adapter),
+        quantity: ticket.quantity
+      })
+    }
 
     this.__claimsURI = transfer.claims
   }
@@ -68,7 +80,7 @@ export class TransferModel extends BaseModel implements Transfer{
   serialise(): TransferData{
   	const tickets = {}
   	for(const ticket of this.tickets){
-  		tickets[ticket.section] = ticket.quantity
+  		tickets[ticket.section.uri] = ticket.quantity
   	}
 
     return {

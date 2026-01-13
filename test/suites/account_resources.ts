@@ -348,8 +348,8 @@ describe("Account Resources", function(){
           expect(sample.recipient).to.eq(`${this.customer.firstName} ${this.customer.lastName} (${this.customer.username})`)
 
           expect(sample.tickets.length).to.eq(1)
-          expect(sample.tickets[0].name).to.equal(`${this.event.title}: ${this.section.name}`)
-          expect(sample.tickets[0].description).to.equal(`${this.section.description}`)
+          expect(sample.tickets[0].event.uri).to.equal(this.event.uri)
+          expect(sample.tickets[0].section.name).to.equal(this.section.name)
           expect(sample.tickets[0].quantity).to.eq(3)
 
           resolve(true)
@@ -392,8 +392,8 @@ describe("Account Resources", function(){
           expect(sample.sender).to.eq(`${this.customer.firstName} ${this.customer.lastName} (${this.customer.username})`)
 
           expect(sample.tickets.length).to.eq(1)
-          expect(sample.tickets[0].name).to.equal(`${this.event.title}: ${this.section.name}`)
-          expect(sample.tickets[0].description).to.equal(`${this.section.description}`)
+          expect(sample.tickets[0].event.uri).to.equal(this.event.uri)
+          expect(sample.tickets[0].section.name).to.equal(this.section.name)
           expect(sample.tickets[0].quantity).to.eq(3)
 
           resolve(true)

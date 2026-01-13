@@ -47,18 +47,26 @@ export class BaseEventModel extends BaseModel implements Event{
     this.type = event.type
     this.public = event.public
     this.featured = event.featured
-    this.category = new CategoryModel(event.category, adapter)
     this.subcategory = event.subcategory
     this.start = event.start
     this.end = event.end
-    this.venue = new VenueModel(event.venue, adapter)
     this.disclaimer = event.disclaimer
     this.tags = event.tags
     this.popularity = event.popularity
     this.sections = []
 
-    for(const section of event.sections){
-      this.sections.push(new SectionModel(section, adapter))
+    if(event.category){
+      this.category = new CategoryModel(event.category, adapter)
+    }
+
+    if(event.venue){
+      this.venue = new VenueModel(event.venue, adapter)
+    }
+
+    if(event.sections){
+      for(const section of event.sections){
+        this.sections.push(new SectionModel(section, adapter))
+      }
     }
 
     this.__bannerUrl = event.banner
