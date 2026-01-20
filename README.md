@@ -112,6 +112,7 @@ export class TickeTingService extends TickeTing{
     * [Update an account](#update-an-account)
     * [Delete an account](#delete-an-account)
     * [Verify an account](#verify-an-account)
+    * [Deactivate an account](#deactivate-an-account)
     * [Fetch account preferences](#fetch-account-preferences)
     * [Update account preferences](#update-account-preferences)
     * [Reset account password](#reset-account-password)
@@ -726,6 +727,31 @@ preferences.
       console.log(error.message) //Missing or invalid email address
     }else if(error instanceof ResourceNotFoundError){
       console.log("The email address provided is not registered to a TickeTing user.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Deactivate an account
+
+[API Reference](https://docs.ticketingevents.com/openapi/account-activation/request_deletion)
+
+```javascript
+  //Retrieve a specific account using its account number
+  account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  //Save changes
+  account.deactivate("The user asked to delete their account.").then(deactivated => {
+    if(deactivated){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof PermissionError){
+      console.log("You are not authorised to access or modify this account.")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }

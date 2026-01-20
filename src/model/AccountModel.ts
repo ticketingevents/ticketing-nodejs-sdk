@@ -13,6 +13,7 @@ import type { Host } from '../interface/Host'
 import type { Event } from '../interface/Event'
 import type { Ticket } from '../interface/Ticket'
 import type { Transfer } from '../interface/Transfer'
+import { PermissionError } from '../errors'
 
 export class AccountModel extends BaseModel implements Account{
   public number: string
@@ -93,6 +94,24 @@ export class AccountModel extends BaseModel implements Account{
 
   wallet(pageLength: number = 25): Collection<Ticket>{
     return this.__walletService.list(pageLength)
+  }
+
+  deactivate(message: string): Promise<boolean>{
+    return new Promise((resolve, reject) => {
+      this._apiAdapter.post(
+        `${this._self}/deletions`,
+        {message: message}
+      ).then(() => {
+        this.activated = false
+        resolve(true)
+      }).catch(error => {
+        if(error.code == 403){
+          error = new PermissionError(error.code, error.message)
+        }
+
+        reject(error)
+      })
+    })
   }
 
   serialise(): AccountData{

@@ -474,6 +474,21 @@ describe("Accounts", function(){
     })
   })
 
+  describe('Deactivate an account', function () {
+    it('Should initiate account deactivation', function () {
+
+      //Save changes
+      return expect(testAccount.deactivate()).eventually.be.true
+    })
+
+    it('Should mark the account as inactive', function () {
+      return expect(ticketing.accounts.find(testAccount.number))
+        .to.eventually.include({
+          "activated": false
+        })
+    })
+  })
+
   describe('Delete an account', function () {
     it('Should delete the account from the system', function () {
       return expect(testAccount.delete()).to.eventually.be.true
