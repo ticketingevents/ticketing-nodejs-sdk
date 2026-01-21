@@ -96,7 +96,7 @@ export class AccountModel extends BaseModel implements Account{
     return this.__walletService.list(pageLength)
   }
 
-  deactivate(message: string): Promise<boolean>{
+  deactivate(message?: string): Promise<boolean>{
     return new Promise((resolve, reject) => {
       this._apiAdapter.post(
         `${this._self}/deletions`,

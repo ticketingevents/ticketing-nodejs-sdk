@@ -32,5 +32,5 @@ export interface Account extends Base{
   itinerary(pageLength: number): Collection<Event>
   wallet(pageLength: number): Collection<Ticket>
   
-  deactivate(message: string): Promise<boolean>
+  deactivate(message?: string): Promise<boolean>
 }
