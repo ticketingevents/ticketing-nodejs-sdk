@@ -17,7 +17,7 @@ describe("Accounts", function(){
   before(async function(){
     //Initialise test data for suite
     this.testAccountData = {
-      username: "zz.mothers.milk",
+      username: "zzzzzz.mothers.milk",
       password: "WuT4NGcl4n",
       email: "marvin.milk@usmc.gov",
       firstName: "Marvin",
