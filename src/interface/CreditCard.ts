@@ -1,6 +1,6 @@
 export interface CreditCard{
   number: string
-  cvv: number
+  cvv: string
   expiryDate: string
   name: string
   email: string

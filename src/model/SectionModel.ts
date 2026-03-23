@@ -24,9 +24,9 @@ export class SectionModel extends BaseModel implements Section{
     this.salesStart = section.salesStart
     this.salesEnd = section.salesEnd
     this.active = section.active
-    this.capacity = section.capacity
+    this.capacity = section.capacity?section.capacity:0
     this.sold = section.sold?section.sold:0
-    this.remaining = section.remaining?section.remaining:section.capacity
+    this.remaining = section.remaining?section.remaining:0
     this.reserved = section.reserved?section.reserved:0
   }
 
@@ -46,6 +46,8 @@ export class SectionModel extends BaseModel implements Section{
 
   serialise(): SectionData{
     const data: SectionData = {
+      id: this.id,
+      uri: this.uri,
       name: this.name,
       description: this.description,
       price: this.price,

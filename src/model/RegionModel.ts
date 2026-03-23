@@ -22,6 +22,8 @@ export class RegionModel extends BaseModel implements Region{
 
   serialise(): RegionData{
     return {
+      id: this.id,
+      uri: this.uri,
       name: this.name,
       country: this.country,
       district: this.district,

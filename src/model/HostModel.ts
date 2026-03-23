@@ -58,6 +58,8 @@ export class HostModel extends BaseModel implements Host{
 
   serialise(): HostData{
     const data: HostData = {
+      id: this.id,
+      uri: this.uri,
       name: this.name,
       contact: this.contact,
       email: this.email,

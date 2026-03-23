@@ -16,6 +16,8 @@ export class CategoryModel extends BaseModel implements Category{
 
   serialise(): CategoryData{
     return {
+      id: this.id,
+      uri: this.uri,
       name: this.name,
       subcategories: this.subcategories
     }

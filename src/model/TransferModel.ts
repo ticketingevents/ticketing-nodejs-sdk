@@ -84,6 +84,8 @@ export class TransferModel extends BaseModel implements Transfer{
   	}
 
     return {
+      id: this.id,
+      uri: this.uri,
       sender: (typeof this.sender == "object")?this.sender.number:this.sender,
       recipient: (typeof this.recipient == "object")?this.recipient.number:this.recipient,
       tickets: tickets

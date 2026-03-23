@@ -1,4 +1,6 @@
 export interface AccountData{
+  id?: string | number,
+  uri?: string,
   number?: string
   username: string
   password?: string

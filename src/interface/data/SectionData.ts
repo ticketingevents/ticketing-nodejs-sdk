@@ -1,4 +1,6 @@
 export interface SectionData{
+  id?: string | number,
+  uri?: string,
   name: string
   description: string
   price: {base: number, current: number, expires: string}

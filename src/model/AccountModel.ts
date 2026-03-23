@@ -116,6 +116,8 @@ export class AccountModel extends BaseModel implements Account{
 
   serialise(): AccountData{
     return {
+      id: this.id,
+      uri: this.uri,
       number: this.number,
       username: this.username,
       email: this.email,

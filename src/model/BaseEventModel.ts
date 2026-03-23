@@ -151,6 +151,8 @@ export class BaseEventModel extends BaseModel implements Event{
 
   serialise(): EventData{
     const data: EventData = {
+      id: this.id,
+      uri: this.uri,
       title: this.title,
       description: this.description,
       type: this.type,
