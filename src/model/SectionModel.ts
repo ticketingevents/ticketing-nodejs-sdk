@@ -26,8 +26,8 @@ export class SectionModel extends BaseModel implements Section{
     this.active = section.active
     this.capacity = section.capacity?section.capacity:0
     this.sold = section.sold?section.sold:0
-    this.remaining = section.remaining?section.remaining:0
     this.reserved = section.reserved?section.reserved:0
+    this.remaining = (section.capacity - section.sold - section.reserved)
   }
 
   get fees(): number{
