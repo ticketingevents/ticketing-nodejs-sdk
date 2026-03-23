@@ -1,6 +1,6 @@
 {
   "name": "@ticketing/ticketing-nodejs-sdk",
-  "version": "3.2.1-alpha.0",
+  "version": "3.2.2-alpha.0",
   "description": "Interact seamlessly with the TickeTing API from any TypeScript or JS application.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
