@@ -79,8 +79,6 @@ export class TokenModel extends BaseModel implements Token{
   	}
 
     const data: TokenData = {
-      id: this.id,
-      uri: this.uri,
       sections: sections
     }
 

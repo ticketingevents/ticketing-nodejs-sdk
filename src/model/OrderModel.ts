@@ -98,8 +98,6 @@ export class OrderModel extends BaseModel implements Order{
   	}
 
     return {
-      id: this.id,
-      uri: this.uri,
       customer: this.customer.number,
       items: items
     }

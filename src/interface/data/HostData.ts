@@ -1,6 +1,4 @@
 export interface HostData{
-  id?: string | number,
-  uri?: string,
   name: string
   contact: string
   email: string

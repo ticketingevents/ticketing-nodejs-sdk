@@ -3,8 +3,6 @@ import { Category } from '../Category'
 import { Venue } from '../Venue'
 
 export interface EventData{
-  id?: string | number,
-  uri?: string,
   host?: Host | string
   title: string
   description: string

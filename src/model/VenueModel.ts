@@ -25,8 +25,6 @@ export class VenueModel extends BaseModel implements Venue{
 
   serialise(): VenueData{
     return {
-      id: this.id,
-      uri: this.uri,
       name: this.name,
       region: this.region.id,
       longitude: this.longitude,

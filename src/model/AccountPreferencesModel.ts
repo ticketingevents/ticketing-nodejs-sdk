@@ -17,8 +17,6 @@ export class AccountPreferencesModel extends BaseModel implements AccountPrefere
 
   serialise(): AccountPreferencesData{
     return {
-      id: this.id,
-      uri: this.uri,
       region: this.region?this.region.id:null
     }
   }

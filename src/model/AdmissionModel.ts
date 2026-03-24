@@ -31,8 +31,6 @@ export class AdmissionModel extends BaseModel implements Admission{
 
   serialise(): AdmissionData{
     const data: AdmissionData = {
-      id: this.id,
-      uri: this.uri,
       redeemer: this.redeemer,
       device: this.device,
       ticket: this.ticket,

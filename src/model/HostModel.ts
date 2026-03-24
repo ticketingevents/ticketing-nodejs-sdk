@@ -48,7 +48,7 @@ export class HostModel extends BaseModel implements Host{
 
   public statistics(): Promise<HostStatisticsModel>{
     return new Promise((resolve, reject) => {
-      this._apiAdapter.get(`${this._self}/statistics`).then(response => {
+      this._apiAdapter.get(`${this.uri}/statistics`).then(response => {
         resolve(new HostStatisticsModel(response.data, this._apiAdapter))
       }).catch(error => {
         reject(error)
@@ -58,8 +58,6 @@ export class HostModel extends BaseModel implements Host{
 
   serialise(): HostData{
     const data: HostData = {
-      id: this.id,
-      uri: this.uri,
       name: this.name,
       contact: this.contact,
       email: this.email,

@@ -46,8 +46,6 @@ export class SectionModel extends BaseModel implements Section{
 
   serialise(): SectionData{
     const data: SectionData = {
-      id: this.id,
-      uri: this.uri,
       name: this.name,
       description: this.description,
       price: this.price,

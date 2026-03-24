@@ -27,8 +27,6 @@ export class TicketModel extends BaseModel implements Ticket{
 
   serialise(): TicketData{
     const data: TicketData = {
-      id: this.id,
-      uri: this.uri,
       serial: this.serial,
       status: this.status,
       owner: (typeof this.owner == "object")?this.owner.uri:this.owner,

@@ -99,7 +99,7 @@ export class BaseEventModel extends BaseModel implements Event{
   submit(): Promise<boolean>{
     return new Promise((resolve, reject) => {
       this._apiAdapter.post(
-        `${this._self}/submissions`,
+        `${this.uri}/submissions`,
         {}
       ).then(() => {
         resolve(true)
@@ -121,7 +121,7 @@ export class BaseEventModel extends BaseModel implements Event{
       }
 
       this._apiAdapter.post(
-        `${this._self}/tokens`, {
+        `${this.uri}/tokens`, {
           sections: sectionData
         }
       ).then(response => {
@@ -141,7 +141,7 @@ export class BaseEventModel extends BaseModel implements Event{
 
   public statistics(): Promise<EventStatisticsModel>{
     return new Promise((resolve, reject) => {
-      this._apiAdapter.get(`${this._self}/statistics`).then(response => {
+      this._apiAdapter.get(`${this.uri}/statistics`).then(response => {
         resolve(new EventStatisticsModel(response.data, this._apiAdapter))
       }).catch(error => {
         reject(error)
@@ -151,8 +151,6 @@ export class BaseEventModel extends BaseModel implements Event{
 
   serialise(): EventData{
     const data: EventData = {
-      id: this.id,
-      uri: this.uri,
       title: this.title,
       description: this.description,
       type: this.type,

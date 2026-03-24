@@ -99,7 +99,7 @@ export class AccountModel extends BaseModel implements Account{
   deactivate(message?: string): Promise<boolean>{
     return new Promise((resolve, reject) => {
       this._apiAdapter.post(
-        `${this._self}/deletions`,
+        `${this.uri}/deletions`,
         {message: message}
       ).then(() => {
         this.activated = false
@@ -116,8 +116,6 @@ export class AccountModel extends BaseModel implements Account{
 
   serialise(): AccountData{
     return {
-      id: this.id,
-      uri: this.uri,
       number: this.number,
       username: this.username,
       email: this.email,
