@@ -17,7 +17,7 @@ describe("Regions", function(){
   before(async function(){ 
     //Initialise test data for suite
     this.testRegionData = {
-      name: "Test Region "+Math.floor(Math.random() * 999999),
+      name: "ZZZ Test Region "+Math.floor(Math.random() * 999999),
       country: "Antigua and Barbuda",
       district: "Saint Paul",
       city: "English Harbour"
@@ -48,26 +48,21 @@ describe("Regions", function(){
     //Create an event category
     this.category = await ticketing.categories.create({
       name: "Event Category "+Math.floor(Math.random() * 999999),
-      subcategories: ["Event Subcategory"]
+      subcategories: ["Event Subcategory "+Math.floor(Math.random() * 999999)]
     })
 
     //An event to test active filter
-    this.regionEvent = await ticketing.events.create({
-      host: this.host,
+    this.regionEvent = await this.host.events.create({
       title: "Region Event",
       description: "Event Description",
       type: "Standard",
       public: true,
       category: this.category,
-      subcategory: "Event Subcategory",
-      venue: this.testVenue
+      subcategory: this.category.subcategories[0],
+      venue: this.testVenue,
+      start: "3034-06-07T20:00",
+      end: "3034-06-07T23:00"
     })
-
-    //Submit event for review
-    await api.post(`${this.regionEvent.uri}/submissions`, {})
-
-    //Approve event
-    await api.delete(`/submissions/${btoa(this.regionEvent.uri)}?approved=true`)
   })
 
   after(async function(){
@@ -98,13 +93,13 @@ describe("Regions", function(){
 
     it('Should throw a BadDataError if required fields are missing', function () {
       return expect(ticketing.regions.create({name: "", country: this.testRegionData.country}))
-        .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: name.")
+        .to.eventually.be.rejectedWith("Your request payload is invalid. Please ensure you have included all required fields and values are well-formed.")
         .and.be.an.instanceOf(BadDataError)
     })
 
     it('Should throw a ResourceExistsError when using an existing name', function () {
       return expect(ticketing.regions.create(this.testRegionData))
-        .to.eventually.be.rejectedWith("The following arguments conflict with those of another region: name.")
+        .to.eventually.be.rejectedWith("Creating the requested Region would violate uniqueness constraints.")
         .and.be.an.instanceOf(ResourceExistsError)
     })
   })
@@ -158,8 +153,8 @@ describe("Regions", function(){
     })
 
     it('Should throw a ResourceNotFoundError when using a non-existant ID', function () {
-      return expect(ticketing.regions.find(12345))
-        .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
+      return expect(ticketing.regions.find(12345678901234))
+        .to.eventually.be.rejectedWith("There is presently no region with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
   })
@@ -187,7 +182,7 @@ describe("Regions", function(){
       testRegion.name = ""
 
       return expect(testRegion.save())
-        .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: name.")
+        .to.eventually.be.rejectedWith("Your request payload is invalid. Please ensure you have included all required fields and values are well-formed.")
         .and.be.an.instanceOf(BadDataError)
     })
 
@@ -196,7 +191,7 @@ describe("Regions", function(){
       testRegion.name = this.secondRegion.name
 
       return expect(testRegion.save())
-        .to.eventually.be.rejectedWith("The following arguments conflict with those of another region: name.")
+        .to.eventually.be.rejectedWith("Creating the requested Region would violate uniqueness constraints.")
         .and.be.an.instanceOf(ResourceExistsError)
     })
   })
@@ -208,13 +203,13 @@ describe("Regions", function(){
 
     it('Region should no longer be retrievable', function () {
       return expect(ticketing.regions.find(testRegion.id))
-        .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
+        .to.eventually.be.rejectedWith("There is presently no region with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
 
     it('Should throw a ResourceIndelibleError when attached to a venue', function () {
       return expect(this.secondRegion.delete())
-        .to.eventually.be.rejectedWith("A region cannot be deleted if it has venues attached")
+        .to.eventually.be.rejectedWith("The requested region is in use and cannot be deleted.")
         .and.be.an.instanceOf(ResourceIndelibleError)
     })
   })

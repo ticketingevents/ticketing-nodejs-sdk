@@ -1,7 +1,7 @@
 import { APIAdapter } from '../util/APIAdapter'
 import { ResourceImmutableError } from '../errors'
 import { BaseModel } from './BaseModel'
-import type { Event } from '../interface/Event'
+import type { EventRevision } from '../interface/EventRevision'
 import type { Section } from '../interface/Section'
 import type { Token } from '../interface/Token'
 import type { TokenData } from '../interface/data/TokenData'
@@ -11,10 +11,10 @@ export class TokenModel extends BaseModel implements Token{
   public global: boolean
   public sections: Array<Section>
 
-  private __event: Event
+  private __event: EventRevision
   private __original_sections: Array<Section>
 
-  constructor(token: any, event: Event, adapter: APIAdapter){
+  constructor(token: any, event: EventRevision, adapter: APIAdapter){
     super(token.self, adapter)
 
     this.code = token.code
@@ -26,9 +26,9 @@ export class TokenModel extends BaseModel implements Token{
 
     //Index event sections
     const sectionMap = {}
-    for(const section of this.__event.sections){
+    /*for(const section of this.__event.sections){
     	sectionMap[section.uri] = section
-    }
+    }*/
 
     for(const section of token.sections){
     	this.sections.push(sectionMap[section])

@@ -1,22 +1,21 @@
 import { Base } from './Base'
-import { Collection } from '../util/Collection'
-import type { Event } from './Event'
 import { HostStatistics } from './reporting/HostStatistics'
+import { EventRevisionService } from '../service/EventRevisionService'
 
 export interface Host extends Base{
   name: string
   contact: string
   email: string
-  description: string
+  bio: string
   phone: string
   website: string
   country: string
   firstAddressLine: string
   secondAddressLine: string
   city: string
-  state: string
+  district: string
   businessNo: string
 
-  events: Collection<Event>
+  events: EventRevisionService
   statistics(): Promise<HostStatistics>
 }

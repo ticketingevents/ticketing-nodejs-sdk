@@ -1,5 +1,5 @@
 //Control execution order
-import './account_resources'
+import './presets'
 
 import { Category, BadDataError,  ResourceExistsError, ResourceNotFoundError, ResourceIndelibleError } from '../../src'
 import { CategoryModel } from  '../../src/model'
@@ -24,7 +24,7 @@ describe("Categories", function(){
     //A category to test duplication
     this.secondCategory = await ticketing.categories.create({
       "name": "Test Category "+Math.floor(Math.random() * 999999),
-      subcategories: ["Event Subcategory"]
+      subcategories: ["Event Subcategory "+Math.floor(Math.random() * 999999)]
     })
 
     //Create an event host
@@ -49,15 +49,16 @@ describe("Categories", function(){
     })
 
     //Create an event so test category cannot be deleted
-    this.testEvent = await ticketing.events.create({
-      host: this.host,
+    this.testEvent = await this.host.events.create({
       title: "Second Event",
       description: "Event Description",
       type: "Standard",
       public: true,
       category: this.secondCategory,
-      subcategory: "Event Subcategory",
-      venue: this.venue
+      subcategory: this.secondCategory.subcategories[0],
+      venue: this.venue,
+      start: "3034-06-07T20:00",
+      end: "3034-06-07T23:00"
     })
   })
 
@@ -75,9 +76,13 @@ describe("Categories", function(){
         ticketing.categories.create(this.testCategoryData).then((category => {
           testCategory = category
 
-          expect(category)
-            .to.be.an.instanceof(CategoryModel)
-            .and.to.deep.include(this.testCategoryData)
+          expect(category).to.be.an.instanceof(CategoryModel)
+          expect(category.name).to.equal(this.testCategoryData.name)
+          for(let i=0; i < category.subcategories.length; i++){
+            expect(category.subcategories[i])
+              .to.be.an.instanceof(CategoryModel)
+              .and.to.have.property("name", this.testCategoryData.subcategories[i])
+          }
 
           resolve(true)
         })).catch(error=>{
@@ -88,13 +93,13 @@ describe("Categories", function(){
 
     it('Should throw a BadDataError if required fields are missing', function () {
       return expect(ticketing.categories.create({name: "", subcategories: this.testCategoryData.subcategories}))
-        .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: name.")
+        .to.eventually.be.rejectedWith("Your request payload is invalid. Please ensure you have included all required fields and values are well-formed")
         .and.be.an.instanceOf(BadDataError)
     })
 
     it('Should throw a ResourceExistsError when using an existing name', function () {
       return expect(ticketing.categories.create(this.testCategoryData))
-        .to.eventually.be.rejectedWith("The following arguments conflict with those of another category: name.")
+        .to.eventually.be.rejectedWith("Creating the requested Category would violate uniqueness constraints.")
         .and.be.an.instanceOf(ResourceExistsError)
     })
   })
@@ -109,9 +114,13 @@ describe("Categories", function(){
         let collection = ticketing.categories.list(1)
         collection.pages.then(pages => {
           collection.goto(pages).then(categories => {
-            expect(categories[0])
-              .to.be.an.instanceof(CategoryModel)
-              .and.to.deep.include(this.testCategoryData)
+            expect(categories[0]).to.be.an.instanceof(CategoryModel)
+            expect(categories[0].name).to.equal(this.testCategoryData.name)
+            for(let i=0; i < categories[0].subcategories.length; i++){
+              expect(categories[0].subcategories[i])
+                .to.be.an.instanceof(CategoryModel)
+                .and.to.have.property("name", this.testCategoryData.subcategories[i])
+            }
 
             resolve(true)
           }).catch(error => {
@@ -124,14 +133,26 @@ describe("Categories", function(){
 
   describe('Fetch a category', function () {
     it('Should return the identified Category resource', function () {
-      return expect(ticketing.categories.find(testCategory.id))
-        .to.eventually.be.an.instanceof(CategoryModel)
-        .and.to.deep.include(this.testCategoryData)
+      return new Promise((resolve, reject) => {
+        ticketing.categories.find(testCategory.id).then(category => {
+          expect(category).to.be.an.instanceof(CategoryModel)
+          expect(category.name).to.equal(this.testCategoryData.name)
+          for(let i=0; i < category.subcategories.length; i++){
+            expect(category.subcategories[i])
+              .to.be.an.instanceof(CategoryModel)
+              .and.to.have.property("name", this.testCategoryData.subcategories[i])
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
     })
 
     it('Should throw a ResourceNotFoundError when using a non-existant ID', function () {
-      return expect(ticketing.categories.find(12345))
-        .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
+      return expect(ticketing.categories.find(12345678902345))
+        .to.eventually.be.rejectedWith("There is presently no category with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
   })
@@ -147,11 +168,21 @@ describe("Categories", function(){
     })
 
     it('Should persist category changes', function () {
-      return expect(ticketing.categories.find(testCategory.id))
-        .to.eventually.deep.include({
-          "name": "New Category",
-          "subcategories": ["Subcategory 1", "Subcategory 3"]
+      return new Promise((resolve, reject) => {
+        ticketing.categories.find(testCategory.id).then(category => {
+          expect(category).to.be.an.instanceof(CategoryModel)
+          expect(category.name).to.equal(testCategory.name)
+          for(let i=0; i < category.subcategories.length; i++){
+            expect(category.subcategories[i])
+              .to.be.an.instanceof(CategoryModel)
+              .and.to.have.property("name", testCategory.subcategories[i].name)
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
         })
+      })
     })
 
     it('Should throw a BadDataError if required fields are missing', function () {
@@ -159,7 +190,7 @@ describe("Categories", function(){
       testCategory.name = ""
 
       return expect(testCategory.save())
-        .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: name.")
+        .to.eventually.be.rejectedWith("Your request payload is invalid. Please ensure you have included all required fields and values are well-formed")
         .and.be.an.instanceOf(BadDataError)
     })
 
@@ -168,7 +199,7 @@ describe("Categories", function(){
       testCategory.name = this.secondCategory.name
 
       return expect(testCategory.save())
-        .to.eventually.be.rejectedWith("The following arguments conflict with those of another category: name.")
+        .to.eventually.be.rejectedWith("Creating the requested Category would violate uniqueness constraints.")
         .and.be.an.instanceOf(ResourceExistsError)
     })
   })
@@ -180,13 +211,13 @@ describe("Categories", function(){
 
     it('Category should no longer be retrievable', function () {
       return expect(ticketing.categories.find(testCategory.id))
-        .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
+        .to.eventually.be.rejectedWith("There is presently no category with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
 
     it('Should throw a ResourceIndelibleError when attached to an event', function () {
       return expect(this.secondCategory.delete())
-        .to.eventually.be.rejectedWith("You cannot delete in-use event categories.")
+        .to.eventually.be.rejectedWith("The requested category is in use and cannot be deleted.")
         .and.be.an.instanceOf(ResourceIndelibleError)
     })
   })

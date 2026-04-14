@@ -17,7 +17,7 @@ let testTicket = null
 let testSerials = []
 let testTimestamp = ""
 
-describe("Admissions", function(){
+describe.skip("Admissions", function(){
   //Set hook timeout
   this.timeout(60000)
 

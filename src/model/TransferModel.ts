@@ -1,11 +1,11 @@
 import { APIAdapter } from '../util/APIAdapter'
 import { BaseModel } from './BaseModel'
 import type { Account } from '../interface/Account'
-import type { Event } from '../interface/Event'
+import type { EventRevision } from '../interface/EventRevision'
 import type { Section } from '../interface/Section'
 import type { Transfer } from '../interface/Transfer'
 import type { TransferData } from '../interface/data/TransferData'
-import { EventModel } from './EventModel'
+import { EventRevisionModel } from './EventRevisionModel'
 import { SectionModel } from './SectionModel'
 import { BadDataError, InvalidStateError, PermissionError } from '../errors'
 
@@ -13,7 +13,7 @@ export class TransferModel extends BaseModel implements Transfer{
   public status: string
   public initiated: string
   public tickets: Array<{
-    event: Event,
+    event: EventRevision,
     section: Section,
   	quantity: number
   }>
@@ -34,7 +34,7 @@ export class TransferModel extends BaseModel implements Transfer{
     this.tickets = []
     for(const ticket of transfer.tickets){
       this.tickets.push({
-        event: new EventModel(ticket.event, adapter),
+        event: new EventRevisionModel(ticket.event, adapter),
         section: new SectionModel(ticket.section, adapter),
         quantity: ticket.quantity
       })

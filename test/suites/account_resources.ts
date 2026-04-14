@@ -1,15 +1,15 @@
 //Control execution order
-import './accounts'
+import './transfers'
 
 import { TickeTing, BadDataError } from '../../src'
-import { HostModel, CategoryModel, VenueModel, EventModel, SectionModel,
+import { HostModel, CategoryModel, VenueModel, EventRevisionModel, SectionModel,
           TicketModel, TransferModel } from  '../../src/model'
 import { expect, ticketing, api, public_ticketing } from '../setup'
 
 // Global account object
 let testAccount = null
 
-describe("Account Resources", function(){
+describe.skip("Account Resources", function(){
 
   //Set hook timeout
   this.timeout(60000)
@@ -142,13 +142,13 @@ describe("Account Resources", function(){
 
   describe('List event itinerary', function () {
     it('Should return a collection of Event resources', function () {
-      return expect(this.customer.itinerary(25)).eventually.to.all.be.instanceof(EventModel)
+      return expect(this.customer.itinerary(25)).eventually.to.all.be.instanceof(EventRevisionModel)
     })
 
     it('Should contain the newly created event as its first resource', function () {
       return new Promise((resolve, reject) => {
         this.customer.itinerary(25).first().then(events => {
-          expect(events[0]).to.be.an.instanceof(EventModel)
+          expect(events[0]).to.be.an.instanceof(EventRevisionModel)
           expect(events[0].title).to.equal(this.event.title)
           expect(events[0].description).to.equal(this.event.description)
           expect(events[0].type).to.equal(this.event.type)

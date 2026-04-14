@@ -21,7 +21,7 @@ describe("Sorting", function(){
     //Create an event category
     this.category = await ticketing.categories.create({
       name: "Event Category "+Math.floor(Math.random() * 999999),
-      subcategories: ["Event Subcategory"]
+      subcategories: ["Event Subcategory "+Math.floor(Math.random() * 999999)]
     })
 
     //Create an event venue
@@ -42,21 +42,22 @@ describe("Sorting", function(){
     this.testEvents = []
     for(let i=1; i <= 5; i++){
       this.testEvents.push(
-        await ticketing.events.create({
-          host: this.host,
+        await this.host.events.create({
           title: "Test Event "+Math.floor(Math.random() * 999999),
           description: "Event Description",
           type: "Standard",
           public: true,
           category: this.category,
-          subcategory: "Event Subcategory",
-          venue: this.venue
+          subcategory: this.category.subcategories[0],
+          venue: this.venue,
+      start: "3034-06-07T20:00",
+      end: "3034-06-07T23:00"
         }
       ))
     }
 
     // Initialise collection handle for testing
-    this.collection = ticketing.events.list(5)
+    this.collection = this.host.events.list(5)
   })
 
   after(async function(){

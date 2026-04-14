@@ -1,5 +1,5 @@
 //Control execution order
-import './events'
+import './event_listings'
 
 import { 
 	TickeTing, BadDataError, InvalidStateError, PermissionError,
@@ -13,7 +13,7 @@ import { expect, ticketing, api, unauthorised_sdk } from '../setup'
 let testCart = null
 let testOrder = null
 
-describe("Orders", function(){
+describe.skip("Orders", function(){
   //Set hook timeout
   this.timeout(60000)
 

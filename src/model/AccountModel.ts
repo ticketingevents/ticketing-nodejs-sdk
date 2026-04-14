@@ -10,7 +10,7 @@ import type { AccountData } from '../interface/data/AccountData'
 import type { AccountPreferences } from '../interface/AccountPreferences'
 import { AccountPreferencesModel } from './AccountPreferencesModel'
 import type { Host } from '../interface/Host'
-import type { Event } from '../interface/Event'
+import type { EventRevision } from '../interface/EventRevision'
 import type { Ticket } from '../interface/Ticket'
 import type { Transfer } from '../interface/Transfer'
 import { PermissionError } from '../errors'
@@ -88,7 +88,7 @@ export class AccountModel extends BaseModel implements Account{
     return this.__transferHistoryService.list().filter({role: "sender"})
   }
 
-  itinerary(pageLength: number = 25): Collection<Event>{
+  itinerary(pageLength: number = 25): Collection<EventRevision>{
     return this.__itineraryService.list(pageLength)
   }
 

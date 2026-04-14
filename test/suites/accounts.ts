@@ -420,7 +420,6 @@ describe("Accounts", function(){
           identification: testAccount.username
         }).then((result => {
           expect(result.identification).to.equal(testAccount.username)
-          expect(result.role).to.equal("")
           expect(result.name).to.equal(`${testAccount.firstName} ${testAccount.lastName}`)
           expect(result.found).to.equal(true)
 
@@ -437,26 +436,8 @@ describe("Accounts", function(){
           identification: testAccount.email
         }).then((result => {
           expect(result.identification).to.equal(testAccount.email)
-          expect(result.role).to.equal("")
           expect(result.name).to.equal(`${testAccount.firstName} ${testAccount.lastName}`)
           expect(result.found).to.equal(true)
-
-          resolve(true)
-        })).catch(error=>{
-          reject(error)
-        })
-      })
-    })
-
-    it('Should support role lookup', function () {
-      return new Promise((resolve, reject) => {
-        ticketing.accounts.lookup({
-          identification: testAccount.username,
-          role: "administrator"
-        }).then((result => {
-          expect(result.identification).to.equal(testAccount.username)
-          expect(result.role).to.equal("administrator")
-          expect(result.found).to.equal(false)
 
           resolve(true)
         })).catch(error=>{

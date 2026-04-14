@@ -6,7 +6,7 @@ import type { AdmissionSession } from '../interface/AdmissionSession'
 import { AdmissionService } from '../service/AdmissionService'
 import { TicketService } from '../service/TicketService'
 import { InvalidStateError } from '../errors'
-import { EventModel } from './EventModel'
+import { EventRevisionModel } from './EventRevisionModel'
 import { SectionModel } from './SectionModel'
 
 export class AdmissionSessionModel implements AdmissionSession{
@@ -14,7 +14,7 @@ export class AdmissionSessionModel implements AdmissionSession{
   public name: string
   public device: string
   public code: string
-  public event: EventModel|null
+  public event: EventRevisionModel|null
   public sections: Array<SectionModel>
 
   private __apiAdapter: APIAdapter
@@ -31,9 +31,9 @@ export class AdmissionSessionModel implements AdmissionSession{
 
     //Index event sections
     const sectionMap = {}
-    for(const section of this.event.sections){
+    /*for(const section of this.event.sections){
       sectionMap[section.uri] = section
-    }
+    }*/
 
     for(const section of admissionSession.sections){
       this.sections.push(sectionMap[section])

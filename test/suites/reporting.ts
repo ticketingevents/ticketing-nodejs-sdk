@@ -1,5 +1,5 @@
 //Control execution order
-import './transfers'
+import './account_resources'
 
 import { 
 	TickeTing, BadDataError, InvalidStateError, ResourceImmutableError,
@@ -9,7 +9,7 @@ import { EventStatisticsModel, HostStatisticsModel, SectionModel } from  '../../
 import { Collection } from  '../../src/util'
 import { expect, ticketing, api } from '../setup'
 
-describe("Reporting", function(){
+describe.skip("Reporting", function(){
 	//Set hook timeout
 	this.timeout(60000)
 

@@ -1,27 +1,31 @@
 import { APIAdapter } from '../util/APIAdapter'
-import { Collection } from '../util/Collection'
 import { BaseModel } from './BaseModel'
-import type { Event } from '../interface/Event'
+import { BaseService } from '../service/BaseService'
+import type { EventRevision } from '../interface/EventRevision'
+import type { EventRevisionData } from '../interface/data/EventRevisionData'
 import type { Host } from '../interface/Host'
 import type { HostData } from '../interface/data/HostData'
+import { EventRevisionModel } from './EventRevisionModel'
+import { CategoryModel } from './CategoryModel'
+import { VenueModel } from './VenueModel'
+import { BadDataError, PermissionError } from '../errors'
 import { HostStatisticsModel } from './reporting/HostStatisticsModel'
-import { HostedEventService } from '../service/HostedEventService'
 
 export class HostModel extends BaseModel implements Host{
   public name: string
   public contact: string
   public email: string
-  public description: string
+  public bio: string
   public phone: string
   public website: string
   public country: string
   public firstAddressLine: string
   public secondAddressLine: string
   public city: string
-  public state: string
+  public district: string
   public businessNo: string
 
-  private __hostedEventService: HostedEventService
+  private __eventRevisionService: EventRevisionService
 
   constructor(host: any, adapter: APIAdapter){
     super(host.self, adapter)
@@ -29,21 +33,21 @@ export class HostModel extends BaseModel implements Host{
     this.name = host.name
     this.contact = host.contact
     this.email = host.email
-    this.description = host.description
+    this.bio = host.bio
     this.phone = host.phone
     this.website = host.website
     this.country = host.country
     this.firstAddressLine = host.firstAddressLine
     this.secondAddressLine = host.secondAddressLine
     this.city = host.city
-    this.state = host.state
+    this.district = host.district
     this.businessNo = host.businessNo
 
-    this.__hostedEventService = new HostedEventService(this._apiAdapter, this)
+    this.__eventRevisionService = new EventRevisionService(this._apiAdapter, this)
   }
 
-  get events(): Collection<Event>{
-    return this.__hostedEventService.list()
+  get events(): EventRevisionService{
+    return this.__eventRevisionService
   }
 
   public statistics(): Promise<HostStatisticsModel>{
@@ -61,17 +65,72 @@ export class HostModel extends BaseModel implements Host{
       name: this.name,
       contact: this.contact,
       email: this.email,
-      description: this.description,
+      bio: this.bio,
       phone: this.phone,
       website: this.website,
       country: this.country,
       firstAddressLine: this.firstAddressLine,
       secondAddressLine: this.secondAddressLine,
       city: this.city,
-      state: this.state,
+      district: this.district,
       businessNo: this.businessNo
     }
 
     return data
+  }
+}
+
+class EventRevisionService extends BaseService<EventRevisionData, EventRevision>{
+  private __apiAdapter: APIAdapter
+
+  constructor(apiAdapter: APIAdapter, host: Host){
+    super(apiAdapter, `${host.uri}/events`, EventRevisionModel,
+      ["region", "host", "title", "status", "active", "public", "section"],
+      ["alphabetical","published","popularity","start"],
+      {region: "id"}
+    )
+
+    this.__apiAdapter = apiAdapter
+  }
+
+  create(data: EventRevisionData): Promise<EventRevision>{
+    return new Promise<EventRevision>((resolve, reject) => {
+      if(!(data.category instanceof CategoryModel)){
+        reject(new BadDataError(400, "Please provide a valid category for the event"))
+      }
+
+      if(!(data.subcategory instanceof CategoryModel)){
+        reject(new BadDataError(400, "Please provide a valid subcategory for the event"))
+      }
+
+      if(!(data.venue instanceof VenueModel)){
+        reject(new BadDataError(400, "Please provide a valid venue for the event"))
+      }
+
+      const payload: EventRevisionData = JSON.parse(JSON.stringify(data))
+      payload.category = (data.category as CategoryModel).id
+      payload.subcategory = (data.subcategory as CategoryModel).id
+      payload.venue = (data.venue as VenueModel).id
+
+      super.create(payload).then(response => {
+        resolve(response)
+      }).catch(error => {
+        reject(error)
+      })
+    })
+  }
+
+  find(id: number|string): Promise<EventRevision>{
+    return new Promise<EventRevision>((resolve, reject) => {
+      super.find(id).then(event => {
+        resolve(event)
+      }).catch(error => {
+        if(error.code == 403){
+          error = new PermissionError(error.code, "You are not authorised to access this unlisted event.")
+        }
+
+        reject(error)
+      })
+    })
   }
 }

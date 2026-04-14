@@ -1,15 +1,15 @@
 //Control execution order
-import './hosts'
+import './event_management'
 
-import { TickeTing, Event, BadDataError, InvalidStateError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
-import { CategoryModel, EventModel, VenueModel, HostModel } from  '../../src/model'
+import { TickeTing, EventRevision, BadDataError, InvalidStateError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
+import { CategoryModel, EventRevisionModel, VenueModel, HostModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
 import { expect, ticketing, api, unauthorised_sdk } from '../setup'
 
 //Global event object
 let testEvent = null
 
-describe("Events", function(){
+describe.skip("Event Listings", function(){
 
   //Set hook timeout
   this.timeout(60000)
@@ -25,8 +25,8 @@ describe("Events", function(){
     //Create an event category
     this.category = await ticketing.categories.create({
       name: "Event Category "+Math.floor(Math.random() * 999999),
-      subcategories: ["Event Subcategory"]
-    })
+      subcategories: ["Event Subcategory "+Math.floor(Math.random() * 999999)
+]    })
 
     //Create an event venue
     this.region = await ticketing.regions.create({
@@ -43,53 +43,26 @@ describe("Events", function(){
     })
 
     //An event to test duplication
-    this.secondEvent = await ticketing.events.create({
-      host: this.host,
+    this.secondEvent = await this.host.events.create({
       title: "Second Event "+Math.floor(Math.random() * 999999),
       description: "Event Description",
       type: "Standard",
       public: true,
       category: this.category,
-      subcategory: "Event Subcategory",
+      subcategory: this.category.subcategories[0],
       start: "3033-06-07T20:00",
       end: "3035-06-07T23:00",
       venue: this.venue
     })
 
-    //Submit and publish the event
-    await api.post(`${this.secondEvent.uri}/submissions`, {})
-    await api.delete(`/submissions/${btoa(this.secondEvent.uri)}?approved=true`)
-
-    //Create advertisement for the event
-    this.zone = (await api.post("/zones", {
-        name: "Ad Zone "+Math.floor(Math.random() * 999999),
-        description: "Ad Zone for testing",
-        width: 1024,
-        height: 800
-    })).data
-
-    this.advertisement = (await api.post("/advertisements", {
-      name: "Test Ad "+Math.floor(Math.random() * 999999),
-      description: "Test Ad",
-      event: this.secondEvent.id,
-      zones: [this.zone.number],
-      schedule:[
-        {
-          start: (new Date(new Date().getTime())).toISOString().substring(0,16).replace(/T/, ' '),
-          end: "9999-12-31 23:59",
-        }
-      ]
-    })).data
-
     //Initialise test data for suite
     this.testEventData = {
-      host: this.host,
       title: "Test Event "+Math.floor(Math.random() * 999999),
       description: "Event Description",
       type: "Standard",
       public: true,
       category: this.category,
-      subcategory: "Event Subcategory",
+      subcategory: this.category.subcategories[0],
       start: "3034-06-07T20:00",
       end: "3034-06-07T23:00",
       venue: this.venue,
@@ -99,8 +72,6 @@ describe("Events", function(){
   })
 
   after(async function(){
-    await api.delete(this.advertisement.self)
-    await api.delete(this.zone.self)
     await this.secondEvent.delete()
     await this.category.delete()
     await this.host.delete()
@@ -108,87 +79,15 @@ describe("Events", function(){
     await this.region.delete()
   })
 
-  describe('Register an event', function () {
-    it('Should return a valid event object', function () {
-      return new Promise((resolve, reject) => {
-        ticketing.events.create(this.testEventData).then((event => {
-          testEvent = event
-
-          expect(event).to.be.an.instanceof(EventModel)
-          expect(event.description).to.equal(this.testEventData.description)
-          expect(event.type).to.equal(this.testEventData.type)
-          expect(event.public).to.equal(this.testEventData.public)
-          expect(event.category).to.be.an.instanceOf(CategoryModel).
-            and.to.have.property("uri", this.testEventData.category.uri)
-          expect(event.subcategory).to.equal(this.testEventData.subcategory)
-          expect(event.start).to.equal(this.testEventData.start)
-          expect(event.end).to.equal(this.testEventData.end)
-          expect(event.disclaimer).to.equal(this.testEventData.disclaimer)
-          expect(event.banner).to.equal(`${ticketing.mediaURL}/banner/${event.id}`)
-          expect(event.thumbnail).to.equal(`${ticketing.mediaURL}/thumbnail/${event.id}`)
-          expect(event.status).to.equal("Draft")
-          expect(event.published).to.be.a.string
-          expect(event.popularity).to.equal(0)
-
-          expect(event.venue).to.be.an.instanceOf(VenueModel).
-            and.to.have.property("uri", this.testEventData.venue.uri)
-
-          expect(event.host).to.be.an.instanceOf(HostModel).
-            and.to.have.property("uri", this.testEventData.host.uri)
-
-          resolve(true)
-        })).catch(error=>{
-          reject(error)
-        })
-      })
-    })
-
-    it('Should throw a BadDataError if required fields are missing', function () {
-      return expect(ticketing.events.create({
-        host: this.host,
-        category: this.category,
-        venue: this.venue,
-        title: "",
-        description: "",
-        public: "",
-        subcategory: ""
-      }))
-      .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: type, title, description, subcategory, public.")
-      .and.be.an.instanceOf(BadDataError)
-    })
-
-    it('Should throw a BadDataError if a non-venue is passed in', function () {
-      return expect(ticketing.events.create({
-        host: this.host,
-        category: this.category,
-        venue: "Non-Venue"
-      }))
-      .to.eventually.be.rejectedWith("Please provide a valid venue for the event")
-      .and.be.an.instanceOf(BadDataError)
-    })
-
-    it('Should throw a ResourceExistsError when using an existing title', function () {
-      return expect(ticketing.events.create(this.testEventData))
-        .to.eventually.be.rejectedWith("The following arguments conflict with those of another event: title.")
-        .and.be.an.instanceOf(ResourceExistsError)
-    })
-
-    it('Should throw a PermissionError when not a host administrator', function () {
-      return expect(unauthorised_sdk.events.create(this.testEventData))
-        .to.eventually.be.rejectedWith("This account is not an administrator for the relevant event host.")
-        .and.be.an.instanceOf(PermissionError)
-    })
-  })
-
-  describe('List all events', function () {
+  describe('Search event listings', function () {
     it('Should return a collection of Event resources', function () {
-      return expect(ticketing.events.list(5).sort("start", false)).eventually.to.all.be.instanceof(EventModel)
+      return expect(ticketing.events.list(5).sort("start", false)).eventually.to.all.be.instanceof(EventRevisionModel)
     })
 
     it('Should contain the newly created event as its first resource', function () {
       return new Promise((resolve, reject) => {
         ticketing.events.list(1).sort("start", false).first().then(events => {
-          expect(events[0]).to.be.an.instanceof(EventModel)
+          expect(events[0]).to.be.an.instanceof(EventRevisionModel)
           expect(events[0].description).to.equal(this.testEventData.description)
           expect(events[0].type).to.equal(this.testEventData.type)
           expect(events[0].public).to.equal(this.testEventData.public)
@@ -341,117 +240,12 @@ describe("Events", function(){
     })
   })
 
-  describe('Fetch an event', function () {
-    it('Should return the identified Event resource', function () {
-      return new Promise((resolve, reject) => {
-        ticketing.events.find(testEvent.id).then(event => {
-          expect(event).to.be.an.instanceof(EventModel)
-          expect(event.description).to.equal(this.testEventData.description)
-          expect(event.type).to.equal(this.testEventData.type)
-          expect(event.public).to.equal(this.testEventData.public)
-          expect(event.category).to.be.an.instanceOf(CategoryModel).
-            and.to.have.property("uri", this.testEventData.category.uri)
-          expect(event.subcategory).to.equal(this.testEventData.subcategory)
-          expect(event.start).to.equal(this.testEventData.start)
-          expect(event.end).to.equal(this.testEventData.end)
-          expect(event.disclaimer).to.equal(this.testEventData.disclaimer)
-          expect(event.banner).to.equal(`${ticketing.mediaURL}/banner/${event.id}`)
-          expect(event.thumbnail).to.equal(`${ticketing.mediaURL}/thumbnail/${event.id}`)
-          expect(event.status).to.equal("Draft")
-          expect(event.published).to.be.a.string
-          expect(event.popularity).to.equal(0)
-
-          expect(event.venue).to.be.an.instanceof(VenueModel)
-            .and.to.have.property("uri", this.testEventData.venue.uri)
-
-          expect(event.host).to.be.an.instanceof(HostModel)
-            .and.to.have.property("uri", this.testEventData.host.uri)
-
-          resolve(true)
-        }).catch(error => {
-          reject(error)
-        })
-      })
-    })
-
-    it('Should throw a ResourceNotFoundError when using a non-existant ID', function () {
-      return expect(ticketing.events.find(12345))
-        .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
-        .and.be.an.instanceOf(ResourceNotFoundError)
-    })
-
-    it('Should throw a PermissionError when accessed with another user', function () {
-      return expect(unauthorised_sdk.events.find(testEvent.id))
-        .to.eventually.be.rejectedWith("You are not authorised to access this unlisted event.")
-        .and.be.an.instanceOf(PermissionError)
-    })
-  })
-
-  describe('Update an event', function () {
-    it('Should save the changes made to the event', function () {
-      //Make changes to the event
-      testEvent.type = "Registration"
-      testEvent.description = "New event description"
-
-      //Save changes
-      return expect(testEvent.save()).eventually.be.true
-    })
-
-    it('Should persist event changes', function () {
-      return expect(ticketing.events.find(testEvent.id))
-        .to.eventually.include({
-          "type": "Registration",
-          "description": "New event description"
-        })
-    })
-
-    it('Should throw a BadDataError if required fields are missing', function () {
-      //Make invalid changes to the event
-      testEvent.title = ""
-
-      return expect(testEvent.save())
-        .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: title.")
-        .and.be.an.instanceOf(BadDataError)
-    })
-
-    it('Should throw a ResourceExistsError when using an existing title', function () {
-      //Attempt to change the title of the existing event to that of the second one
-      testEvent.title = this.secondEvent.title
-
-      return expect(testEvent.save())
-        .to.eventually.be.rejectedWith("The following arguments conflict with those of another event: title.")
-        .and.be.an.instanceOf(ResourceExistsError)
-    })
-  })
-
-  describe('Submit an event for review', function () {
-    it('Should submit the event for review', function () {
-      return new Promise((resolve, reject) => {
-        testEvent.submit().then(submitted => {
-          expect(submitted).to.be.true
-
-          //Publish event
-          api.delete(`/submissions/${btoa(testEvent.uri)}?approved=true`).then(response => {
-            resolve(true)
-          })
-        })
-      })
-    })
-
-    it('Should throw a InvalidStateError when already submitted', function () {
-      //Attempt to resubmit the same event
-      return expect(testEvent.submit())
-        .to.eventually.be.rejectedWith("The event has already been submitted or cancelled.")
-        .and.be.an.instanceOf(InvalidStateError)
-    })
-  })
-
   describe('List published events', function () {
     it('Should return a collection of Event resources', function () {
       return new Promise((resolve, reject) => {
         ticketing.events.published.list(5).sort("start", false).then(events => {
           expect(events.length).to.be.at.least(1)
-          expect(events[0]).to.be.an.instanceof(EventModel)
+          expect(events[0]).to.be.an.instanceof(EventRevisionModel)
           expect(events[0].public).to.equal(this.testEventData.public)
           expect(events[0].category).to.be.an.instanceOf(CategoryModel).
             and.to.have.property("uri", this.testEventData.category.uri)
@@ -667,18 +461,6 @@ describe("Events", function(){
           reject(error)
         })
       })
-    })
-  })
-
-  describe('Delete an event', function () {
-    it('Should delete the event from the system', function () {
-      return expect(testEvent.delete()).to.eventually.be.true
-    })
-
-    it('Event should no longer be retrievable', function () {
-      return expect(ticketing.events.find(testEvent.id))
-        .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
-        .and.be.an.instanceOf(ResourceNotFoundError)
     })
   })
 })

@@ -21,12 +21,12 @@ jobs:
           name: Lint SDK
           command: npm run lint
 
-            #- run:
-            #name: Run unit tests
-            #command: |
-            #if [ '<< parameters.environment >>' != 'production' ]; then
-            #  npm run test
-            #fi
+      - run:
+          name: Run unit tests
+          command: |
+          if [ '<< parameters.environment >>' != 'production' ]; then
+            npm run test
+          fi
 
       - run:
           name: Build distribution files

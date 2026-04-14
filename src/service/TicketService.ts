@@ -4,14 +4,14 @@ import { APIAdapter } from '../util/APIAdapter'
 import type { TicketData } from '../interface/data/TicketData'
 import type { Ticket } from '../interface/Ticket'
 import { AccountModel } from '../model/AccountModel'
-import { EventModel } from '../model/EventModel'
+import { EventRevisionModel } from '../model/EventRevisionModel'
 import { TicketModel } from '../model/TicketModel'
 
 export class TicketService extends BaseService<TicketData, Ticket>{
   private __apiAdapter: APIAdapter
   private __ticket: TicketModel
 
-  constructor(apiAdapter: APIAdapter, event: EventModel){
+  constructor(apiAdapter: APIAdapter, event: EventRevisionModel){
     super(apiAdapter, `${event.uri}/tickets`, TicketModel, ["modified_since"])
 
     this.__apiAdapter = apiAdapter

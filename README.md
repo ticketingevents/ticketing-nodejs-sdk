@@ -1075,14 +1075,14 @@ add-on services through TickeTing
     "name": "Vought Entertainment",
     "contact": "Billy Butcher",
     "email": "billy.butcher@fbsa.gov",
-    "description": "Premier events for supes of all ages",
+    "bio": "Premier events for supes of all ages",
     "phone": "+1 (268) 555 8075",
     "website": "https://theboys.net",
     "country": "Antigua and Barbuda",
     "firstAddressLine": "Wireless Road",
     "secondAddressLine": "Clare Hall",
     "city": "St. John's",
-    "state": "Saint John",
+    "district": "Saint John",
     "businessNo": "A5585291"
   }
 
@@ -1180,7 +1180,11 @@ add-on services through TickeTing
   })
 ```
 
-### List hosted events
+## Event Management
+
+Operations for managing events in the TickeTing system.
+
+### List events
 
 [API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/list_host_events)
 
@@ -1191,7 +1195,7 @@ add-on services through TickeTing
   //Retrieve a specific region using its ID
   let region = await ticketing.regions.find(19290238432215)
 
-  host.events
+  host.events.list
     // Supported filters with examples
     .filter({
       region: region,
@@ -1222,12 +1226,136 @@ add-on services through TickeTing
     })
 ```
 
+### Register an event
 
-## Events
+[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/register_event)
 
-Operations for working with events in the TickeTing system.
+```javascript
+  let host = ticketing.hosts.find(16951985851389)
+  let category = await ticketing.categories.find(16878141745207)
+  let venue = await ticketing.venues.find(16878146473429)
 
-### List published events
+  let eventData = {
+    "title": "Dawn of the Seven Premier", //Required
+    "description": "World Premier of the long ....", //Required
+    "type": "Standard", //Required
+    "public": true, //Required
+    "category": category, //Required
+    "subcategory": category.subcategories[0], //Required
+    "venue": venue, //Required
+    "start": "2024-06-07T20:00", //Required
+    "end": "2024-06-07T23:00", //Required
+    "disclaimer": "Attend at your own risk",
+    "tags": ["homelander", "queen maeve", "the deep", "A-Train"],
+    "banner": "data:image/png;base64,iVBORw0KGgoAAAA...",
+    "thumbnail": "data:image/png;base64,iVBORw0KGgoA..."
+  }
+
+  host.events.create(eventData)
+    .then(event => {
+      //Do something with the created event resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log(error.message)
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to manage events on behalf of this host.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch an event
+
+[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/retrieve_event)
+
+```javascript
+  let host = ticketing.hosts.find(16951985851389)
+
+  //Retrieve a specific event using its ID
+  host.events.find(16993717817996)
+    .then(event => {
+      //Do something with the event resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no event with the given ID")
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to access this unlisted event.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Update an event
+
+[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/update_event)
+
+```javascript
+  //Retrieve a specific event using its ID
+  let host = ticketing.hosts.find(16951985851389)
+  let event = await host.events.find(16993717817996)
+
+  //Make changes to the resource
+  event.public = false
+  event.end = "2025-09-07T23:00"
+
+  //Save changes
+  event.save().then(saved => {
+    if(saved){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log(error.message)
+    }else if(error instanceof PermissionError){
+        console.log("You are not authorised to manage events on behalf of this host.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Delete an event
+
+[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/delete_event)
+
+```javascript
+  //Retrieve a specific event using its ID
+  let host = ticketing.hosts.find(16951985851389)
+  let event = await host.events.find(16993717817996)
+
+  //Delete the event
+  event.delete().then(deleted => {
+    if(deleted){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof PermissionError){
+      console.log("You are not authorised to manage events on behalf of this host.")
+    }else if(error instanceof ResourceIndelibleError){
+      console.log("The event has active sections which must be deleted first.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+## Event Listings
+
+Operations for searching and retrieving TickeTing event listings.
+
+### Search event listings
 
 [API Reference](https://docs.ticketingevents.com/openapi/working-with-events/list_published_events)
 
@@ -1241,7 +1369,7 @@ Operations for working with events in the TickeTing system.
   //Retrieve a specific category using its ID
   let category = await ticketing.categories.find(16878141745207)
 
-  ticketing.events.published.list()
+  ticketing.events.list()
     // Supported filters with examples
     .filter({
       region: region,
@@ -1283,209 +1411,6 @@ Operations for working with events in the TickeTing system.
 
     // List new events (newest first)
     ticketing.events.published.list().sort("published", false).then(newest=>{})
-```
-
-### List all events (Admin Only)
-
-[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/list_events)
-
-```javascript
-  //Retrieve a specific region using its ID
-  let region = await ticketing.regions.find(19290238432215)
-
-  //Retrieve a specific host using its ID
-  let host = await ticketing.hosts.find(17327135633743)
-
-  //Retrieve a specific section using its ID
-  let section = (await ticketing.events.find(16993717817996)).sections[0]
-
-  ticketing.events.list()
-    // Supported filters with examples
-    .filter({
-      region: region,
-      host: host,
-      title: "Dawn of the Seven Premier",
-      status: "Scheduled",
-      active: true,
-      public: false,
-      featured: false,
-      section: section
-    })
-    // Supported sort fields
-    .sort(
-      "published", //One of "alphabetical" "published" "popularity" "start"
-      false //Set true for ascending sort (default), or false for descending order
-    )
-    .then(events => {
-      //Do something with the collection of events
-    })
-    .catch(error => {
-      //Handle errors
-      if(error instanceof UnsupportedCriteriaError){
-        //Handle unsupported criteria error
-      }else if(error instanceof UnsupportedSortError){
-        //Handle unsupported sort field error
-      }else if(error instanceof PageAccessError){
-        //Handle non-existant page error
-      }else{
-        console.log(`${typeof error} (${error.code}): ${error.message}`)
-      }
-    })
-```
-
-### Register an event
-
-[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/register_event)
-
-```javascript
-  let host = ticketing.hosts.find(16951985851389)
-  let category = await ticketing.categories.find(16878141745207)
-  let venue = await ticketing.venues.find(16878146473429)
-
-  let eventData = {
-    "host": host, //Required
-    "title": "Dawn of the Seven Premier", //Required
-    "description": "World Premier of the long ....", //Required
-    "type": "Standard", //Required
-    "public": true, //Required
-    "category": category, //Required
-    "subcategory": "Premier", //Required
-    "venue": venue, //Required
-    "start": "2024-06-07T20:00",
-    "end": "2024-06-07T23:00",
-    "disclaimer": "Attend at your own risk",
-    "tags": ["homelander", "queen maeve", "the deep", "A-Train"],
-    "banner": "data:image/png;base64,iVBORw0KGgoAAAA...",
-    "thumbnail": "data:image/png;base64,iVBORw0KGgoA..."
-  }
-
-  ticketing.events.create(eventData)
-    .then(event => {
-      //Do something with the created event resource
-    })
-    .catch(error => {
-      //Handle errors
-      if(error instanceof BadDataError){
-        console.log(error.message)
-      }else if(error instanceof ResourceNotFoundError){
-        console.log("The specified event host does not exist.")
-      }else if(error instanceof PermissionError){
-        console.log("You are not authorised to manage events on behalf of this host.")
-      }else if(error instanceof ResourceExistsError){
-        console.log("An event with the given name already exists.")
-      }else{
-        console.log(`${typeof error} (${error.code}): ${error.message}`)
-      }
-    })
-```
-
-### Fetch an event
-
-[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/retrieve_event)
-
-```javascript
-  //Retrieve a specific event using its ID
-  ticketing.events.find(16993717817996)
-    .then(event => {
-      //Do something with the event resource
-    })
-    .catch(error => {
-      //Handle errors
-      if(error instanceof ResourceNotFoundError){
-        console.log("There is no event with the given ID")
-      }else if(error instanceof PermissionError){
-        console.log("You are not authorised to access this unlisted event.")
-      }else{
-        console.log(`${typeof error} (${error.code}): ${error.message}`)
-      }
-    })
-```
-
-### Update an event
-
-[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/update_event)
-
-```javascript
-  //Retrieve a specific event using its ID
-  let event = await ticketing.events.find(16993717817996)
-
-  //Make changes to the resource
-  event.public = false
-  event.end = "2025-09-07T23:00"
-
-  //Save changes
-  event.save().then(saved => {
-    if(saved){
-      //Do something on success
-    }else{
-      //Do something on failure
-    }
-  }).catch(error => {
-    //Handle errors
-    if(error instanceof BadDataError){
-      console.log(error.message)
-    }else if(error instanceof PermissionError){
-        console.log("You are not authorised to manage events on behalf of this host.")
-    }else if(error instanceof ResourceExistsError){
-      console.log("An event with the given name already exists.")
-    }else{
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
-    }
-  })
-```
-
-### Delete an event
-
-[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/delete_event)
-
-```javascript
-  //Retrieve a specific event using its ID
-  let event = await ticketing.events.find(16993717817996)
-
-  //Delete the event
-  event.delete().then(deleted => {
-    if(deleted){
-      //Do something on success
-    }else{
-      //Do something on failure
-    }
-  }).catch(error => {
-    //Handle errors
-    if(error instanceof PermissionError){
-      console.log("You are not authorised to manage events on behalf of this host.")
-    }else if(error instanceof ResourceIndelibleError){
-      console.log("The event has active sections which must be deleted first.")
-    }else{
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
-    }
-  })
-```
-
-### Submit an event for review
-
-[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/submit_event)
-
-```javascript
-  //Retrieve a specific event using its ID
-  let event = await ticketing.events.find(16993717817996)
-
-  //Delete the event
-  event.submit().then(submitted => {
-    if(submitted){
-      //Do something on success
-    }else{
-      //Do something on failure
-    }
-  }).catch(error => {
-    //Handle errors
-    if(error instanceof PermissionError){
-      console.log("You are not authorised to manage events on behalf of this host.")
-    }else if(error instanceof InvalidStateError){
-      console.log("The event has already been submitted or cancelled.")
-    }else{
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
-    }
-  })
 ```
 
 ## Purchasing tickets

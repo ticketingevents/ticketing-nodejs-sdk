@@ -2,13 +2,13 @@ export interface HostData{
   name: string
   contact: string
   email: string
-  description?: string
+  bio?: string
   phone?: string
   website?: string
   country?: string
   firstAddressLine?: string
   secondAddressLine?: string
   city?: string
-  state?: string
+  district?: string
   businessNo?: string
 }

@@ -2,7 +2,7 @@
 import './venues'
 
 import { TickeTing, Host, BadDataError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
-import { HostModel, BaseEventModel, CategoryModel, VenueModel } from  '../../src/model'
+import { HostModel, EventRevisionModel, CategoryModel, VenueModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
 import { expect, ticketing, unauthorised_sdk } from '../setup'
 
@@ -26,7 +26,7 @@ describe("Hosts", function(){
     //Add an event to test hosted events collection
     this.category = await ticketing.categories.create({
       name: "Event Category "+Math.floor(Math.random() * 999999),
-      subcategories: ["Event Subcategory"]
+      subcategories: ["Event Subcategory "+Math.floor(Math.random() * 999999)]
     })
 
     this.region = await ticketing.regions.create({
@@ -43,15 +43,16 @@ describe("Hosts", function(){
     })
 
     //An event to test duplication
-    this.hostedEvent = await ticketing.events.create({
-      host: this.secondHost,
+    this.hostedEvent = await this.secondHost.events.create({
       title: "Hosted Event "+Math.floor(Math.random() * 999999),
       description: "Event Description",
       type: "Standard",
       public: true,
       category: this.category,
-      subcategory: "Event Subcategory",
-      venue: this.venue
+      subcategory: this.category.subcategories[0],
+      venue: this.venue,
+      start: "3034-06-07T20:00",
+      end: "3034-06-07T23:00"
     })
 
     //Initialise test data for suite
@@ -59,14 +60,14 @@ describe("Hosts", function(){
       name: "Test Host "+Math.floor(Math.random() * 999999),
       contact: "Test Contact",
       email: "test@test.com",
-      description: "A host for hosting test events",
+      bio: "A host for hosting test events",
       phone: "+1 (268) 555 5555",
       website: "https://test.com",
       country: "Antigua and Barbuda",
       firstAddressLine: "Test Address",
       secondAddressLine: "Test Street",
       city: "Test City",
-      state: "Test State",
+      district: "Test State",
       businessNo: "0000000000"
     }
   })
@@ -98,13 +99,13 @@ describe("Hosts", function(){
 
     it('Should throw a BadDataError if required fields are missing', function () {
       return expect(ticketing.hosts.create({name: "", contact: "", email: ""}))
-        .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: name, contact, email.")
+        .to.eventually.be.rejectedWith("Your request payload is invalid. Please ensure you have included all required fields and values are well-formed.")
         .and.be.an.instanceOf(BadDataError)
     })
 
     it('Should throw a ResourceExistsError when using an existing name', function () {
       return expect(ticketing.hosts.create(this.testHostData))
-        .to.eventually.be.rejectedWith("The following arguments conflict with those of another host: name.")
+        .to.eventually.be.rejectedWith("Creating the requested Host would violate uniqueness constraints.")
         .and.be.an.instanceOf(ResourceExistsError)
     })
   })
@@ -177,8 +178,8 @@ describe("Hosts", function(){
     })
 
     it('Should throw a ResourceNotFoundError when using a non-existant ID', function () {
-      return expect(ticketing.hosts.find(12345))
-        .to.eventually.be.rejectedWith("The specified host could not be found.")
+      return expect(ticketing.hosts.find(12345678901234))
+        .to.eventually.be.rejectedWith("There is presently no host with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
   })
@@ -206,7 +207,7 @@ describe("Hosts", function(){
       testHost.name = ""
 
       return expect(testHost.save())
-        .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: name.")
+        .to.eventually.be.rejectedWith("Your request payload is invalid. Please ensure you have included all required fields and values are well-formed.")
         .and.be.an.instanceOf(BadDataError)
     })
 
@@ -227,43 +228,8 @@ describe("Hosts", function(){
       testHost.name = this.secondHost.name
 
       return expect(testHost.save())
-        .to.eventually.be.rejectedWith("The following arguments conflict with those of another host: name.")
+        .to.eventually.be.rejectedWith("Creating the requested Host would violate uniqueness constraints.")
         .and.be.an.instanceOf(ResourceExistsError)
-    })
-  })
-
-  describe('List hosted events', function () {
-    it('Should return a collection of Event resources', function () {
-      return expect(this.secondHost.events).eventually.to.all.be.instanceof(BaseEventModel)
-    })
-
-    it('Should contain a single hosted event', function () {
-      return new Promise((resolve, reject) => {
-        this.secondHost.events.then(events => {
-          expect(events.length).to.equal(1)
-
-          expect(events[0]).to.be.an.instanceof(BaseEventModel)
-          expect(events[0].description).to.equal(this.hostedEvent.description)
-          expect(events[0].type).to.equal(this.hostedEvent.type)
-          expect(events[0].public).to.equal(this.hostedEvent.public)
-          expect(events[0].category).to.be.an.instanceOf(CategoryModel).
-            and.to.have.property("uri", this.hostedEvent.category.uri)
-          expect(events[0].subcategory).to.equal(this.hostedEvent.subcategory)
-          expect(events[0].start).to.equal(this.hostedEvent.start)
-          expect(events[0].venue).to.be.an.instanceof(VenueModel)
-            .and.to.have.property("uri", this.hostedEvent.venue.uri)
-          expect(events[0].disclaimer).to.equal(this.hostedEvent.disclaimer)
-          expect(events[0].banner).to.equal(`${ticketing.mediaURL}/banner/${events[0].id}`)
-          expect(events[0].thumbnail).to.equal(`${ticketing.mediaURL}/thumbnail/${events[0].id}`)
-          expect(events[0].status).to.equal("Draft")
-          expect(events[0].published).to.be.a.string
-          expect(events[0].popularity).to.equal(0)
-
-          resolve(true)
-        }).catch(error => {
-          reject(error)
-        })
-      })
     })
   })
 
@@ -286,7 +252,7 @@ describe("Hosts", function(){
 
     it('Host should no longer be retrievable', function () {
       return expect(ticketing.hosts.find(testHost.id))
-        .to.eventually.be.rejectedWith("The specified host could not be found.")
+        .to.eventually.be.rejectedWith("There is presently no host with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
   })

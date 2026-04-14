@@ -3,7 +3,7 @@ import { APIAdapter } from '../util/APIAdapter'
 import type { Admission } from '../interface/Admission'
 import type { AdmissionData } from '../interface/data/AdmissionData'
 import { AccountModel } from './AccountModel'
-import { EventModel } from './EventModel'
+import { EventRevisionModel } from './EventRevisionModel'
 import { SectionModel } from './SectionModel'
 
 export class AdmissionModel extends BaseModel implements Admission{
@@ -14,9 +14,9 @@ export class AdmissionModel extends BaseModel implements Admission{
   public section: SectionModel
   public admitted: string
   
-  private __event: EventModel
+  private __event: EventRevisionModel
 
-  constructor(admission: any, event: EventModel, adapter: APIAdapter){
+  constructor(admission: any, event: EventRevisionModel, adapter: APIAdapter){
     super(admission.self, adapter)
 
     this.redeemer = admission.redeemer

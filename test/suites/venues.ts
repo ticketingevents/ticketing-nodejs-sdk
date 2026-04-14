@@ -48,18 +48,19 @@ describe("Venues", function(){
 
     this.category = await ticketing.categories.create({
       name: "Event Category "+Math.floor(Math.random() * 999999),
-      subcategories: ["Event Subcategory"]
+      subcategories: ["Event Subcategory "+Math.floor(Math.random() * 999999)]
     })
 
-    this.testEvent = await ticketing.events.create({
-      host: this.host,
+    this.testEvent = await this.host.events.create({
       title: "Test Event "+Math.floor(Math.random() * 999999),
       description: "Event Description",
       type: "Standard",
       public: true,
       category: this.category,
-      subcategory: "Event Subcategory",
-      venue: this.secondVenue
+      subcategory: this.category.subcategories[0],
+      venue: this.secondVenue,
+      start: "3034-06-07T20:00",
+      end: "3034-06-07T23:00"
     })
   })
 
@@ -97,17 +98,17 @@ describe("Venues", function(){
       return expect(ticketing.venues.create({
         region: this.venueRegion,
         name: "",
-        longitude: "",
-        latitude: "",
+        longitude: 0,
+        latitude: 0,
         address:""
       }))
-      .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: name, address, longitude, latitude.")
+      .to.eventually.be.rejectedWith("Your request payload is invalid. Please ensure you have included all required fields and values are well-formed.")
       .and.be.an.instanceOf(BadDataError)
     })
 
     it('Should throw a ResourceExistsError when using an existing name', function () {
       return expect(ticketing.venues.create(this.testVenueData))
-        .to.eventually.be.rejectedWith("The following arguments conflict with those of another venue: name.")
+        .to.eventually.be.rejectedWith("Creating the requested Venue would violate uniqueness constraints.")
         .and.be.an.instanceOf(ResourceExistsError)
     })
   })
@@ -186,8 +187,8 @@ describe("Venues", function(){
     })
 
     it('Should throw a ResourceNotFoundError when using a non-existant ID', function () {
-      return expect(ticketing.venues.find(12345))
-        .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
+      return expect(ticketing.venues.find(12345678901234))
+        .to.eventually.be.rejectedWith("There is presently no venue with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
   })
@@ -213,11 +214,11 @@ describe("Venues", function(){
     it('Should throw a BadDataError if required fields are missing', function () {
       //Make invalid changes to the venue
       testVenue.name = ""
-      testVenue.address = ""
-      testVenue.latitude = ""
+      testVenue.address = "Test"
+      testVenue.latitude = 0
 
       return expect(testVenue.save())
-        .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: name, address, latitude.")
+        .to.eventually.be.rejectedWith("Your request payload is invalid. Please ensure you have included all required fields and values are well-formed.")
         .and.be.an.instanceOf(BadDataError)
     })
 
@@ -226,7 +227,7 @@ describe("Venues", function(){
       testVenue.name = this.secondVenue.name
 
       return expect(testVenue.save())
-        .to.eventually.be.rejectedWith("The following arguments conflict with those of another venue: name.")
+        .to.eventually.be.rejectedWith("Creating the requested Venue would violate uniqueness constraints.")
         .and.be.an.instanceOf(ResourceExistsError)
     })
   })
@@ -238,13 +239,13 @@ describe("Venues", function(){
 
     it('Should no longer be retrievable', function () {
       return expect(ticketing.venues.find(testVenue.id))
-        .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
+        .to.eventually.be.rejectedWith("There is presently no venue with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
 
     it('Should throw a ResourceIndelibleError when attached to an event', function () {
       return expect(this.secondVenue.delete())
-        .to.eventually.be.rejectedWith("A venue cannot be deleted if it is staging an event")
+        .to.eventually.be.rejectedWith("The requested venue is in use and cannot be deleted.")
         .and.be.an.instanceOf(ResourceIndelibleError)
     })
   })

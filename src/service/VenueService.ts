@@ -35,9 +35,4 @@ export class VenueService extends BaseService<VenueData, Venue>{
       })
     })
   }
-
-  protected _instantiateModel(data: any){
-    data.region = {self: data.region}
-    return new VenueModel(data, this.__apiAdapter)
-  }
 }

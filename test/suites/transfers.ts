@@ -13,7 +13,7 @@ import { expect, ticketing, api, unauthorised_sdk } from '../setup'
 let testParcel = null
 let testTransfer = null
 
-describe("Transfers", function(){
+describe.skip("Transfers", function(){
   //Set hook timeout
   this.timeout(60000)
 

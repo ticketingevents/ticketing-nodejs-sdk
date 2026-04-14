@@ -2,7 +2,7 @@ import { TickeTing } from '../src'
 import { APIAdapter } from  '../src/util'
 
 const administratorKey = process.env.ADMINISTRATOR_KEY || '07b2f3b08810a4296ee19fc59dff48b0'
-const publicKey = process.env.PUBLIC_KEY || '586af812feea6665969d807ab34f4a82'
+const publicKey = process.env.PUBLIC_KEY || '3cd396cf669c2b30445a4d46a1e176bf'
 const unauthorisedKey = process.env.UNAUTHORISED_KEY || '413c7e517b63822c3037ead7679c780e'
 
 //Setup chai for assertions
