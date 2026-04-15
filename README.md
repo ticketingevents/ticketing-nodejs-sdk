@@ -128,15 +128,19 @@ export class TickeTingService extends TickeTing{
     * [Fetch an event host](#fetch-an-event-host)
     * [Update an event host](#update-an-event-host)
     * [Delete an event host](#delete-an-event-host)
-    * [List hosted events](#list-hosted-events)
-- [Events](#events)
-    * [List published events](#list-published-events)
-    * [List all events](#list-all-events)
+    * [List privileges](#list-privileges)
+    * [Grant a privilege](#grant-a-privilege)
+    * [Fetch a privilege](#fetch-a-privilege)
+    * [Update a privilege](#update-a-privilege)
+    * [Revoke a privilege](#revoke-a-privilege)
+- [Event Management](#event-management)
+    * [List events](#list-events)
     * [Register an event](#register-an-event)
     * [Fetch an event](#fetch-an-event)
     * [Update an event](#update-an-event)
     * [Delete an event](#delete-an-event)
-    * [Submit an event for review](#submit-an-event-for-review)
+- [Event Listings](#event-listings)
+    * [Search event listings](#search-event-listings)
 - [Purchasing Tickets](#purchasing-tickets)
     * [Create a shopping cart](#create-a-shopping-cart)
     * [Add items to cart](#add-items-to-cart)
@@ -1174,6 +1178,153 @@ add-on services through TickeTing
     //Handle errors
     if(error instanceof PermissionError){
       console.log("This account is not an administrator of this event host.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### List privileges
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/list_host_privileges)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  host.privileges.list
+    // Supported filters with examples
+    .filter({
+      role: "Editor"
+    })
+    .then(privileges => {
+      //Do something with the collection of privileges
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Grant a privilege
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/grant_a_host_privilege)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  let privilegeData = {
+    "user": "billy.butcher@fbsa.gov", //Required
+    "role": "Editor" //Required
+  }
+
+  host.privileges.create(privilegeData)
+    .then(privilege => {
+      //Do something with the created privilege resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log("You must specify a valid role for this privilege.")
+      }else if(error instanceof PermissionError){
+        console.log("You are restricted from perfoming this operation on the specified host.")
+      }else if(error instanceof ResourceExistsError){
+        console.log("The requested privilege has already been granted to the specified user.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch a privilege
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/retrieve_host_privilege)
+
+```javascript
+  //Retrieve a specific host by its ID
+  let host = await ticketing.hosts.find(16951985851389)
+
+  //Retrieve a specific privilege using its ID
+  host.privilege.find(18537291857173)
+    .then(privilege => {
+      //Do something with the privilege resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no privilege with the given ID")
+      }else if(error instanceof PermissionError){
+        console.log("You are restricted from perfoming this operation on the specified host.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Update a privilege
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/update_host_privilege)
+
+```javascript
+  //Retrieve a specific privilege by its ID
+  let host = await ticketing.hosts.find(16951985851389)
+  let privilege = await host.privilege.find(18537291857173)
+
+  //Make changes to the resource
+  privilege.role = "Administrator"
+
+  //Save changes
+  privilege.save().then(saved => {
+    if(saved){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof ResourceNotFoundError){
+      console.log("There is no privilege with the given ID")
+    }else if(error instanceof BadDataError){
+      console.log("You must specify a valid role for this privilege.")
+    }else if(error instanceof PermissionError){
+      console.log("You are restricted from perfoming this operation on the specified host.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Revoke a privilege
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/revoke_a_host_privilege)
+
+```javascript
+  //Retrieve a specific privilege by its ID
+  let host = await ticketing.hosts.find(16951985851389)
+  let privilege = await host.privilege.find(18537291857173)
+
+  //Delete the privilege
+  privilege.delete().then(deleted => {
+    if(deleted){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof ResourceNotFoundError){
+      console.log("There is no privilege with the given ID")
+    }else if(error instanceof PermissionError){
+      console.log("You are restricted from perfoming this operation on the specified host.")
+    }else if(error instanceof ResourceIndelibleError){
+      console.log("A host's owner privilege cannot be deleted.")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }

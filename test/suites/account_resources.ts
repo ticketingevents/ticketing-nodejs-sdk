@@ -419,24 +419,4 @@ describe.skip("Account Resources", function(){
       })
     })
   })
-
-  describe('List managed hosts', function () {
-    it('Should return a collection of Host resources', function () {
-      return expect(this.customer.hosts).eventually.to.all.be.instanceof(HostModel)
-    })
-
-    it('Should contain the test host', function () {
-      return new Promise((resolve, reject) => {
-        this.customer.hosts.then(hosts => {
-          expect(hosts[0])
-            .to.be.an.instanceof(HostModel)
-            .and.to.deep.include(this.host.serialise())
-
-          resolve(true)
-        }).catch(error => {
-          reject(error)
-        })
-      })
-    })
-  })
 })

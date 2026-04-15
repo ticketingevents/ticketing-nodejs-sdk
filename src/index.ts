@@ -2,7 +2,7 @@ export { TickeTing } from './ticketing'
 
 export {
   Account, AccountPreferences, Admission, Cart, Category, Collection, EventRevision, Host,
-  Lookup, Parcel, PasswordReset, Region, Section, Session, Ticket, Token,
+  Lookup, Parcel, PasswordReset, Privilege, Region, Role, Section, Session, Ticket, Token,
   Transfer, Venue, HostStatistics, EventStatistics //Reporting
 } from './interface'
 

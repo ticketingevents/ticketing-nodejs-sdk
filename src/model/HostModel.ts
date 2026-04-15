@@ -5,7 +5,10 @@ import type { EventRevision } from '../interface/EventRevision'
 import type { EventRevisionData } from '../interface/data/EventRevisionData'
 import type { Host } from '../interface/Host'
 import type { HostData } from '../interface/data/HostData'
+import type { Privilege } from '../interface/Privilege'
+import type { PrivilegeData } from '../interface/data/PrivilegeData'
 import { EventRevisionModel } from './EventRevisionModel'
+import { PrivilegeModel } from './PrivilegeModel'
 import { CategoryModel } from './CategoryModel'
 import { VenueModel } from './VenueModel'
 import { BadDataError, PermissionError } from '../errors'
@@ -26,6 +29,7 @@ export class HostModel extends BaseModel implements Host{
   public businessNo: string
 
   private __eventRevisionService: EventRevisionService
+  private __privilegeService: HostPrivilegeService
 
   constructor(host: any, adapter: APIAdapter){
     super(host.self, adapter)
@@ -44,10 +48,15 @@ export class HostModel extends BaseModel implements Host{
     this.businessNo = host.businessNo
 
     this.__eventRevisionService = new EventRevisionService(this._apiAdapter, this)
+    this.__privilegeService = new HostPrivilegeService(this._apiAdapter, this)
   }
 
   get events(): EventRevisionService{
     return this.__eventRevisionService
+  }
+
+  get privileges(): HostPrivilegeService{
+    return this.__privilegeService
   }
 
   public statistics(): Promise<HostStatisticsModel>{
@@ -132,5 +141,14 @@ class EventRevisionService extends BaseService<EventRevisionData, EventRevision>
         reject(error)
       })
     })
+  }
+}
+
+class HostPrivilegeService extends BaseService<PrivilegeData, Privilege>{
+  private __apiAdapter: APIAdapter
+
+  constructor(apiAdapter: APIAdapter, host: Host){
+    super(apiAdapter, `${host.uri}/privileges`, PrivilegeModel, ["role"])
+    this.__apiAdapter = apiAdapter
   }
 }

@@ -2,14 +2,15 @@
 import './venues'
 
 import { TickeTing, Host, BadDataError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
-import { HostModel, EventRevisionModel, CategoryModel, VenueModel } from  '../../src/model'
+import { HostModel, EventRevisionModel, CategoryModel, RoleModel, VenueModel, PrivilegeModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
 import { expect, ticketing, unauthorised_sdk } from '../setup'
 
-//Global host object
+//Global objects
 let testHost = null
+let testPrivilege = null
 
-describe("Hosts", function(){
+describe("Host Management", function(){
 
   //Set hook timeout
   this.timeout(60000)
@@ -43,7 +44,7 @@ describe("Hosts", function(){
     })
 
     //An event to test duplication
-    this.hostedEvent = await this.secondHost.events.create({
+    this.testHostedEvent = await this.secondHost.events.create({
       title: "Hosted Event "+Math.floor(Math.random() * 999999),
       description: "Event Description",
       type: "Standard",
@@ -70,10 +71,15 @@ describe("Hosts", function(){
       district: "Test State",
       businessNo: "0000000000"
     }
+
+    this.testPrivilegeData = {
+      user: "billy.butcher@fbsa.gov",
+      role: "Editor"
+    }
   })
 
   after(async function(){
-    await this.hostedEvent.delete()
+    await this.testHostedEvent.delete()
     await this.venue.delete()
     await this.region.delete()
     await this.category.delete()
@@ -230,6 +236,154 @@ describe("Hosts", function(){
       return expect(testHost.save())
         .to.eventually.be.rejectedWith("Creating the requested Host would violate uniqueness constraints.")
         .and.be.an.instanceOf(ResourceExistsError)
+    })
+  })
+
+  describe('Grant a privilege', function () {
+    it('Should return a valid Privilege object', function () {
+      return new Promise((resolve, reject) => {
+        testHost.privileges.create(this.testPrivilegeData).then((privilege => {
+          testPrivilege = privilege
+
+          expect(privilege).to.be.an.instanceof(PrivilegeModel)
+          expect(privilege.user).to.equal(this.testPrivilegeData.user)
+          expect(privilege.role).to.be.an.instanceOf(RoleModel).
+            and.to.have.property("name", this.testPrivilegeData.role)
+          expect(privilege.type).to.equal("host")
+          expect(privilege.resource).to.equal(testHost.id)
+          expect(privilege.pending).to.equal(true)
+
+          resolve(true)
+        })).catch(error=>{
+          reject(error)
+        })
+      })
+    })
+
+    it('Should throw a BadDataError if required fields are missing', function () {
+      return expect(testHost.privileges.create({
+        user: "",
+        role: ""
+      }))
+      .to.eventually.be.rejectedWith("Your request payload is invalid. Please ensure you have included all required fields and values are well-formed.")
+      .and.be.an.instanceOf(BadDataError)
+    })
+
+    it('Should throw a ResourceExistsError if the requested privilege has already been granted.', function () {
+      return expect(testHost.privileges.create(this.testPrivilegeData))
+      .to.eventually.be.rejectedWith("Creating the requested Privilege would violate uniqueness constraints.")
+      .and.be.an.instanceOf(ResourceExistsError)
+    })
+  })
+
+  describe('List privileges', function () {
+    it('Should return a collection of Privilege resources', function () {
+      return expect(testHost.privileges.list()).eventually.to.all.be.instanceof(PrivilegeModel)
+    })
+
+    it('Should contain the newly granted privilege as its first resource', function () {
+      return new Promise((resolve, reject) => {
+        testHost.privileges.list(1).then(privileges => {
+          expect(privileges[0]).to.be.an.instanceof(PrivilegeModel)
+          expect(privileges[0].user).to.be.a.string
+          expect(privileges[0].role).to.be.an.instanceOf(RoleModel).
+            and.to.have.property("name", "Owner")
+          expect(privileges[0].type).to.equal("host")
+          expect(privileges[0].resource).to.equal(testHost.id)
+          expect(privileges[0].pending).to.equal(false)
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return a collection of privileges matching the role filter', function () {
+      return new Promise((resolve, reject) => {
+        testHost.privileges.list(5).filter({role: "Editor"}).then(privileges => {
+          expect(privileges).to.have.a.lengthOf.at.least(1)
+          for(const privilege of privileges){
+            expect(privilege.role).to.be.an.instanceOf(RoleModel).
+              and.to.have.property("name", this.testPrivilegeData.role)
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+  })
+
+  describe('Fetch a privilege', function () {
+    it('Should return the identified Privilege resource', function () {
+      return new Promise((resolve, reject) => {
+        testHost.privileges.find(testPrivilege.id).then(privilege => {
+          expect(privilege).to.be.an.instanceof(PrivilegeModel)
+          expect(privilege.user).to.equal(this.testPrivilegeData.user)
+          expect(privilege.role).to.be.an.instanceOf(RoleModel).
+            and.to.have.property("name", this.testPrivilegeData.role)
+          expect(privilege.type).to.equal("host")
+          expect(privilege.resource).to.equal(testHost.id)
+          expect(privilege.pending).to.equal(true)
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should throw a ResourceNotFoundError when using a non-existant ID', function () {
+      return expect(testHost.privileges.find(12345678901234))
+        .to.eventually.be.rejectedWith("There is presently no privilege with the given URI.")
+        .and.be.an.instanceOf(ResourceNotFoundError)
+    })
+  })
+
+  describe('Update a privilege', function () {
+    it('Should save the changes made to the privilege', function () {
+      //Make changes to the privilege
+      testPrivilege.role = "Administrator"
+
+      //Save changes
+      return expect(testPrivilege.save()).eventually.be.true
+    })
+
+    it('Should persist privilege changes', function () {
+      return new Promise((resolve, reject) => {
+        testHost.privileges.find(testPrivilege.id).then(privilege => {
+          expect(privilege.user).to.equal(this.testPrivilegeData.user)
+          expect(privilege.role).to.be.an.instanceOf(RoleModel).
+            and.to.have.property("name", "Administrator")
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should throw a BadDataError if required fields are invalid', function () {
+      //Make invalid changes to the privilege
+      testPrivilege.role = "Owner"
+
+      return expect(testPrivilege.save())
+        .to.eventually.be.rejectedWith("Your request payload is invalid. Please ensure you have included all required fields and values are well-formed.")
+        .and.be.an.instanceOf(BadDataError)
+    })
+  })
+
+  describe('Revoke a privilege', function () {
+    it('Should revoke the privilege', function () {
+      return expect(testPrivilege.delete()).to.eventually.be.true
+    })
+
+    it('Privilege should no longer be retrievable', function () {
+      return expect(testHost.privileges.find(testPrivilege.id))
+        .to.eventually.be.rejectedWith("There is presently no privilege with the given URI.")
+        .and.be.an.instanceOf(ResourceNotFoundError)
     })
   })
 

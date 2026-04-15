@@ -3,8 +3,8 @@ import type { Base } from '../interface/Base'
 import { BadDataError, ResourceExistsError, ResourceIndelibleError } from '../errors'
 
 export class BaseModel implements Base{
-  public id: string
-  public uri: string
+  readonly id: string
+  readonly uri: string
   
   protected _apiAdapter: APIAdapter
 
