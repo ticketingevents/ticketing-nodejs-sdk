@@ -6,7 +6,7 @@ orbs:
 jobs:
   publish:
     docker:
-      - image: node:18
+      - image: node:22
     parameters:
       environment:
         type: string
