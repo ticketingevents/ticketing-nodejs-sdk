@@ -39,7 +39,7 @@ describe("Account Privileges", function(){
   	})
 
     //Grant host privilege to customer
-    this.host.privileges.create({
+    await this.host.privileges.create({
       "user": this.customer.email,
       "role": "Administrator" 
     })
