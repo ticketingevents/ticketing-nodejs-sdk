@@ -15,7 +15,9 @@ jobs:
 
       - run:
           name: Install build dependencies
-          command: npm install
+          command: |
+            npm install -g npm@latest   
+            npm install
 
       - run:
           name: Lint SDK
