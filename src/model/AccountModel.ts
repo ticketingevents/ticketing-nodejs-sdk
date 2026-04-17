@@ -1,8 +1,8 @@
 import { APIAdapter } from '../util/APIAdapter'
 import { Collection } from '../util/Collection'
+import { BaseService } from '../service/BaseService'
 import { ItineraryService } from '../service/ItineraryService'
 import { WalletService } from '../service/WalletService'
-import { ManagedHostService } from '../service/ManagedHostService'
 import { TransferHistoryService } from '../service/TransferHistoryService'
 import { BaseModel } from './BaseModel'
 import type { Account } from '../interface/Account'
@@ -10,6 +10,11 @@ import type { AccountData } from '../interface/data/AccountData'
 import type { AccountPreferences } from '../interface/AccountPreferences'
 import { AccountPreferencesModel } from './AccountPreferencesModel'
 import type { Host } from '../interface/Host'
+import type { HostData } from '../interface/data/HostData'
+import { HostModel } from './HostModel'
+import type { Privilege } from '../interface/Privilege'
+import type { PrivilegeData } from '../interface/data/PrivilegeData'
+import { PrivilegeModel } from './PrivilegeModel'
 import type { EventRevision } from '../interface/EventRevision'
 import type { Ticket } from '../interface/Ticket'
 import type { Transfer } from '../interface/Transfer'
@@ -34,9 +39,12 @@ export class AccountModel extends BaseModel implements Account{
   public state: string
 
   private __preferences: string
+  private __accountPrivilegeService: AccountPrivilegeService
+  private __privilegedHostService: PrivilegedHostService
+
+
   private __itineraryService: ItineraryService
   private __walletService: WalletService
-  private __managedHostService: ManagedHostService
   private __transferHistoryService: TransferHistoryService
 
   constructor(account: any, adapter: APIAdapter){
@@ -60,9 +68,11 @@ export class AccountModel extends BaseModel implements Account{
     this.state = account.state
 
     this.__preferences = account.preferences
+    this.__privilegedHostService = new PrivilegedHostService(this._apiAdapter, this)
+    this.__accountPrivilegeService = new AccountPrivilegeService(this._apiAdapter, this)
+
     this.__itineraryService = new ItineraryService(this._apiAdapter, this)
     this.__walletService = new WalletService(this._apiAdapter, this)
-    this.__managedHostService = new ManagedHostService(this._apiAdapter, this)
     this.__transferHistoryService = new TransferHistoryService(this._apiAdapter, this)
   }
 
@@ -76,8 +86,12 @@ export class AccountModel extends BaseModel implements Account{
     })
   }
 
-  get hosts(): Collection<Host>{
-    return this.__managedHostService.list()
+  get privileges(): AccountPrivilegeService{
+    return this.__accountPrivilegeService
+  }
+
+  get hosts(): PrivilegedHostService{
+    return this.__privilegedHostService
   }
 
   get inbox(): Collection<Transfer>{
@@ -130,5 +144,17 @@ export class AccountModel extends BaseModel implements Account{
       city: this.city,
       state: this.state
     }
+  }
+}
+
+export class AccountPrivilegeService extends BaseService<PrivilegeData, Privilege>{
+  constructor(apiAdapter: APIAdapter, account: Account){
+    super(apiAdapter, `${account.uri}/privileges`, PrivilegeModel, ["role", "type"])
+  }
+}
+
+export class PrivilegedHostService extends BaseService<HostData, Host>{
+  constructor(apiAdapter: APIAdapter, account: Account){
+    super(apiAdapter, `${account.uri}/hosts`, HostModel)
   }
 }

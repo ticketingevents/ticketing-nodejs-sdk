@@ -117,11 +117,13 @@ export class TickeTingService extends TickeTing{
     * [Update account preferences](#update-account-preferences)
     * [Reset account password](#reset-account-password)
     * [Lookup an account](#lookup-an-account)
+- [Account Privileges](#account-privileges)
+    * [List account privileges](#list-account-privileges)
+    * [Retrieve privileged hosts](#retrieve-managed-hosts)
 - [Account Resources](#account-resources)
     * [Retrieve event itinerary](#retrieve-event-itinerary)
     * [Retrieve ticket wallet](#retrieve-ticket-wallet)
     * [Retrieve transfer history](#retrieve-transfer-history)
-    * [Retrieve managed hosts](#retrieve-managed-hosts)
 - [Hosts](#hosts)
     * [List event hosts](#list-event-hosts)
     * [Create an event host](#create-an-event-host)
@@ -883,6 +885,61 @@ preferences.
   })
 ```
 
+## Account Privileges
+
+Retrieval of account privileges for determining system access levels
+
+### List account privileges
+
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/list_account_privileges)
+
+```javascript
+  //Retrieve a specific account using its account number
+  account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  account.privileges.list()
+    // Supported filters with examples
+    .filter({
+      role: "Editor",
+      type: "host"
+    })
+    .then(privileges => {
+      //Do something with the collection of privileges
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### List privileged hosts
+
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/list_privileged_hosts)
+
+```javascript
+  //Retrieve a specific account using its account number
+  account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  account.hosts.list()
+    .then(hosts => {
+      //Do something with the collection of hosts
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
 ## Account Resources
 
 Operations for accessing collections of resources linked to a user's account
@@ -1012,28 +1069,6 @@ Operations for accessing collections of resources linked to a user's account
           console.log(`${typeof error} (${error.code}): ${error.message}`)
         }
       })
-```
-
-### Retrieve managed hosts
-
-[API Reference](https://docs.ticketingevents.com/openapi/account-management/list_account_hosts)
-
-```javascript
-  //Retrieve a specific account using its account number
-  account = await ticketing.accounts.find("MO-6A39EE8D")
-
-  account.hosts
-    .then(hosts => {
-      //Do something with the collection of hosts
-    })
-    .catch(error => {
-      //Handle errors
-      if(error instanceof PageAccessError){
-        //Handle non-existant page error
-      }else{
-        console.log(`${typeof error} (${error.code}): ${error.message}`)
-      }
-    })
 ```
 
 ## Hosts
@@ -1192,7 +1227,7 @@ add-on services through TickeTing
   //Retrieve a specific host using its ID
   let host = await ticketing.hosts.find(17327135633743)
 
-  host.privileges.list
+  host.privileges.list()
     // Supported filters with examples
     .filter({
       role: "Editor"
@@ -1346,7 +1381,7 @@ Operations for managing events in the TickeTing system.
   //Retrieve a specific region using its ID
   let region = await ticketing.regions.find(19290238432215)
 
-  host.events.list
+  host.events.list()
     // Supported filters with examples
     .filter({
       region: region,

@@ -1,6 +1,6 @@
 import { Collection } from '../util/Collection'
 import { Admission } from './Admission'
-import { Event } from './Event'
+import { EventRevision } from './EventRevision'
 import { Section } from './Section'
 import { Ticket } from './Ticket'
 
@@ -9,7 +9,7 @@ export interface AdmissionSession{
   name: string
   device: string
   code: string
-  event: Event
+  event: EventRevision
   sections: Array<Section>
 
   admissions(pageLength: number): Collection<Admission>

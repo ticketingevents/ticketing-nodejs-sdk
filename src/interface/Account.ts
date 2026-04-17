@@ -1,10 +1,10 @@
 import { Base } from './Base'
 import { Collection } from '../util/Collection'
 import type { AccountPreferences } from './AccountPreferences'
-import type { Event } from './Event'
+import type { EventRevision } from './EventRevision'
 import type { Ticket } from './Ticket'
-import type { Host } from './Host'
 import type { Transfer } from './Transfer'
+import { AccountPrivilegeService, PrivilegedHostService } from '../model/AccountModel'
 
 export interface Account extends Base{
   number: string
@@ -25,11 +25,13 @@ export interface Account extends Base{
   state: string
 
   preferences: Promise<AccountPreferences>
-  hosts: Collection<Host>
+  privileges: AccountPrivilegeService
+  hosts: PrivilegedHostService
+
   inbox: Collection<Transfer>
   outbox: Collection<Transfer>
 
-  itinerary(pageLength: number): Collection<Event>
+  itinerary(pageLength: number): Collection<EventRevision>
   wallet(pageLength: number): Collection<Ticket>
   
   deactivate(message?: string): Promise<boolean>

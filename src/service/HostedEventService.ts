@@ -1,29 +1,20 @@
 import { APIAdapter } from '../util/APIAdapter'
 import { BaseService } from '../service/BaseService'
-import { BaseEventModel } from '../model/BaseEventModel'
-import type { EventData } from '../interface/data/EventData'
-import type { Event } from '../interface/Event'
+import { EventRevisionModel } from '../model/EventRevisionModel'
+import type { EventRevisionData } from '../interface/data/EventRevisionData'
+import type { EventRevision } from '../interface/EventRevision'
 import type { Host } from '../interface/Host'
 
-export class HostedEventService extends BaseService<EventData, Event>{
+export class HostedEventService extends BaseService<EventRevisionData, EventRevision>{
   private __apiAdapter: APIAdapter
-  private __host: Host
 
   constructor(apiAdapter: APIAdapter, host: Host){
-    super(apiAdapter, `${host.uri}/events`, BaseEventModel,
+    super(apiAdapter, `${host.uri}/events`, EventRevisionModel,
       ["region", "host", "title", "status", "active", "public", "section"],
       ["alphabetical","published","popularity","start"],
       {region: "id"}
     )
 
     this.__apiAdapter = apiAdapter
-    this.__host = host
-  }
-
-  protected _instantiateModel(data: any){
-    const event: Event = new BaseEventModel(data, this.__apiAdapter)
-    event.host = this.__host
-
-    return event
   }
 }

@@ -89,7 +89,7 @@ export class HostModel extends BaseModel implements Host{
   }
 }
 
-class EventRevisionService extends BaseService<EventRevisionData, EventRevision>{
+export class EventRevisionService extends BaseService<EventRevisionData, EventRevision>{
   private __apiAdapter: APIAdapter
 
   constructor(apiAdapter: APIAdapter, host: Host){
@@ -144,7 +144,7 @@ class EventRevisionService extends BaseService<EventRevisionData, EventRevision>
   }
 }
 
-class HostPrivilegeService extends BaseService<PrivilegeData, Privilege>{
+export class HostPrivilegeService extends BaseService<PrivilegeData, Privilege>{
   private __apiAdapter: APIAdapter
 
   constructor(apiAdapter: APIAdapter, host: Host){

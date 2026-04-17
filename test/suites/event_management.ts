@@ -25,8 +25,8 @@ describe("Event Management", function(){
     //Create an event category
     this.category = await ticketing.categories.create({
       name: "Event Category "+Math.floor(Math.random() * 999999),
-      subcategories: ["Event Subcategory "+Math.floor(Math.random() * 999999)
-]    })
+      subcategories: ["Event Subcategory "+Math.floor(Math.random() * 999999)]
+    })
 
     //Create an event venue
     this.region = await ticketing.regions.create({
