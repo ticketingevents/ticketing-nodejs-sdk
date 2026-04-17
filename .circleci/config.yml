@@ -24,9 +24,9 @@ jobs:
       - run:
           name: Run unit tests
           command: |
-          if [ '<< parameters.environment >>' != 'production' ]; then
-            npm run test
-          fi
+            if [ '<< parameters.environment >>' != 'production' ]; then
+              npm run test
+            fi
 
       - run:
           name: Build distribution files
