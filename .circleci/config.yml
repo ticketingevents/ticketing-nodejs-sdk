@@ -17,6 +17,7 @@ jobs:
           name: Install build dependencies
           command: |
             npm install -g npm@latest   
+            npm -v
             npm install
 
       - run:
@@ -34,10 +35,6 @@ jobs:
           name: Build distribution files
           command: |
             npm run build
-
-      - run:
-          name: Authenticate to NPM
-          command: npm set //registry.npmjs.org/:_authToken=$NPM_TOKEN
 
       - run:
           name: Publish package to NPM
