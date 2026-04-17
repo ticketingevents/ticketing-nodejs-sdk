@@ -6,7 +6,7 @@ orbs:
 jobs:
   publish:
     docker:
-      - image: node:22
+      - image: node:20
     parameters:
       environment:
         type: string
@@ -16,7 +16,6 @@ jobs:
       - run:
           name: Install build dependencies
           command: |
-            npm install -g npm@latest   
             npm install
 
       - run:
