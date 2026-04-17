@@ -1,7 +1,11 @@
 {
   "name": "@ticketing/ticketing-nodejs-sdk",
-  "version": "3.3.0-alpha.8",
+  "version": "3.2.1",
   "description": "Interact seamlessly with the TickeTing API from any TypeScript or JS application.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ticketingevents/ticketing-nodejs-sdk"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -39,9 +43,5 @@
         "skipTypeImports": true
       }
     }
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ticketingevents/ticketing-nodejs-sdk"
   }
 }
