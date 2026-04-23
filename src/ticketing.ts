@@ -7,6 +7,7 @@ import {
   OrderService,
   PresetService,
   RegionService,
+  SubmissionService,
   TransferService,
   VenueService
 } from './service'
@@ -47,6 +48,10 @@ export class TickeTing{
 
   get regions(): RegionService{
     return new RegionService(this.__apiAdapter)
+  }
+
+  get submissions(): SubmissionService{
+    return new SubmissionService(this.__apiAdapter)
   }
 
   get transfers(): TransferService{

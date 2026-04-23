@@ -1,6 +1,7 @@
 import { Base } from './Base'
 import { Category } from './Category'
 import { Venue } from './Venue'
+import { RevisionSubmissionService } from '../model/EventRevisionModel'
 
 export interface EventRevision extends Base{
   title: string
@@ -19,4 +20,5 @@ export interface EventRevision extends Base{
   popularity: number
   banner: string
   thumbnail: string
+  submissions: RevisionSubmissionService
 }

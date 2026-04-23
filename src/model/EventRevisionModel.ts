@@ -2,8 +2,13 @@ import { APIAdapter } from '../util/APIAdapter'
 import type { EventRevision } from '../interface/EventRevision'
 import type { EventRevisionData } from '../interface/data/EventRevisionData'
 import { BaseModel } from './BaseModel'
+import { BaseService } from '../service/BaseService'
 import { CategoryModel } from './CategoryModel'
 import { VenueModel } from './VenueModel'
+import type { Submission } from '../interface/Submission'
+import type { SubmissionData } from '../interface/data/SubmissionData'
+import { SubmissionModel } from './SubmissionModel'
+import { InvalidStateError } from '../errors'
 
 export class EventRevisionModel extends BaseModel implements EventRevision{
   public title: string
@@ -25,6 +30,8 @@ export class EventRevisionModel extends BaseModel implements EventRevision{
   private __bannerData: string
   private __thumbnailUrl: string
   private __thumbnailData: string
+
+  private __submissionService: RevisionSubmissionService
 
   constructor(revision: any, adapter: APIAdapter){
     super(revision.self, adapter)
@@ -57,6 +64,8 @@ export class EventRevisionModel extends BaseModel implements EventRevision{
     this.__bannerData = ""
     this.__thumbnailUrl = revision.thumbnail
     this.__thumbnailData = ""
+
+    this.__submissionService = new RevisionSubmissionService(this._apiAdapter, this)
   }
 
   get banner(){
@@ -73,6 +82,10 @@ export class EventRevisionModel extends BaseModel implements EventRevision{
 
   set thumbnail(thumbnailData: string){
     this.__thumbnailData = thumbnailData
+  }
+
+  get submissions(): RevisionSubmissionService{
+    return this.__submissionService
   }
 
   serialise(): EventRevisionData{
@@ -99,5 +112,42 @@ export class EventRevisionModel extends BaseModel implements EventRevision{
     }
 
     return data
+  }
+}
+
+export class RevisionSubmissionService extends BaseService<SubmissionData, Submission>{
+  private __apiAdapter: APIAdapter
+  private __event: EventRevision
+
+  constructor(apiAdapter: APIAdapter, event: EventRevision){
+    super(apiAdapter, `${event.uri}/submissions`, SubmissionModel)
+    this.__apiAdapter = apiAdapter
+    this.__event = event
+  }
+
+  create(): Promise<Submission>{
+    return new Promise<Submission>((resolve, reject) => {
+      this.__event.submissions.list().total.then(submissions => {
+        let note: string = ""
+        if(submissions == 0){
+          note = `New Event Submission: ${this.__event.title}`
+        }else{
+          note = `Event Change Request: ${this.__event.title}`
+        }
+
+        super.create({
+          note: note
+        }).then(response => {
+          resolve(response)
+        }).catch(error => {
+          if(error.message == "You must upload banner and thumbnail images for an event prior to submission."){
+            error = new InvalidStateError(error.code, error.message)
+          }
+          reject(error)
+        })
+      }).catch(error => {
+        reject(error)
+      })
+    })
   }
 }

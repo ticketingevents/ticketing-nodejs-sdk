@@ -2,12 +2,13 @@
 import './hosts'
 
 import { TickeTing, EventRevision, BadDataError, InvalidStateError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
-import { CategoryModel, EventRevisionModel, VenueModel, HostModel } from  '../../src/model'
+import { CategoryModel, EventRevisionModel, SubmissionModel, VenueModel, HostModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
 import { expect, ticketing, api, unauthorised_sdk } from '../setup'
 
-//Global event object
+//Global resource objects
 let testEvent = null
+let testSubmission = null
 
 describe("Event Management", function(){
 
@@ -67,7 +68,9 @@ describe("Event Management", function(){
       end: "3032-06-07T23:00",
       venue: this.venue,
       disclaimer: "Attend at your own risk",
-      tags: ["homelander", "queen maeve", "the deep", "A-Train"]
+      tags: ["homelander", "queen maeve", "the deep", "A-Train"],
+      banner: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAIBAQIBAQICAgICAgICAwUDAwMDAwYEBAMFBwYHBwcGBwcICQsJCAgKCAcHCg0KCgsMDAwMBwkODw0MDgsMDAz/2wBDAQICAgMDAwYDAwYMCAcIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAz/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9/KKKKAP/2Q==",
+      thumbnail: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAIBAQIBAQICAgICAgICAwUDAwMDAwYEBAMFBwYHBwcGBwcICQsJCAgKCAcHCg0KCgsMDAwMBwkODw0MDgsMDAz/2wBDAQICAgMDAwYDAwYMCAcIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAz/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9/KKKKAP/2Q=="
     }
   })
 
@@ -314,6 +317,73 @@ describe("Event Management", function(){
       return expect(testEvent.save())
         .to.eventually.be.rejectedWith("Your request payload is invalid. Please ensure you have included all required fields and values are well-formed.")
         .and.be.an.instanceOf(BadDataError)
+    })
+  })
+
+  describe('Submit event for review', function () {
+    it('Should return a valid Submission object', function () {
+      return new Promise((resolve, reject) => {
+        testEvent.submissions.create().then(submission => {
+          testSubmission = submission
+
+          expect(submission).to.be.an.instanceof(SubmissionModel)
+          expect(submission.type).to.equal("event")
+          expect(submission.resource).to.equal(testEvent.id)
+          expect(submission.previous).to.equal(null)
+          expect(submission.changes).to.have.any.keys(
+            "id","title","description","start","end","category","subcategory","type",
+            "public","host","venue","disclaimer","tags","thumbnail","banner",
+            "published","popularity"
+          )
+          expect(submission.note).to.equal(`New Event Submission: ${testEvent.title}`)
+          expect(submission.status).to.equal("Pending")
+
+          resolve(true)
+        }).catch(error=>{
+          reject(error)
+        })
+      })
+    })
+
+    it('Should throw an InvalidStateError if the no images have been uploaded for review.', function () {
+      return expect(this.secondEvent.submissions.create())
+        .to.eventually.be.rejectedWith("You must upload banner and thumbnail images for an event prior to submission.")
+        .and.be.an.instanceOf(InvalidStateError)
+    })
+
+    it('Should throw a ResourceExistsError if the current event revision has already been submitted for review.', function () {
+      return expect(testEvent.submissions.create())
+        .to.eventually.be.rejectedWith("The pending changes have already been submitted for review.")
+        .and.be.an.instanceOf(ResourceExistsError)
+    })
+  })
+
+  describe('List event submissions', function () {
+    it('Should return a collection of Submission resources', function () {
+      return expect(testEvent.submissions.list())
+        .eventually.to.all.be.instanceof(SubmissionModel)
+    })
+
+    it('Should contain the newly created submission as its first resource', function () {
+      return new Promise((resolve, reject) => {
+        testEvent.submissions.list().then(submissions => {
+          expect(submissions[0]).to.be.an.instanceof(SubmissionModel)
+          expect(submissions[0].type).to.equal("event")
+          expect(submissions[0].resource).to.equal(testEvent.id)
+          expect(submissions[0].previous).to.equal(null)
+          expect(submissions[0].changes).to.have.any.keys(
+            "id","title","description","start","end","category","subcategory","type",
+            "public","host","venue","disclaimer","tags","thumbnail","banner",
+            "published","popularity"
+          )
+          expect(submissions[0].note).to.equal(`New Event Submission: ${testEvent.title}`)
+          expect(submissions[0].status).to.equal("Pending")
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
     })
   })
 

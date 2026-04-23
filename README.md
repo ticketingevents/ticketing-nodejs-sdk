@@ -141,6 +141,8 @@ export class TickeTingService extends TickeTing{
     * [Fetch an event](#fetch-an-event)
     * [Update an event](#update-an-event)
     * [Delete an event](#delete-an-event)
+    * [List event submissions](#list-event-submissions)
+    * [Submit event for review](#submit-event-for-review)
 - [Event Listings](#event-listings)
     * [Search event listings](#search-event-listings)
 - [Purchasing Tickets](#purchasing-tickets)
@@ -199,6 +201,11 @@ export class TickeTingService extends TickeTing{
     * [Delete an event venue](#delete-an-event-venue)
 - [Presets](#presets)
     * [Retrieve a list of countries](#retrieve-a-list-of-countries)
+- [Content Review](#reviewing-content)
+    * [List submissions](#list-submissions)
+    * [Fetch a submission](#fetch-a-submission)
+    * [Decide on a submission](#decide-on-a-submission)
+    * [Fetch submission decision](#fetch-a-submission-decision)
 
 ## Collections
 
@@ -1458,7 +1465,7 @@ Operations for managing events in the TickeTing system.
 [API Reference](https://docs.ticketingevents.com/openapi/working-with-events/retrieve_event)
 
 ```javascript
-  let host = ticketing.hosts.find(16951985851389)
+  let host = await ticketing.hosts.find(16951985851389)
 
   //Retrieve a specific event using its ID
   host.events.find(16993717817996)
@@ -1483,7 +1490,7 @@ Operations for managing events in the TickeTing system.
 
 ```javascript
   //Retrieve a specific event using its ID
-  let host = ticketing.hosts.find(16951985851389)
+  let host = await ticketing.hosts.find(16951985851389)
   let event = await host.events.find(16993717817996)
 
   //Make changes to the resource
@@ -1515,7 +1522,7 @@ Operations for managing events in the TickeTing system.
 
 ```javascript
   //Retrieve a specific event using its ID
-  let host = ticketing.hosts.find(16951985851389)
+  let host = await ticketing.hosts.find(16951985851389)
   let event = await host.events.find(16993717817996)
 
   //Delete the event
@@ -1535,6 +1542,58 @@ Operations for managing events in the TickeTing system.
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
   })
+```
+
+### List event submissions
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-events/list_event_submissions)
+
+```javascript
+  //Retrieve a specific event using its ID
+  let host = await ticketing.hosts.find(16951985851389)
+  let event = await host.events.find(16993717817996)
+
+  event.submissions.list()
+    .then(submissions => {
+      //Do something with the collection of submissions
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Submit event for review
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-events/submit_event)
+
+```javascript
+  //Retrieve a specific event using its ID
+  let host = await ticketing.hosts.find(16951985851389)
+  let event = await host.events.find(16993717817996)
+
+  event.submissions.create()
+    .then(submission => {
+      //Do something with the created submission resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof PermissionError){
+        console.log("You are restricted from perfoming this operation on the specified host.")
+      }else if(error instanceof InvalidStateError){
+        console.log("You must upload banner and thumbnail images for an event prior to submission.")
+      }else if(error instanceof ResourceExistsError){
+        console.log("Pending changes have already been submitted for review, and are awaiting approval.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
 ```
 
 ## Event Listings
@@ -2845,8 +2904,6 @@ Operations for managing the venues at which event can be staged
   })
 ```
 
-
-
 ## Presets
 
 Retrieve lists of pre-defined values for use in creating events, hosts, venues and
@@ -2865,5 +2922,117 @@ preset collections cannot be filtered, sorted or paginated.
     .catch(error => {
       //Handle errors
       console.log(`${typeof error} (${error.code}): ${error.message}`)
+    })
+```
+
+## Content Review (Admin Only)
+
+### List submissions
+
+[API Reference](https://docs.ticketingevents.com/openapi/reviewing-content/list_submissions)
+
+```javascript
+  ticketing.submissions.list()
+    // Supported filters with examples
+    .filter({
+      type: "event",
+      status: "Pending", //Pending, Approved, Rejected
+    })
+    .then(submissions => {
+      //Do something with the collection of submissions
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch a submission
+
+[API Reference](https://docs.ticketingevents.com/openapi/reviewing-content/retrieve_submission)
+
+```javascript
+  //Retrieve a specific submission using its ID
+  ticketing.submissions.find(17325458293736)
+    .then(submission => {
+      //Do something with the submission resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no submission with the given ID")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Decide on a submission
+
+[API Reference](https://docs.ticketingevents.com/openapi/reviewing-content/take_submission_decision)
+
+```javascript
+  //Retrieve a specific submission using its ID
+  let submission = await ticketing.submissions.find(17325458293736)
+
+  //Approve submission
+  submission.approve("Approval note")
+    .then(decision => {
+      //Do something with the decision resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log("You have entered an invalid approval note.")
+      }else if(error instanceof ResourceExistsError){
+        console.log("A decision has already been taken on this submission.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+
+  //Reject submission
+  submission.reject("Rejection note")
+    .then(decision => {
+      //Do something with the decision resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log("You have entered an invalid rejection note.")
+      }else if(error instanceof ResourceExistsError){
+        console.log("A decision has already been taken on this submission.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch submission decision
+
+[API Reference](https://docs.ticketingevents.com/openapi/reviewing-content/retrieve_submission_decision)
+
+```javascript
+  //Retrieve a specific submission using its ID
+  let submission = await ticketing.submissions.find(17325458293736)
+
+  //Retrieve the submission decision
+  submission.decision
+    .then(submission => {
+      //Do something with the decision resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundErroru){
+        console.log("A decision has not yet been taken on this submission.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
     })
 ```

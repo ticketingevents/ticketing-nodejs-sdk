@@ -43,6 +43,8 @@ export class Collection<T> extends Promise<Array<T>> implements CollectionInterf
     return new Promise((resolve) => {
       this.then(() => {
         resolve(this.__onTotal())
+      }).catch(() => {
+        resolve(0)
       })
     })
   }
@@ -51,6 +53,8 @@ export class Collection<T> extends Promise<Array<T>> implements CollectionInterf
     return new Promise((resolve) => {
       this.then(() => {
         resolve(this.__onPages())
+      }).catch(() => {
+        resolve(0)
       })
     })
   }
@@ -74,6 +78,8 @@ export class Collection<T> extends Promise<Array<T>> implements CollectionInterf
       this.current.then(current => {
         this.__goto(current+1)
         this.__executor(resolve, reject)
+      }).catch(error => {
+        reject(error)
       })
     }, this.__cursor+1)
   }
@@ -83,6 +89,8 @@ export class Collection<T> extends Promise<Array<T>> implements CollectionInterf
       this.current.then(current => {
         this.__goto(current-1)
         this.__executor(resolve, reject)
+      }).catch(error => {
+        reject(error)
       })
     }, this.__cursor-1)
   }

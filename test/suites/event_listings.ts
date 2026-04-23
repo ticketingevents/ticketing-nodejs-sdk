@@ -1,5 +1,5 @@
 //Control execution order
-import './account_privileges'
+import './content_review'
 
 import { TickeTing, EventRevision, BadDataError, InvalidStateError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
 import { CategoryModel, EventRevisionModel, VenueModel, HostModel } from  '../../src/model'

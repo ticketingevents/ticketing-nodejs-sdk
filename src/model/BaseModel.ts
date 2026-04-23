@@ -9,7 +9,7 @@ export class BaseModel implements Base{
   protected _apiAdapter: APIAdapter
 
   constructor(self: string, adapter: APIAdapter){
-    this.id = /([A-Za-z0-9\-]+)$/.exec(self)[1]
+    this.id = self ? /([A-Za-z0-9\-]+)$/.exec(self)[1] : ""
     this.uri = self
     this._apiAdapter = adapter
   }
