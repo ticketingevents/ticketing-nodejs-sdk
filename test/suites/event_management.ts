@@ -1,8 +1,14 @@
 //Control execution order
 import './hosts'
 
-import { TickeTing, EventRevision, BadDataError, InvalidStateError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
-import { CategoryModel, EventRevisionModel, SubmissionModel, VenueModel, HostModel } from  '../../src/model'
+import { 
+  TickeTing, EventRevision, BadDataError, InvalidStateError, 
+  PermissionError, ResourceExistsError, ResourceNotFoundError,
+  ResourceIndelibleError
+} from '../../src'
+import { 
+  CategoryModel, EventRevisionModel, SubmissionModel, VenueModel, HostModel
+} from  '../../src/model'
 import { Collection } from  '../../src/util'
 import { expect, ticketing, api, unauthorised_sdk } from '../setup'
 
@@ -56,6 +62,20 @@ describe("Event Management", function(){
       venue: this.venue
     })
 
+    //Create a test tier
+    this.tier = await this.host.tiers.create({
+        name: "Second Tier "+Math.floor(Math.random() * 999999),
+        description: "Spend a day shadowing a supe!",
+        price: 500.00,
+        capacity: 5,
+        available_from: "2025-05-02T21:00",
+        available_to: "2025-07-01T00:00",
+        events: [{
+            "event": this.secondEvent,
+            "share": 100
+        }]
+    })
+
     //Initialise test data for suite
     this.testEventData = {
       title: "Test Event "+Math.floor(Math.random() * 999999),
@@ -75,6 +95,7 @@ describe("Event Management", function(){
   })
 
   after(async function(){
+    await this.tier.delete()
     await this.secondEvent.delete()
     await this.category.delete()
     await this.host.delete()
@@ -116,7 +137,6 @@ describe("Event Management", function(){
 
     it('Should throw a BadDataError if required fields are missing', function () {
       return expect(this.host.events.create({
-        host: this.host,
         category: this.category,
         venue: this.venue,
         title: "",
@@ -130,7 +150,6 @@ describe("Event Management", function(){
 
     it('Should throw a BadDataError if a non-venue is passed in', function () {
       return expect(this.host.events.create({
-        host: this.host,
         category: this.category,
         subcategory: this.category.subcategories[0],
         venue: "Non-Venue"
@@ -396,6 +415,12 @@ describe("Event Management", function(){
       return expect(this.host.events.find(testEvent.id))
         .to.eventually.be.rejectedWith("You are not authorised to access this unlisted event.")
         .and.be.an.instanceOf(PermissionError)
+    })
+
+    it('Should throw a ResourceIndelibleError when attached to a tier', function () {
+      return expect(this.secondEvent.delete())
+        .to.eventually.be.rejectedWith("The event is associated with one or more tiers which must be deleted first.")
+        .and.be.an.instanceOf(ResourceIndelibleError)
     })
   })
 })

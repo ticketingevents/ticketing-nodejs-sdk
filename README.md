@@ -143,6 +143,12 @@ export class TickeTingService extends TickeTing{
     * [Delete an event](#delete-an-event)
     * [List event submissions](#list-event-submissions)
     * [Submit event for review](#submit-event-for-review)
+- [Tier Management](#tier-management)
+    * [List tiers](#list-tiers)
+    * [Create a tier](#create-a-tier)
+    * [Fetch a tier](#fetch-a-tier)
+    * [Update a tier](#update-a-tier)
+    * [Delete a tier](#delete-a-tier)
 - [Event Listings](#event-listings)
     * [Search event listings](#search-event-listings)
 - [Purchasing Tickets](#purchasing-tickets)
@@ -1537,7 +1543,7 @@ Operations for managing events in the TickeTing system.
     if(error instanceof PermissionError){
       console.log("You are not authorised to manage events on behalf of this host.")
     }else if(error instanceof ResourceIndelibleError){
-      console.log("The event has active sections which must be deleted first.")
+      console.log("The event is associated with one or more tiers which must be deleted first.")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
@@ -1594,6 +1600,193 @@ Operations for managing events in the TickeTing system.
         console.log(`${typeof error} (${error.code}): ${error.message}`)
       }
     })
+```
+
+## Tier Management
+
+Operations for managing tiers in the TickeTing system.
+
+### List tiers
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-tiers/list_host_tiers)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific event using its ID
+  let event = await host.events.find(16993717817996)
+
+  host.tiers.list()
+    // Supported filters with examples
+    .filter({
+      event: event,
+    })
+    .then(tiers => {
+      //Do something with the collection of tiers
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Create a tier
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-tiers/create_tier)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific event using its ID
+  let event = await host.events.find(16993717817996)
+
+  //Retrieve a specific tier using its ID
+  let upgrade_tier = await host.tiers.find(19240249258262)
+
+  let tierData = {
+    "name": "Backstage Pass", //Required
+    "description": "Gain exclusive access to meet the Supes and hang out after the show.", //Required
+    "price": 299.9, //Required
+    "capacity": 20, //Required
+    "available_from": "2025-05-02T21:00:00", //Required
+    "available_to": "2025-07-01T00:00:00", //Required
+    "events": [{ //Required
+      "event": event,
+      "share": 100
+    }],
+    "artwork": "data:image/jpeg;base64,/9j/4AAQSkZJRgABA...",
+    "unit_size": 1,
+    "purchase_limit": 2,
+    "purchase_note": "Your all set. Remember to give the codeword HOMELANDER when coming backstage.",
+    "complimentary": false,
+    "transferrable": false,
+    "upgrades": [upgrade_tier]
+  }
+
+  host.tiers.create(tierData)
+    .then(tier => {
+      //Do something with the created tier resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log(error.message)
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to manage tiers on behalf of this host.")
+      }else if(error instanceof ResourceExistsError){
+        console.log("One or more of the specified events already has a tier with the given name.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch a tier
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-tiers/retrieve_tier)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific tier using its ID
+  host.tiers.find(19240249258262)
+    .then(tier => {
+      //Do something with the tier resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no tier with the given ID")
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to manage tiers on behalf of this host.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Update a tier
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-tiers/update_tier)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific tier using its ID
+  let tier = await host.tiers.find(19240249258262)
+
+  //Retrieve a specific event using its ID
+  let event = await host.events.find(16993717948145)
+
+  //Make changes to the resource
+  tier.name = "Season Pass"
+  
+  let tierEvents = await tier.events
+  tierEvents[0].share = 50
+  tierEvents.push({
+    event: event,
+    share: 50
+  })
+
+  //Save changes
+  tier.save().then(saved => {
+    if(saved){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log(error.message)
+    }else if(error instanceof PermissionError){
+      console.log("You are not authorised to manage tiers on behalf of this host.")
+    }else if(error instanceof ResourceExistsError){
+      console.log("One or more of the specified events already has a tier with the given name.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Delete an event
+
+[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/delete_event)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific tier using its ID
+  let tier = await host.tiers.find(19240249258262)
+
+  //Delete the event
+  tier.delete().then(deleted => {
+    if(deleted){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof PermissionError){
+      console.log("You are not authorised to manage events on behalf of this host.")
+    }else if(error instanceof ResourceIndelibleError){
+      console.log("Tickets have already been issued under this tier and changes or deletion are no longer possible.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
 ```
 
 ## Event Listings

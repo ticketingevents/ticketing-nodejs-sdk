@@ -1,7 +1,5 @@
 //Control execution order
 import './account_privileges'
-//Control execution order
-import './hosts'
 
 import { TickeTing, EventRevision, BadDataError, InvalidStateError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
 import { CategoryModel, DecisionModel, EventRevisionModel, SubmissionModel, VenueModel, HostModel } from  '../../src/model'

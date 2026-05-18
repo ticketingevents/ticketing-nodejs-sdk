@@ -1,5 +1,5 @@
 //Control execution order
-import './event_management'
+import './tier_management'
 
 import { TickeTing } from '../../src'
 import { HostModel, CategoryModel, VenueModel, PrivilegeModel, RoleModel } from  '../../src/model'

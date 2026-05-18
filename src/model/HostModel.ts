@@ -3,15 +3,18 @@ import { BaseModel } from './BaseModel'
 import { BaseService } from '../service/BaseService'
 import type { EventRevision } from '../interface/EventRevision'
 import type { EventRevisionData } from '../interface/data/EventRevisionData'
+import type { Tier } from '../interface/Tier'
+import type { TierData } from '../interface/data/TierData'
 import type { Host } from '../interface/Host'
 import type { HostData } from '../interface/data/HostData'
 import type { Privilege } from '../interface/Privilege'
 import type { PrivilegeData } from '../interface/data/PrivilegeData'
 import { EventRevisionModel } from './EventRevisionModel'
+import { TierModel } from './TierModel'
 import { PrivilegeModel } from './PrivilegeModel'
 import { CategoryModel } from './CategoryModel'
 import { VenueModel } from './VenueModel'
-import { BadDataError, PermissionError } from '../errors'
+import { BadDataError, PermissionError, ResourceExistsError } from '../errors'
 import { HostStatisticsModel } from './reporting/HostStatisticsModel'
 
 export class HostModel extends BaseModel implements Host{
@@ -29,6 +32,7 @@ export class HostModel extends BaseModel implements Host{
   public businessNo: string
 
   private __eventRevisionService: EventRevisionService
+  private __tierService: TierService
   private __privilegeService: HostPrivilegeService
 
   constructor(host: any, adapter: APIAdapter){
@@ -48,11 +52,16 @@ export class HostModel extends BaseModel implements Host{
     this.businessNo = host.businessNo
 
     this.__eventRevisionService = new EventRevisionService(this._apiAdapter, this)
+    this.__tierService = new TierService(this._apiAdapter, this)
     this.__privilegeService = new HostPrivilegeService(this._apiAdapter, this)
   }
 
   get events(): EventRevisionService{
     return this.__eventRevisionService
+  }
+
+  get tiers(): TierService{
+    return this.__tierService
   }
 
   get privileges(): HostPrivilegeService{
@@ -136,6 +145,82 @@ export class EventRevisionService extends BaseService<EventRevisionData, EventRe
       }).catch(error => {
         if(error.code == 403){
           error = new PermissionError(error.code, "You are not authorised to access this unlisted event.")
+        }
+
+        reject(error)
+      })
+    })
+  }
+}
+
+export class TierService extends BaseService<TierData, Tier>{
+  private __apiAdapter: APIAdapter
+
+  constructor(apiAdapter: APIAdapter, host: Host){
+    super(apiAdapter, `${host.uri}/tiers`, TierModel, ["event"], [], {event: "id"})
+
+    this.__apiAdapter = apiAdapter
+  }
+
+  create(data: TierData): Promise<Tier>{
+    return new Promise<Tier>((resolve, reject) => {
+      const payload = {
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        capacity: data.capacity,
+        available_from: data.available_from,
+        available_to: data.available_to,
+        events: [],
+        artwork: data.artwork,
+        unit_size: data.unit_size,
+        purchase_limit: data.purchase_limit,
+        purchase_note: data.purchase_note,
+        complimentary: data.complimentary,
+        transferrable: data.transferrable,
+        upgrades: []
+      }
+
+      for(const entry of ('events' in data?data.events:[])){
+        if(!(entry.event instanceof EventRevisionModel)){
+          reject(new BadDataError(400, "One or more of the specified events is not a valid EventRevision."))
+        }
+
+        payload.events.push({
+          id: (entry.event as EventRevisionModel).id,
+          share: entry.share
+        })
+      }
+
+      for(const upgrade of ('upgrades' in data?data.upgrades:[])){
+        if(!(upgrade instanceof TierModel)){
+          reject(new BadDataError(400, "One or more of the specified tiers is not a valid Tier."))
+        }
+
+        payload.upgrades.push(upgrade.id)
+      }
+
+      super.create(
+        JSON.parse(JSON.stringify(payload))
+      ).then(response => {
+        resolve(response)
+      }).catch(error => {
+        if(error.code == 409){
+          error = new ResourceExistsError(error.code, error.message)
+        }
+
+        reject(error)
+      })
+    })
+  }
+
+  find(id: number|string): Promise<Tier>{
+    return new Promise<Tier>((resolve, reject) => {
+      super.find(id).then(tier => {
+        resolve(tier)
+      }).catch(error => {
+        if(error.code == 403){
+          error = new PermissionError(error.code, "You are not authorised to manage this host or its resources.")
         }
 
         reject(error)
