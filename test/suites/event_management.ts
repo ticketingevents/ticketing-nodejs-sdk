@@ -7,7 +7,8 @@ import {
   ResourceIndelibleError
 } from '../../src'
 import { 
-  CategoryModel, EventRevisionModel, SubmissionModel, VenueModel, HostModel
+  CategoryModel, EventRevisionModel, SubmissionModel, VenueModel,
+  HostModel, PublicationModel
 } from  '../../src/model'
 import { Collection } from  '../../src/util'
 import { expect, ticketing, api, unauthorised_sdk } from '../setup'
@@ -15,6 +16,7 @@ import { expect, ticketing, api, unauthorised_sdk } from '../setup'
 //Global resource objects
 let testEvent = null
 let testSubmission = null
+let testPublication = null
 
 describe("Event Management", function(){
 
@@ -397,6 +399,64 @@ describe("Event Management", function(){
           )
           expect(submissions[0].note).to.equal(`New Event Submission: ${testEvent.title}`)
           expect(submissions[0].status).to.equal("Pending")
+
+          //Approve submission for publication test
+          submissions[0].approve("We have approved your submission.").then(decision => {
+            //Submission approved
+            resolve(true)
+          })
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+  })
+
+  describe('Publish event changes', function () {
+    it('Should return a valid Publication object', function () {
+      return new Promise((resolve, reject) => {
+        testEvent.publish().then(publication => {
+          testPublication = publication
+
+          expect(publication).to.be.an.instanceof(PublicationModel)
+          expect(publication.changes).to.have.any.keys(
+            "id","title","description","start","end","category","subcategory","type",
+            "public","host","venue","disclaimer","tags","thumbnail","banner",
+            "published","popularity"
+          )
+          expect(publication.publish_at).to.equal("2000-01-01T00:00")
+
+          resolve(true)
+        }).catch(error=>{
+          reject(error)
+        })
+      })
+    })
+
+    it('Should throw an InvalidStateError if pending changes have not been approved.', function () {
+      return expect(this.secondEvent.publish())
+        .to.eventually.be.rejectedWith("Pending changes must be submitted and approved before publication.")
+        .and.be.an.instanceOf(InvalidStateError)
+    })
+  })
+
+  describe('List event publications', function () {
+    it('Should return a collection of Publication resources', function () {
+      return expect(testEvent.publications.list())
+        .eventually.have.a.lengthOf.at.least(1)
+        .and.to.all.be.instanceof(PublicationModel)
+    })
+
+    it('Should contain the newly created publication as its first resource', function () {
+      return new Promise((resolve, reject) => {
+        testEvent.publications.list().then(publications => {
+          expect(publications[0]).to.be.an.instanceof(PublicationModel)
+          expect(publications[0].changes).to.have.any.keys(
+            "id","title","description","start","end","category","subcategory","type",
+            "public","host","venue","disclaimer","tags","thumbnail","banner",
+            "published","popularity"
+          )
+          expect(publications[0].publish_at).to.equal("2000-01-01T00:00")
 
           resolve(true)
         }).catch(error => {

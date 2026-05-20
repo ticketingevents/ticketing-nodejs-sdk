@@ -1,7 +1,9 @@
 import { Base } from './Base'
 import { Category } from './Category'
 import { Venue } from './Venue'
+import { Publication } from './Publication'
 import { RevisionSubmissionService } from '../model/EventRevisionModel'
+import { RevisionPublicationService } from '../model/EventRevisionModel'
 
 export interface EventRevision extends Base{
   title: string
@@ -21,4 +23,7 @@ export interface EventRevision extends Base{
   banner: string
   thumbnail: string
   submissions: RevisionSubmissionService
+  publications: RevisionPublicationService
+
+  publish(schedule: string): Promise<Publication>
 }

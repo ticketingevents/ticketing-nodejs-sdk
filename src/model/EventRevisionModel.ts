@@ -8,6 +8,9 @@ import { VenueModel } from './VenueModel'
 import type { Submission } from '../interface/Submission'
 import type { SubmissionData } from '../interface/data/SubmissionData'
 import { SubmissionModel } from './SubmissionModel'
+import type { Publication } from '../interface/Publication'
+import type { PublicationData } from '../interface/data/PublicationData'
+import { PublicationModel } from './PublicationModel'
 import { InvalidStateError } from '../errors'
 
 export class EventRevisionModel extends BaseModel implements EventRevision{
@@ -32,6 +35,7 @@ export class EventRevisionModel extends BaseModel implements EventRevision{
   private __thumbnailData: string
 
   private __submissionService: RevisionSubmissionService
+  private __publicationService: RevisionPublicationService
 
   constructor(revision: any, adapter: APIAdapter){
     super(revision.self, adapter)
@@ -66,6 +70,7 @@ export class EventRevisionModel extends BaseModel implements EventRevision{
     this.__thumbnailData = ""
 
     this.__submissionService = new RevisionSubmissionService(this._apiAdapter, this)
+    this.__publicationService = new RevisionPublicationService(this._apiAdapter, this)
   }
 
   get banner(){
@@ -86,6 +91,10 @@ export class EventRevisionModel extends BaseModel implements EventRevision{
 
   get submissions(): RevisionSubmissionService{
     return this.__submissionService
+  }
+
+  get publications(): RevisionPublicationService{
+    return this.__publicationService
   }
 
   serialise(): EventRevisionData{
@@ -112,6 +121,16 @@ export class EventRevisionModel extends BaseModel implements EventRevision{
     }
 
     return data
+  }
+
+  publish(schedule: string = ""): Promise<Publication>{
+    if(!schedule){
+      schedule = "2000-01-01T00:00"
+    }
+
+    return this.__publicationService.create({
+      publish_at: schedule
+    })
   }
 }
 
@@ -146,6 +165,31 @@ export class RevisionSubmissionService extends BaseService<SubmissionData, Submi
           reject(error)
         })
       }).catch(error => {
+        reject(error)
+      })
+    })
+  }
+}
+
+export class RevisionPublicationService extends BaseService<PublicationData, Publication>{
+  private __apiAdapter: APIAdapter
+  private __event: EventRevision
+
+  constructor(apiAdapter: APIAdapter, event: EventRevision){
+    super(apiAdapter, `${event.uri}/publications`, PublicationModel)
+    this.__apiAdapter = apiAdapter
+    this.__event = event
+  }
+
+  create(data: PublicationData): Promise<Publication>{
+    return new Promise<Publication>((resolve, reject) => {
+      super.create(data).then(response => {
+        resolve(response as Publication)
+      }).catch(error => {
+        if(error.code == 409){
+          error = new InvalidStateError(error.code, error.message)
+        }
+
         reject(error)
       })
     })

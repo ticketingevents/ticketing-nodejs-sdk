@@ -143,6 +143,8 @@ export class TickeTingService extends TickeTing{
     * [Delete an event](#delete-an-event)
     * [List event submissions](#list-event-submissions)
     * [Submit event for review](#submit-event-for-review)
+    * [List event publications](#list-event-publications)
+    * [Publish event changes](#publish-event-changes)
 - [Tier Management](#tier-management)
     * [List tiers](#list-tiers)
     * [Create a tier](#create-a-tier)
@@ -1591,11 +1593,61 @@ Operations for managing events in the TickeTing system.
     .catch(error => {
       //Handle errors
       if(error instanceof PermissionError){
-        console.log("You are restricted from perfoming this operation on the specified host.")
+        console.log("You are restricted from perfoming this operation on the specified event or its resources.")
       }else if(error instanceof InvalidStateError){
         console.log("You must upload banner and thumbnail images for an event prior to submission.")
       }else if(error instanceof ResourceExistsError){
         console.log("Pending changes have already been submitted for review, and are awaiting approval.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### List event publications
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-events/list_event_publications)
+
+```javascript
+  //Retrieve a specific event using its ID
+  let host = await ticketing.hosts.find(16951985851389)
+  let event = await host.events.find(16993717817996)
+
+  event.publications.list()
+    .then(publications => {
+      //Do something with the collection of publications
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Publish event changes
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-events/publish_event)
+
+```javascript
+  //Retrieve a specific event using its ID
+  let host = await ticketing.hosts.find(16951985851389)
+  let event = await host.events.find(16993717817996)
+
+  event.publish("2030-01-01T00:00" //Optional publication date. Published immediately if not specified)
+    .then(publication => {
+      //Do something with the created publication resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof PermissionError){
+        console.log("You are restricted from perfoming this operation on the specified event or its resources.")
+      }else if(error instanceof InvalidStateError){
+        console.log("Pending changes must be submitted and approved before publication.")
       }else{
         console.log(`${typeof error} (${error.code}): ${error.message}`)
       }
