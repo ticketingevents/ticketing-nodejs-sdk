@@ -1,6 +1,6 @@
 {
   "name": "@ticketing/ticketing-nodejs-sdk",
-  "version": "3.3.0-alpha.5",
+  "version": "3.3.0-alpha.6",
   "description": "Interact seamlessly with the TickeTing API from any TypeScript or JS application.",
   "repository": {
     "type": "git",
