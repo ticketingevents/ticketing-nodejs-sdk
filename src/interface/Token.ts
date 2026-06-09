@@ -1,11 +1,11 @@
 import { Base } from './Base'
-import { Section } from './Section'
+import { TierListing } from './TierListing'
 
 export interface Token extends Base{
   code: string
   global: boolean
-  sections: Array<Section>
+  tiers: Array<TierListing>
 
-  allow(section: Section)
-  deny(section: Section)
+  allow(tier: TierListing)
+  deny(tier: TierListing)
 }

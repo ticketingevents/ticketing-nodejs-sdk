@@ -1,16 +1,16 @@
 import { BaseService } from './BaseService'
 
 import { APIAdapter } from '../util/APIAdapter'
-import type { EventRevision } from '../interface/EventRevision'
+import type { EventListing } from '../interface/EventListing'
 import type { TokenData } from '../interface/data/TokenData'
 import type { Token } from '../interface/Token'
 import { TokenModel } from '../model/TokenModel'
 
 export class TokenService extends BaseService<TokenData, Token>{
   private __apiAdapter: APIAdapter
-  private __event: EventRevision
+  private __event: EventListing
 
-  constructor(apiAdapter: APIAdapter, event: EventRevision){
+  constructor(apiAdapter: APIAdapter, event: EventListing){
     super(apiAdapter, `${event.uri}/tokens`, TokenModel, ["global"])
 
     this.__apiAdapter = apiAdapter

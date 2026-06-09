@@ -1,14 +1,13 @@
 import { BaseService } from './BaseService'
 
 import { APIAdapter } from '../util/APIAdapter'
-import { EventRevisionModel } from '../model/EventRevisionModel'
+import { EventListingModel } from '../model/EventListingModel'
 import type { Account } from '../interface/Account'
-import type { EventRevisionData } from '../interface/data/EventRevisionData'
-import type { EventRevision } from '../interface/EventRevision'
+import type { EventListing } from '../interface/EventListing'
 
-export class ItineraryService extends BaseService<EventRevisionData, EventRevision>{
+export class ItineraryService extends BaseService<EventListing, EventListing>{
   constructor(apiAdapter: APIAdapter, account: Account){
-    super(apiAdapter, `${account.uri}/events`, EventRevisionModel,
+    super(apiAdapter, `${account.uri}/events`, EventListingModel,
       ["active"],
       ["alphabetical","published","popularity","start"]
     )

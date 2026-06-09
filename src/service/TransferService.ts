@@ -25,13 +25,13 @@ export class TransferService extends BaseService<TransferData, Transfer>{
   }
 
   create(): Promise<Transfer>{
-    return new Promise<Transfer>((resolve, reject) => {
+  return new Promise<Transfer>((_resolve, reject) => {
       reject(new UnsupportedOperationError(0, "Operation not supported"))
     })
   }
 
   batchCreate(): Promise<Array<Transfer>>{
-    return new Promise<Array<Transfer>>((resolve, reject) => {
+    return new Promise<Array<Transfer>>((_resolve, reject) => {
       reject(new UnsupportedOperationError(0, "Operation not supported"))
     })
   }

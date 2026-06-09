@@ -6,16 +6,16 @@ import type { AdmissionSession } from '../interface/AdmissionSession'
 import { AdmissionService } from '../service/AdmissionService'
 import { TicketService } from '../service/TicketService'
 import { InvalidStateError } from '../errors'
-import { EventRevisionModel } from './EventRevisionModel'
-import { SectionModel } from './SectionModel'
+import { EventListingModel } from './EventListingModel'
+import { TierListingModel } from './TierListingModel'
 
 export class AdmissionSessionModel implements AdmissionSession{
   public started: string
   public name: string
   public device: string
   public code: string
-  public event: EventRevisionModel|null
-  public sections: Array<SectionModel>
+  public event: EventListingModel|null
+  public tiers: Array<TierListingModel>
 
   private __apiAdapter: APIAdapter
   private __admissionService: AdmissionService
@@ -27,28 +27,31 @@ export class AdmissionSessionModel implements AdmissionSession{
     this.device = admissionSession.device
     this.code = admissionSession.code
     this.event = admissionSession.event
-    this.sections = []
-
-    //Index event sections
-    const sectionMap = {}
-    /*for(const section of this.event.sections){
-      sectionMap[section.uri] = section
-    }*/
-
-    for(const section of admissionSession.sections){
-      this.sections.push(sectionMap[section])
-    }
+    this.tiers = []
 
     this.__apiAdapter = adapter
     this.__admissionService = new AdmissionService(this.__apiAdapter, this.event)
     this.__ticketService = new TicketService(this.__apiAdapter, this.event)
+
+    //Index event tiers
+    const tierMap = {}
+
+    this.event.tiers.list().then(tiers => {
+      for(const tier of tiers){
+        tierMap[tier.uri] = tier
+      }
+
+      for(const tier of admissionSession.tiers){
+        this.tiers.push(tierMap[tier])
+      }
+    })
   }
 
   admissions(pageLength: number): Collection<Admission>{
     if(this.started){
       return this.__admissionService.list(pageLength)
     }else{
-      return new Collection((resolve, reject) => {
+      return new Collection((_resolve, reject) => {
         reject(new InvalidStateError(0, "The admission session has ended, you must start a new one."))
       })
     }
@@ -58,7 +61,7 @@ export class AdmissionSessionModel implements AdmissionSession{
     if(this.started){
       return this.__ticketService.list(pageLength)
     }else{
-      return new Collection((resolve, reject) => {
+      return new Collection((_resolve, reject) => {
         reject(new InvalidStateError(0, "The admission session has ended, you must start a new one."))
       })
     }
@@ -90,7 +93,7 @@ export class AdmissionSessionModel implements AdmissionSession{
         this.device = ""
         this.code = ""
         this.event = null
-        this.sections = []
+        this.tiers = []
         this.__apiAdapter.key = ""
 
         resolve(true)

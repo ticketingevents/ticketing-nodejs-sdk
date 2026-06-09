@@ -1,14 +1,14 @@
 import type { Base } from './Base'
 import type { Account } from './Account'
-import type { EventRevision } from './EventRevision'
-import type { Section } from './Section'
+import type { EventListing } from './EventListing'
+import type { TierListing } from './TierListing'
 
 export interface Transfer extends Base{
   status: string
   initiated: string
   tickets: Array<{
-    event: EventRevision,
-    section: Section,
+    event: EventListing,
+    tier: TierListing,
     quantity: number
   }>
   sender: Account | string

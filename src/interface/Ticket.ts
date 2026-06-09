@@ -1,11 +1,11 @@
 import { Base } from './Base'
 import { Account } from './Account'
-import { Section } from './Section'
+import { TierListing } from './TierListing'
 
 export interface Ticket extends Base{
   serial: string
   status: string
-  section: Section
+  tier: TierListing
   issued: string
   redeemed: string
   owner: Account | string

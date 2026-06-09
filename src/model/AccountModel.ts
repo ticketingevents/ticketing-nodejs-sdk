@@ -15,7 +15,7 @@ import { HostModel } from './HostModel'
 import type { Privilege } from '../interface/Privilege'
 import type { PrivilegeData } from '../interface/data/PrivilegeData'
 import { PrivilegeModel } from './PrivilegeModel'
-import type { EventRevision } from '../interface/EventRevision'
+import type { EventListing } from '../interface/EventListing'
 import type { Ticket } from '../interface/Ticket'
 import type { Transfer } from '../interface/Transfer'
 import { PermissionError } from '../errors'
@@ -102,7 +102,7 @@ export class AccountModel extends BaseModel implements Account{
     return this.__transferHistoryService.list().filter({role: "sender"})
   }
 
-  itinerary(pageLength: number = 25): Collection<EventRevision>{
+  itinerary(pageLength: number = 25): Collection<EventListing>{
     return this.__itineraryService.list(pageLength)
   }
 

@@ -5,7 +5,7 @@ import {
 	TickeTing, BadDataError, InvalidStateError, ResourceImmutableError,
 	ResourceIndelibleError, UnauthorisedError
 } from '../../src'
-import { AdmissionModel, SectionModel, TicketModel, TokenModel } from  '../../src/model'
+import { AdmissionModel, TicketModel, TokenModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
 import { expect, ticketing, api } from '../setup'
 
@@ -79,32 +79,32 @@ describe.skip("Admissions", function(){
 	      end: "9999-12-31T23:59:59.999Z"
 		})
 
-		//Create event sections
-		let sectionData = (await api.post(`${this.testEvent.uri}/sections`, {
-		  name: "Test Section "+Math.floor(Math.random() * 999999),
-		  description: "Test admissions with this.",
-		  basePrice: 0,
+  	//Create event tiers
+  	this.tier = await this.host.tiers.create({
+  		name: "Test Section "+Math.floor(Math.random() * 999999),
+  		description: "Test admissions with this.",
+  		price: 0,
 		  salesStart: (new Date()).toISOString(),
 		  salesEnd: "9999-12-31T23:59:59.999Z",
-		  capacity: 100
-		})).data
+		  capacity: 100,
+      events: [{
+        "event": this.event,
+        "share": 100
+      }]
+  	})
 
-		sectionData.self = `${this.testEvent.uri}${sectionData.self}`
-		this.testSection = new SectionModel(sectionData, api)
-		this.testEvent.sections.push(this.testSection)
-
-		sectionData = (await api.post(`${this.testEvent.uri}/sections`, {
-		  name: "Test Section "+Math.floor(Math.random() * 999999),
-		  description: "Test admissions with this.",
-		  basePrice: 0,
+  	this.secondTier = await this.host.tiers.create({
+  		name: "Test Section "+Math.floor(Math.random() * 999999),
+  		description: "Test admissions with this.",
+  		price: 0,
 		  salesStart: (new Date()).toISOString(),
 		  salesEnd: "9999-12-31T23:59:59.999Z",
-		  capacity: 100
-		})).data
-
-		sectionData.self = `${this.testEvent.uri}${sectionData.self}`
-		this.secondSection = new SectionModel(sectionData, api)
-		this.testEvent.sections.push(this.secondSection)
+		  capacity: 100,
+      events: [{
+        "event": this.event,
+        "share": 100
+      }]
+  	})
 
 		//Place first ticket order
 		let firstCart = await ticketing.orders.start()
@@ -122,8 +122,8 @@ describe.skip("Admissions", function(){
 	})
 
 	after(async function(){
-		await this.testSection.delete()
-		await this.secondSection.delete()
+		await this.secondTier.delete()
+		await this.tier.delete()
 		await this.testEvent.delete()
 		await this.category.delete()
 		await this.host.delete()

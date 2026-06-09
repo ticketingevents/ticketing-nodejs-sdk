@@ -1,10 +1,10 @@
 import { Account } from '../Account'
-import { Section } from '../Section'
+import { TierListing } from '../TierListing'
 
 export interface TicketData{
   serial: string
   status: string
-  section: Section | string
+  tier: TierListing | string
   owner?: Account | string
   issued: string
   redeemed: string

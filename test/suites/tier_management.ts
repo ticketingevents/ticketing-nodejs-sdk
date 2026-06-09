@@ -237,7 +237,7 @@ describe("Tier Management", function(){
       })
     })
 
-    it('Should return a collection of events matching the event filter', function () {
+    it('Should return a collection of tiers matching the event filter', function () {
       return new Promise((resolve, reject) => {
         this.host.tiers.list().filter({event: this.event}).then(tiers => {
           expect(tiers).to.have.lengthOf.at.least(1)

@@ -1,5 +1,5 @@
 import { Account } from '../Account'
-import { Section } from '../Section'
+import { TierListing } from '../TierListing'
 
 export interface AdmissionData{
   redeemer: string
@@ -7,6 +7,6 @@ export interface AdmissionData{
   serials?: string[]
   ticket?: string
   patron?: Account | string
-  section?: Section | string
+  tier?: TierListing | string
   admitted?: string
 }

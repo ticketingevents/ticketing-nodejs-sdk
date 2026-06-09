@@ -3,12 +3,12 @@ import type { Account } from '../interface/Account'
 import type { Cart } from '../interface/Cart'
 import type { Order } from '../interface/Order'
 import { OrderModel } from './OrderModel'
-import type { Section } from '../interface/Section'
+import type { TierListing } from '../interface/TierListing'
 import { BadDataError, UnsupportedOperationError } from '../errors'
 
 export class CartModel implements Cart{
   public created: string
-  public items: Array<{section: Section, quantity: number, total: number}>
+  public items: Array<{tier: TierListing, quantity: number, total: number}>
 
   private __apiAdapter: APIAdapter
 
@@ -29,10 +29,10 @@ export class CartModel implements Cart{
   }
 
   get fees(): number{
-    let fees = 0
-    for(const item of this.items){
-      fees += item.section.fees * item.quantity
-    }
+    const fees = 0
+    /*for(const item of this.items){
+      fees += item.tier.fees * item.quantity
+    }*/
 
     return fees
   }
@@ -41,73 +41,73 @@ export class CartModel implements Cart{
     return this.subtotal + this.fees
   }
 
-  add(section: Section, quantity: number): Promise<boolean>{
+  add(tier: TierListing, quantity: number): Promise<boolean>{
     return new Promise<boolean>((resolve, reject) => {
-      //See if section already exists
-      const sectionIndex = this.__hasSection(section)
+      //See if tier already exists
+      const tierIndex = this.__hasTier(tier)
 
       //Check that quantity is a valid number
       if(quantity < 1){
         reject(new BadDataError(400, "The number of items to be added to the cart must be a positive integer."))
-      }else if(quantity > section.remaining){
-        reject(new UnsupportedOperationError(400, "Adding the specified quantity of this item would exceed the section capacity."))
-      }else if(sectionIndex < 0){
+      }else if(quantity > tier.remaining){
+        reject(new UnsupportedOperationError(400, "Adding the specified quantity of this item would exceed the tier capacity."))
+      }else if(tierIndex < 0){
         this.items.push({
-          section: section,
+          tier: tier,
           quantity: quantity,
-          total: section.price.base*quantity
+          total: tier.price*quantity
         })
 
         resolve(true)
-      }else if(this.items[sectionIndex].quantity + quantity > section.remaining){
-        reject(new UnsupportedOperationError(400, "Adding the specified quantity of this item would exceed the section capacity."))
+      }else if(this.items[tierIndex].quantity + quantity > tier.remaining){
+        reject(new UnsupportedOperationError(400, "Adding the specified quantity of this item would exceed the tier capacity."))
       }else{
-        this.items[sectionIndex].quantity += quantity
-        this.items[sectionIndex].total = (section.price.base*this.items[sectionIndex].quantity)
+        this.items[tierIndex].quantity += quantity
+        this.items[tierIndex].total = (tier.price*this.items[tierIndex].quantity)
 
         resolve(true)
       }
     })
   }
 
-  remove(section: Section, quantity: number): Promise<boolean>{
+  remove(tier: TierListing, quantity: number): Promise<boolean>{
     return new Promise<boolean>((resolve, reject) => {
-      //See if section already exists
-      const sectionIndex = this.__hasSection(section)
+      //See if tier already exists
+      const tierIndex = this.__hasTier(tier)
 
       //Check that quantity is a valid number
       if(quantity < 1){
         reject(new BadDataError(400, "The number of items to be removed from the cart must be a positive integer."))
-      }else if(sectionIndex < 0 || this.items[sectionIndex].quantity < quantity){
+      }else if(tierIndex < 0 || this.items[tierIndex].quantity < quantity){
         reject(new UnsupportedOperationError(400, "The cart contains fewer items than the quantity to be removed."))
       }else{
-        this.items[sectionIndex].quantity -= quantity
-        this.items[sectionIndex].total = (section.price.base*this.items[sectionIndex].quantity)
+        this.items[tierIndex].quantity -= quantity
+        this.items[tierIndex].total = (tier.price*this.items[tierIndex].quantity)
 
         resolve(true)
       }
     })
   }
 
-  set(section: Section, quantity: number): Promise<boolean>{
+  set(tier: TierListing, quantity: number): Promise<boolean>{
     return new Promise<boolean>((resolve, reject) => {
-      //See if section already exists
-      const sectionIndex = this.__hasSection(section)
+      //See if tier already exists
+      const tierIndex = this.__hasTier(tier)
 
       //Check that quantity is a valid number
       if(quantity < 1){
         reject(new BadDataError(400, "The target item quantity must be a positive integer."))
-      }else if(quantity > section.remaining){
-        reject(new UnsupportedOperationError(400, "Setting the item quantity to the specified value would exceed the section capacity."))
-      }else if(sectionIndex < 0){
-        this.add(section, quantity).then(success => {
+      }else if(quantity > tier.remaining){
+        reject(new UnsupportedOperationError(400, "Setting the item quantity to the specified value would exceed the tier capacity."))
+      }else if(tierIndex < 0){
+        this.add(tier, quantity).then(success => {
           resolve(success)
         }).catch(error => {
           reject(error)
         })
       }else{
-        this.items[sectionIndex].quantity = quantity
-        this.items[sectionIndex].total = (section.price.base*quantity)
+        this.items[tierIndex].quantity = quantity
+        this.items[tierIndex].total = (tier.price*quantity)
 
         resolve(true)
       }
@@ -118,7 +118,7 @@ export class CartModel implements Cart{
     return new Promise<Order>((resolve, reject) => {
       const items = {}
       for(const item of this.items){
-        items[item.section.uri] = item.quantity
+        items[item.tier.uri] = item.quantity
       }
 
       this.__apiAdapter.post("/orders", {
@@ -136,15 +136,15 @@ export class CartModel implements Cart{
     })
   }
 
-  private __hasSection(section: Section): number{
-    let sectionIndex = -1
+  private __hasTier(tier: TierListing): number{
+    let tierIndex = -1
 
     for(let i=0; i < this.items.length; i++){
-      if(this.items[i].section.uri == section.uri){
-        sectionIndex = i
+      if(this.items[i].tier.uri == tier.uri){
+        tierIndex = i
       }
     }
 
-    return sectionIndex
+    return tierIndex
   }
 }

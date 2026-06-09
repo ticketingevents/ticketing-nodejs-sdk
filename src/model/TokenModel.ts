@@ -1,59 +1,62 @@
 import { APIAdapter } from '../util/APIAdapter'
 import { ResourceImmutableError } from '../errors'
 import { BaseModel } from './BaseModel'
-import type { EventRevision } from '../interface/EventRevision'
-import type { Section } from '../interface/Section'
+import type { EventListing } from '../interface/EventListing'
+import type { TierListing } from '../interface/TierListing'
 import type { Token } from '../interface/Token'
 import type { TokenData } from '../interface/data/TokenData'
 
 export class TokenModel extends BaseModel implements Token{
   public code: string
   public global: boolean
-  public sections: Array<Section>
+  public tiers: Array<TierListing>
 
-  private __event: EventRevision
-  private __original_sections: Array<Section>
+  private __event: EventListing
+  private __original_tiers: Array<TierListing>
 
-  constructor(token: any, event: EventRevision, adapter: APIAdapter){
+  constructor(token: any, event: EventListing, adapter: APIAdapter){
     super(token.self, adapter)
 
     this.code = token.code
     this.global = token.global
-    this.sections = []
-    this.__original_sections = []
+    this.tiers = []
+    this.__original_tiers = []
 
     this.__event = event
 
-    //Index event sections
-    const sectionMap = {}
-    /*for(const section of this.__event.sections){
-    	sectionMap[section.uri] = section
-    }*/
+    //Index event tiers
+    const tierMap = {}
 
-    for(const section of token.sections){
-    	this.sections.push(sectionMap[section])
-      this.__original_sections.push(sectionMap[section])
+    this.__event.tiers.list().then(tiers => {
+      for(const tier of tiers){
+        tierMap[tier.uri] = tier
+      }
+
+      for(const tier of token.tiers){
+        this.tiers.push(tierMap[tier])
+        this.__original_tiers.push(tierMap[tier])
+      }
+    })
+  }
+
+  allow(tier: TierListing){
+    if(this.tiers.indexOf(tier) < 0){
+    	this.tiers.push(tier)
     }
   }
 
-  allow(section: Section){
-    if(this.sections.indexOf(section) < 0){
-    	this.sections.push(section)
-    }
-  }
-
-  deny(section: Section){
-    if(this.sections.indexOf(section) >= 0){
-  	 this.sections.splice(this.sections.indexOf(section), 1)
+  deny(tier: TierListing){
+    if(this.tiers.indexOf(tier) >= 0){
+  	 this.tiers.splice(this.tiers.indexOf(tier), 1)
     }
   }
 
   save(): Promise<boolean>{
     return new Promise<boolean>((resolve, reject) => {
       super.save().then(saved => {
-        this.__original_sections = []
-        for(const section of this.sections){
-          this.__original_sections.push(section)
+        this.__original_tiers = []
+        for(const tier of this.tiers){
+          this.__original_tiers.push(tier)
         }
 
         resolve(saved)
@@ -62,9 +65,9 @@ export class TokenModel extends BaseModel implements Token{
           error = new ResourceImmutableError(error.code, error.message)
         }
 
-        this.sections = []
-        for(const section of this.__original_sections){
-          this.sections.push(section)
+        this.tiers = []
+        for(const tier of this.__original_tiers){
+          this.tiers.push(tier)
         }
 
         reject(error)
@@ -73,13 +76,13 @@ export class TokenModel extends BaseModel implements Token{
   }
 
   serialise(): TokenData{
-  	const sections = []
-  	for(const section of this.sections){
-  		sections.push(section.uri)
+  	const tiers = []
+  	for(const tier of this.tiers){
+  		tiers.push(tier.uri)
   	}
 
     const data: TokenData = {
-      sections: sections
+      tiers: tiers
     }
 
     return data

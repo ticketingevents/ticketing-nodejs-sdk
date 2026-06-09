@@ -5,7 +5,7 @@ import {
 	TickeTing, BadDataError, InvalidStateError, PermissionError,
 	ResourceNotFoundError, UnsupportedOperationError, ResourceIndelibleError
 } from '../../src'
-import { ParcelModel, TransferModel, SectionModel } from  '../../src/model'
+import { ParcelModel, TransferModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
 import { expect, ticketing, api, unauthorised_sdk } from '../setup'
 
@@ -92,19 +92,19 @@ describe.skip("Transfers", function(){
 			end: "9999-12-31T23:59:59.999Z"
 		})
 
-		//Create event sections
-		let sectionData = (await api.post(`${this.event.uri}/sections`, {
-		  name: "Test Section "+Math.floor(Math.random() * 999999),
-		  description: "Test admissions with this.",
-		  basePrice: 0,
-		  salesStart: (new Date()).toISOString(),
-		  salesEnd: "9999-12-31T23:59:59.999Z",
-		  capacity: 15
-		})).data
-
-		sectionData.self = `${this.event.uri}${sectionData.self}`
-		this.section = new SectionModel(sectionData, api)
-		this.event.sections.push(this.section)
+  	//Create event tiers
+  	this.tier = await this.host.tiers.create({
+  		name: "Test Section "+Math.floor(Math.random() * 999999),
+  		description: "Test admissions with this.",
+  		price: 0,
+  		available_from: (new Date()).toISOString(),
+  		available_to: "9999-12-31T23:59:59.999Z",
+  		capacity: 15,
+      events: [{
+        "event": this.event,
+        "share": 100
+      }]
+  	})
 
 		//Place and fulful order order
 		let cart = await ticketing.orders.start()
@@ -120,7 +120,7 @@ describe.skip("Transfers", function(){
 	})
 
 	after(async function(){
-		await this.section.delete()
+		await this.tier.delete()
 		await this.event.delete()
 		await this.category.delete()
 		await this.venue.delete()

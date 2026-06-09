@@ -3,27 +3,27 @@ import { APIAdapter } from '../util/APIAdapter'
 import type { Admission } from '../interface/Admission'
 import type { AdmissionData } from '../interface/data/AdmissionData'
 import { AccountModel } from './AccountModel'
-import { EventRevisionModel } from './EventRevisionModel'
-import { SectionModel } from './SectionModel'
+import { EventListingModel } from './EventListingModel'
+import { TierListingModel } from './TierListingModel'
 
 export class AdmissionModel extends BaseModel implements Admission{
   public redeemer: string
   public device: string
   public ticket: string
   public patron: AccountModel
-  public section: SectionModel
+  public tier: TierListingModel
   public admitted: string
   
-  private __event: EventRevisionModel
+  private __event: EventListingModel
 
-  constructor(admission: any, event: EventRevisionModel, adapter: APIAdapter){
+  constructor(admission: any, event: EventListingModel, adapter: APIAdapter){
     super(admission.self, adapter)
 
     this.redeemer = admission.redeemer
     this.device = admission.device
     this.ticket = admission.ticket
     this.patron = new AccountModel(admission.patron, adapter)
-    this.section = new SectionModel(admission.section, adapter)
+    this.tier = new TierListingModel(admission.tier, adapter)
     this.admitted = admission.admitted
 
     this.__event = event
@@ -35,7 +35,7 @@ export class AdmissionModel extends BaseModel implements Admission{
       device: this.device,
       ticket: this.ticket,
       patron: this.patron.uri,
-      section: this.section.uri,
+      tier: this.tier.uri,
       admitted: this.admitted
     }
 

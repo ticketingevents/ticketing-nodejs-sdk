@@ -153,6 +153,8 @@ export class TickeTingService extends TickeTing{
     * [Delete a tier](#delete-a-tier)
 - [Event Listings](#event-listings)
     * [Search event listings](#search-event-listings)
+    * [Fetch an event listing](#fetch-an-event-listing)
+    * [List event tiers](#list-event-tiers)
 - [Purchasing Tickets](#purchasing-tickets)
     * [Create a shopping cart](#create-a-shopping-cart)
     * [Add items to cart](#add-items-to-cart)
@@ -1811,9 +1813,9 @@ Operations for managing tiers in the TickeTing system.
   })
 ```
 
-### Delete an event
+### Delete a tier
 
-[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/delete_event)
+[API Reference](https://docs.ticketingevents.com/openapi/managing-tiers/delete_tier)
 
 ```javascript
   //Retrieve a specific host using its ID
@@ -1847,7 +1849,7 @@ Operations for searching and retrieving TickeTing event listings.
 
 ### Search event listings
 
-[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/list_published_events)
+[API Reference](https://docs.ticketingevents.com/openapi/event-listings/list_published_events)
 
 ```javascript
   //Retrieve a specific region using its ID
@@ -1859,18 +1861,21 @@ Operations for searching and retrieving TickeTing event listings.
   //Retrieve a specific category using its ID
   let category = await ticketing.categories.find(16878141745207)
 
+  //Retrieve a specific subcategory using its ID
+  let subcategory = await ticketing.categories.find(19271181725646)
+
   ticketing.events.list()
     // Supported filters with examples
     .filter({
       region: region,
       host: host,
+      title: "Dawn of the Seven Premier",
+      active: true,
       category: category,
-      subcategory: "Premier",
+      subcategory: subcategory,
       after: "2025-01-01T00:00",
       before: "2025-12-31T23:59",
-      title: "Dawn of the Seven Premier",
       featured: true,
-      active: true
     })
     // Supported sort fields
     .sort(
@@ -1894,13 +1899,63 @@ Operations for searching and retrieving TickeTing event listings.
     })
 
     // List upcoming events (earliest event first)
-    ticketing.events.published.list().sort("start").then(upcoming=>{})
+    ticketing.events.list().sort("start").then(upcoming=>{})
 
     // List popular events (most popular first)
-    ticketing.events.published.list().sort("popularity", false).then(popular=>{})
+    ticketing.events.list().sort("popularity", false).then(popular=>{})
 
     // List new events (newest first)
-    ticketing.events.published.list().sort("published", false).then(newest=>{})
+    ticketing.events.list().sort("published", false).then(newest=>{})
+```
+
+### Fetch an event listing
+
+[API Reference](https://docs.ticketingevents.com/openapi/event-listings/retrieve_published_event)
+
+```javascript
+  //Retrieve a specific event listing using its ID
+  ticketing.events.find(16993717817996)
+    .then(event => {
+      //Do something with the event resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no event with the given ID")
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to access this unlisted event.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### List event tiers
+
+[API Reference](https://docs.ticketingevents.com/openapi/event-listings/list_event_tiers)
+
+```javascript
+  //Retrieve a specific event using its ID
+  let event = await ticketing.events.find(16993717817996)
+
+  event.tiers.list()
+    // Supported filters with examples
+    .filter({
+      active: true, //Whether or not the tier is currently available for sale
+    })
+    .then(tiers => {
+      //Do something with the collection of event tiers
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
 ```
 
 ## Purchasing tickets
@@ -3170,7 +3225,7 @@ preset collections cannot be filtered, sorted or paginated.
     })
 ```
 
-## Content Review (Admin Only)
+## Content Review
 
 ### List submissions
 

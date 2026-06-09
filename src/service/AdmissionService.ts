@@ -4,14 +4,14 @@ import { APIAdapter } from '../util/APIAdapter'
 import type { AdmissionData } from '../interface/data/AdmissionData'
 import type { Admission } from '../interface/Admission'
 import { AdmissionModel } from '../model/AdmissionModel'
-import { EventRevisionModel } from '../model/EventRevisionModel'
+import { EventListingModel } from '../model/EventListingModel'
 
 export class AdmissionService extends BaseService<AdmissionData, Admission>{
   private __apiAdapter: APIAdapter
   private __admission: AdmissionModel
-  private __event: EventRevisionModel
+  private __event: EventListingModel
 
-  constructor(apiAdapter: APIAdapter, event: EventRevisionModel){
+  constructor(apiAdapter: APIAdapter, event: EventListingModel){
     super(apiAdapter, `${event.uri}/admissions`, AdmissionModel,
       ["redeemer", "device", "ticket", "patron", "section"],
       [],

@@ -2,7 +2,7 @@
 import './transfers'
 
 import { TickeTing, BadDataError } from '../../src'
-import { HostModel, CategoryModel, VenueModel, EventRevisionModel, SectionModel,
+import { HostModel, CategoryModel, VenueModel, EventRevisionModel,
           TicketModel, TransferModel } from  '../../src/model'
 import { expect, ticketing, api, public_ticketing } from '../setup'
 
@@ -77,8 +77,7 @@ describe.skip("Account Resources", function(){
   	})
 
   	//Create test event
-  	this.event = await ticketing.events.create({
-  		host: this.host,
+  	this.event = await this.host.events.create({
   		title: "Test Event "+Math.floor(Math.random() * 999999),
   		description: "Event Description",
   		type: "Standard",
@@ -90,18 +89,19 @@ describe.skip("Account Resources", function(){
   		end: "9999-12-31T23:59:59.999Z"
   	})
 
-  	//Create event sections
-  	let sectionData = (await api.post(`${this.event.uri}/sections`, {
-  		name: "Test Section "+Math.floor(Math.random() * 999999),
-  		description: "Test admissions with this.",
-  		basePrice: 0,
-  		salesStart: (new Date()).toISOString(),
-  		salesEnd: "9999-12-31T23:59:59.999Z",
-  		capacity: 15
-  	})).data
-
-  	sectionData.self = `${this.event.uri}${sectionData.self}`
-  	this.section = new SectionModel(sectionData, api)
+    //Create event tiers
+    this.tier = await this.host.tiers.create({
+      name: "Test Section "+Math.floor(Math.random() * 999999),
+      description: "Test admissions with this.",
+      price: 0,
+      available_from: (new Date()).toISOString(),
+      available_to: "9999-12-31T23:59:59.999Z",
+      capacity: 15,
+      events: [{
+        "event": this.event,
+        "share": 100
+      }]
+    })
 
   	//Place order for fulfillment tests
   	let cart = await ticketing.orders.start()
@@ -130,7 +130,7 @@ describe.skip("Account Resources", function(){
     await this.transfer.cancel()
     await this.secondOrder.refund("Test")
     await this.order.refund("Test")
-  	await this.section.delete()
+    await this.tier.delete()
   	await this.event.delete()
   	await this.category.delete()
   	await this.venue.delete()

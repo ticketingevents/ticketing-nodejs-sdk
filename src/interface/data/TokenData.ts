@@ -1,5 +1,5 @@
-import { Section } from '../Section'
+import { TierListing } from '../TierListing'
 
 export interface TokenData{
-  sections: Array<Section | string>
+  tiers: Array<TierListing | string>
 }

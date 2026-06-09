@@ -29,13 +29,13 @@ export class OrderService extends BaseService<OrderData, Order>{
   }
 
   create(): Promise<Order>{
-    return new Promise<Order>((resolve, reject) => {
+    return new Promise<Order>((_resolve, reject) => {
       reject(new UnsupportedOperationError(0, "Operation not supported"))
     })
   }
 
   batchCreate(): Promise<Array<Order>>{
-    return new Promise<Array<Order>>((resolve, reject) => {
+    return new Promise<Array<Order>>((_resolve, reject) => {
       reject(new UnsupportedOperationError(0, "Operation not supported"))
     })
   }
