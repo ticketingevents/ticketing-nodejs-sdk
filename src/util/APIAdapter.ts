@@ -1,7 +1,15 @@
-import axios, { AxiosResponse } from 'axios'
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
 import { environment } from '../environment/environment'
 import { constants } from './constants'
 import { TickeTingError, UnauthorisedError } from '../errors'
+import {
+  attachRequestCache,
+  normalizeCacheOptions,
+  RequestCacheController,
+  RequestCacheOptions
+} from './RequestCache'
+
+export type RequestCacheMode = NonNullable<AxiosRequestConfig['cache']>
 
 export class APIAdapter{
   private __originalKey;
@@ -9,8 +17,10 @@ export class APIAdapter{
   private __requester;
   private __baseURL;
   private __mediaURL;
+  private __cache: RequestCacheController | null = null;
+  private __cacheMode?: RequestCacheMode;
 
-  constructor(apiKey: string){
+  constructor(apiKey: string, cache: RequestCacheOptions | boolean = false){
     this.__originalKey = apiKey
     this.__baseURL = environment.baseURL
     this.__mediaURL = environment.mediaURL
@@ -23,7 +33,29 @@ export class APIAdapter{
       timeout: 69000
     })
 
+    this.__cache = attachRequestCache(
+      this.__requester,
+      normalizeCacheOptions(cache),
+      () => this.__currentKey
+    )
+
     this.key = apiKey
+  }
+
+  /**
+   * Force caching for subsequent requests from this adapter instance.
+   * Overrides the global cache setting. Prefer chaining: `adapter.cache().get(...)`.
+   */
+  cache(options: true | { ttl?: number; key?: string } = true): APIAdapter {
+    return this.__withCacheMode(options === true ? true : options)
+  }
+
+  /**
+   * Bypass caching for subsequent requests from this adapter instance.
+   * Overrides the global cache setting. Prefer chaining: `adapter.nocache().get(...)`.
+   */
+  nocache(): APIAdapter {
+    return this.__withCacheMode(false)
   }
 
   get key(): string{
@@ -45,14 +77,20 @@ export class APIAdapter{
 
   reset(){
     this.key = this.__originalKey
+    this.__cache?.clear()
+  }
+
+  get cacheControls(): RequestCacheController | null {
+    return this.__cache
   }
 
   get(
     url: string,
     params: {[key: string]: string|number} = {},
-    headers: {[key: string]: string} = {}
+    headers: {[key: string]: string} = {},
+    cache?: AxiosRequestConfig['cache']
   ): Promise<AxiosResponse>{
-    return this.__request("get", url, params, headers)
+    return this.__request("get", url, params, headers, {}, cache)
   }
 
   post(
@@ -87,20 +125,36 @@ export class APIAdapter{
     return this.__request("delete", url, params, headers)
   }
 
+  private __withCacheMode(mode: RequestCacheMode): APIAdapter {
+    const scoped = Object.create(APIAdapter.prototype) as APIAdapter
+    scoped.__originalKey = this.__originalKey
+    scoped.__currentKey = this.__currentKey
+    scoped.__requester = this.__requester
+    scoped.__baseURL = this.__baseURL
+    scoped.__mediaURL = this.__mediaURL
+    scoped.__cache = this.__cache
+    scoped.__cacheMode = mode
+    return scoped
+  }
+
   private __request(
     method: string,
     url: string,
     params: {[key: string]: string|number} = {},
     headers: {[key: string]: string} = {},
-    data: {[key: string]: any} = {}
+    data: {[key: string]: any} = {},
+    cache?: AxiosRequestConfig['cache']
   ): Promise<AxiosResponse>{
+    const cacheMode = cache !== undefined ? cache : this.__cacheMode
+
     return new Promise((resolve, reject) => {
       this.__requester.request({
         method: method,
         url: url,
         headers: headers,
         params: params,
-        data: data
+        data: data,
+        cache: cacheMode
       }).then(response => {
         resolve(response)
       }).catch(error => {

@@ -7,6 +7,24 @@ export class PresetService{
     this.__adapter = apiAdapter
   }
 
+  cache(options: true | { ttl?: number; key?: string } = true): PresetService {
+    const scoped = Object.assign(
+      Object.create(PresetService.prototype),
+      this
+    ) as PresetService
+    scoped.__adapter = this.__adapter.cache(options)
+    return scoped
+  }
+
+  nocache(): PresetService {
+    const scoped = Object.assign(
+      Object.create(PresetService.prototype),
+      this
+    ) as PresetService
+    scoped.__adapter = this.__adapter.nocache()
+    return scoped
+  }
+
   countries(): Promise<Array<string>>{
     return new Promise<Array<string>>((resolve, reject) => {
       this.__adapter.get("/countries").then(response => {

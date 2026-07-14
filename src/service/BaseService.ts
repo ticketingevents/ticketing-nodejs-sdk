@@ -40,6 +40,22 @@ export class BaseService<RequestType, ResponseType>{
     this.__listResult = {entries: [], page: 0, records: 0, total: 0}
   }
 
+  /**
+   * Force caching for subsequent requests on this service instance.
+   * Overrides the global cache setting. Prefer chaining: `events.cache().find(1)`.
+   */
+  public cache(options: true | { ttl?: number; key?: string } = true): this {
+    return this.__withAdapter(this.__adapter.cache(options))
+  }
+
+  /**
+   * Bypass caching for subsequent requests on this service instance.
+   * Overrides the global cache setting. Prefer chaining: `events.nocache().find(1)`.
+   */
+  public nocache(): this {
+    return this.__withAdapter(this.__adapter.nocache())
+  }
+
   public create(data: RequestType): Promise<ResponseType>{
     return new Promise<ResponseType>((resolve, reject) => {
       this.__adapter.post(this.__baseUrl, data).then(response => {
@@ -146,6 +162,20 @@ export class BaseService<RequestType, ResponseType>{
 
   protected _instantiateModel(data: any){
     return new this.__modelClass(data, this.__adapter)
+  }
+
+  private __withAdapter(adapter: APIAdapter): this {
+    const scoped = Object.assign(
+      Object.create(Object.getPrototypeOf(this)),
+      this
+    ) as this
+
+    scoped.__adapter = adapter
+    if ('__apiAdapter' in scoped) {
+      ;(scoped as { __apiAdapter: APIAdapter }).__apiAdapter = adapter
+    }
+
+    return scoped
   }
 
   private __listQuery(resolve, reject){

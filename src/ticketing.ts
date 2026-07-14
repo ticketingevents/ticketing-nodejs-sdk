@@ -1,4 +1,4 @@
-import { APIAdapter, SessionManager } from './util'
+import { APIAdapter, RequestCacheOptions, SessionManager } from './util'
 import {
   AccountService,
   CategoryService,
@@ -17,9 +17,29 @@ export class TickeTing{
   private __apiAdapter: APIAdapter;
   public session: SessionManager
 
-  constructor(config: {apiKey: string}){
-    this.__apiAdapter = new APIAdapter(config.apiKey)
+  constructor(config: {apiKey: string, cache?: RequestCacheOptions | boolean}){
+    this.__apiAdapter = new APIAdapter(config.apiKey, config.cache ?? false)
     this.session = new SessionManager(this.__apiAdapter)
+  }
+
+  /**
+   * Force caching for the next chained service calls, overriding the global setting.
+   * @example ticketing.cache().events.find(1)
+   */
+  cache(options: true | { ttl?: number; key?: string } = true): TickeTing {
+    return this.__withAdapter(this.__apiAdapter.cache(options))
+  }
+
+  /**
+   * Bypass caching for the next chained service calls, overriding the global setting.
+   * @example ticketing.nocache().events.find(1)
+   */
+  nocache(): TickeTing {
+    return this.__withAdapter(this.__apiAdapter.nocache())
+  }
+
+  get cacheControls(){
+    return this.__apiAdapter.cacheControls
   }
 
   get accounts(): AccountService{
@@ -72,5 +92,12 @@ export class TickeTing{
 
   get mediaURL(): string{
     return this.__apiAdapter.media
+  }
+
+  private __withAdapter(adapter: APIAdapter): TickeTing {
+    const scoped = Object.create(TickeTing.prototype) as TickeTing
+    scoped.__apiAdapter = adapter
+    scoped.session = this.session
+    return scoped
   }
 }
