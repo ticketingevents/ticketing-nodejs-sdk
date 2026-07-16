@@ -1,6 +1,13 @@
 export interface CacheEntry<T = unknown> {
   value: T
+  /** Soft expiry: after this time the entry is stale and should be revalidated. */
   expiresAt: number | null
+  /**
+   * Hard expiry: after this time the entry is removed.
+   * `null` keeps the entry for offline fallback until LRU eviction.
+   * Older persisted entries without this field fall back to `expiresAt`.
+   */
+  staleExpiresAt?: number | null
 }
 
 export interface CachePersistenceAdapter {

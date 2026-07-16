@@ -44,7 +44,7 @@ export class BaseService<RequestType, ResponseType>{
    * Force caching for subsequent requests on this service instance.
    * Overrides the global cache setting. Prefer chaining: `events.cache().find(1)`.
    */
-  public cache(options: true | { ttl?: number; key?: string } = true): this {
+  public cache(options: true | { ttl?: number; key?: string; revalidateTimeout?: number } = true): this {
     return this.__withAdapter(this.__adapter.cache(options))
   }
 

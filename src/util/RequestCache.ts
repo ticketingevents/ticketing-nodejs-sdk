@@ -9,7 +9,20 @@ import { CacheStore } from './CacheStore'
 
 export interface RequestCacheOptions {
   enabled?: boolean
+  /** Soft TTL in ms. After this, data is stale and revalidated on next request. */
   defaultTtl?: number
+  /**
+   * How long after soft expiry stale data may still be returned (offline / slow network).
+   * Defaults to unlimited (`null`) so cache remains available until LRU eviction.
+   * Set to `0` to hard-expire with the soft TTL.
+   */
+  staleTtl?: number | null
+  /**
+   * When serving stale data, how long to wait for a fresh network response before
+   * returning the stale cache and continuing the refresh in the background.
+   * Defaults to 3000ms.
+   */
+  revalidateTimeout?: number
   maxEntries?: number
   invalidateOnMutation?: boolean
   persistence?: boolean | CachePersistenceOptions
@@ -34,13 +47,16 @@ declare module 'axios' {
    * - `false` bypasses the cache
    * - `{ ttl }` sets a per-request TTL in milliseconds (`0` caches until invalidated)
    * - `{ key }` uses a custom cache key
+   * - `{ revalidateTimeout }` overrides how long to wait for fresh data before
+   *   returning stale cache
    */
-    cache?: boolean | { ttl?: number; key?: string }
+    cache?: boolean | { ttl?: number; key?: string; revalidateTimeout?: number }
   }
 }
 
 const CACHEABLE_METHODS = new Set(['get', 'head'])
 const CACHE_KEY_SEPARATOR = '\x1e'
+const DEFAULT_REVALIDATE_TIMEOUT = 3000
 
 export function normalizeCacheOptions(
   cache?: RequestCacheOptions | boolean
@@ -88,9 +104,11 @@ export function attachRequestCache(
   // When attaching directly, default to on. SDK entry points pass an explicit `enabled`.
   const enabled = options.enabled !== false
   const invalidateOnMutation = options.invalidateOnMutation !== false
+  const defaultRevalidateTimeout = options.revalidateTimeout ?? DEFAULT_REVALIDATE_TIMEOUT
   const store = new CacheStore({
     maxEntries: options.maxEntries,
     defaultTtl: options.defaultTtl,
+    staleTtl: options.staleTtl,
     ...resolvePersistenceOptions(options.persistence)
   })
   const inflight = new Map<string, Promise<AxiosResponse>>()
@@ -112,15 +130,18 @@ export function attachRequestCache(
     const cacheKey = resolveCacheKey(config, getApiKey())
     config.__cacheKey = cacheKey
 
-    const cached = store.get(cacheKey)
-    if (cached) {
-      config.adapter = () => Promise.resolve(cloneResponse(cached.value as AxiosResponse))
+    const fresh = store.get(cacheKey)
+    if (fresh) {
+      config.adapter = () => Promise.resolve(cloneResponse(fresh.value as AxiosResponse))
       return config
     }
 
+    const stale = store.peek(cacheKey)
     const pending = inflight.get(cacheKey)
+    const revalidateTimeout = resolveRevalidateTimeout(config, defaultRevalidateTimeout)
+
     if (pending) {
-      config.adapter = () => pending.then(response => cloneResponse(response))
+      config.adapter = () => resolveCachedOrNetwork(pending, stale, revalidateTimeout)
       return config
     }
 
@@ -137,14 +158,15 @@ export function attachRequestCache(
     })
     inflight.set(cacheKey, shared)
 
-    config.adapter = (requestConfig) => {
+    const networkPromise = (requestConfig: InternalAxiosRequestConfig) => {
       return defaultAdapter(requestConfig).then(
         (response) => {
           const cachedResponse = cloneResponse(response)
           store.set(cacheKey, cachedResponse, resolveTtl(requestConfig))
           inflight.delete(cacheKey)
           resolveShared(cachedResponse)
-          return response
+          // Return a separate clone so callers cannot mutate the cached entry.
+          return cloneResponse(cachedResponse)
         },
         (error) => {
           inflight.delete(cacheKey)
@@ -153,6 +175,16 @@ export function attachRequestCache(
         }
       )
     }
+
+    if (stale) {
+      config.adapter = (requestConfig) => {
+        const fetchPromise = networkPromise(requestConfig)
+        return resolveCachedOrNetwork(fetchPromise, stale, revalidateTimeout)
+      }
+      return config
+    }
+
+    config.adapter = (requestConfig) => networkPromise(requestConfig)
 
     return config
   })
@@ -194,6 +226,63 @@ export function attachRequestCache(
   } as RequestCacheController & { detach(): void }
 }
 
+/**
+ * Prefer a fresh network response, but fall back to stale cache when the network
+ * is slow (timeout) or fails (offline). A timed-out fetch continues in the background
+ * so the cache is still refreshed for the next caller.
+ */
+function resolveCachedOrNetwork(
+  network: Promise<AxiosResponse>,
+  stale: ReturnType<CacheStore['peek']>,
+  timeoutMs: number
+): Promise<AxiosResponse> {
+  if (!stale) {
+    return network.then((response) => cloneResponse(response))
+  }
+
+  const staleResponse = stale.value as AxiosResponse
+
+  return new Promise((resolve, reject) => {
+    let settled = false
+
+    const timer = setTimeout(() => {
+      if (settled) {
+        return
+      }
+      settled = true
+      resolve(cloneResponse(staleResponse))
+    }, timeoutMs)
+
+    network.then(
+      (response) => {
+        clearTimeout(timer)
+        if (!settled) {
+          settled = true
+          resolve(cloneResponse(response))
+        }
+      },
+      (error) => {
+        clearTimeout(timer)
+        if (!settled) {
+          settled = true
+          // Offline / network error: prefer stale cache over failing the request.
+          resolve(cloneResponse(staleResponse))
+        } else {
+          // Already returned stale after timeout; swallow the background error.
+          void error
+        }
+      }
+    ).catch((error) => {
+      // Defensive: should not reach here, but avoid unhandled rejections.
+      if (!settled) {
+        settled = true
+        clearTimeout(timer)
+        reject(error)
+      }
+    })
+  })
+}
+
 function resolveCacheKey(config: AxiosRequestConfig, apiKey: string): string {
   if (typeof config.cache === 'object' && config.cache.key) {
     return config.cache.key
@@ -215,6 +304,17 @@ function resolveTtl(config: AxiosRequestConfig): number | undefined {
   }
 
   return undefined
+}
+
+function resolveRevalidateTimeout(
+  config: AxiosRequestConfig,
+  defaultTimeout: number
+): number {
+  if (typeof config.cache === 'object' && config.cache.revalidateTimeout !== undefined) {
+    return config.cache.revalidateTimeout
+  }
+
+  return defaultTimeout
 }
 
 function resolveRequestUrl(config: AxiosRequestConfig): string {

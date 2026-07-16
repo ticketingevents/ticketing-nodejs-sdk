@@ -46,7 +46,7 @@ export class APIAdapter{
    * Force caching for subsequent requests from this adapter instance.
    * Overrides the global cache setting. Prefer chaining: `adapter.cache().get(...)`.
    */
-  cache(options: true | { ttl?: number; key?: string } = true): APIAdapter {
+  cache(options: true | { ttl?: number; key?: string; revalidateTimeout?: number } = true): APIAdapter {
     return this.__withCacheMode(options === true ? true : options)
   }
 

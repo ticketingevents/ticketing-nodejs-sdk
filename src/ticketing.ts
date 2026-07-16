@@ -26,7 +26,7 @@ export class TickeTing{
    * Force caching for the next chained service calls, overriding the global setting.
    * @example ticketing.cache().events.find(1)
    */
-  cache(options: true | { ttl?: number; key?: string } = true): TickeTing {
+  cache(options: true | { ttl?: number; key?: string; revalidateTimeout?: number } = true): TickeTing {
     return this.__withAdapter(this.__apiAdapter.cache(options))
   }
 

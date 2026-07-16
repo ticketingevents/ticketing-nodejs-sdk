@@ -7,7 +7,7 @@ export class PresetService{
     this.__adapter = apiAdapter
   }
 
-  cache(options: true | { ttl?: number; key?: string } = true): PresetService {
+  cache(options: true | { ttl?: number; key?: string; revalidateTimeout?: number } = true): PresetService {
     const scoped = Object.assign(
       Object.create(PresetService.prototype),
       this
