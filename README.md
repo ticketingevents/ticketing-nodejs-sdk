@@ -100,6 +100,14 @@ export class TickeTingService extends TickeTing{
   * [Pagination](#pagination)
   * [Chaining operations](#chaining-operations)
 - [Error handling](#error-handling)
+- [Request Caching](#request-caching)
+    * [Enable caching](#enable-caching)
+    * [How caching behaves](#how-caching-behaves)
+    * [Cache options](#cache-options)
+    * [Force cache or bypass per call](#force-cache-or-bypass-per-call)
+    * [Persistence](#cache-persistence)
+    * [Custom persistence adapters](#custom-persistence-adapters)
+    * [Manual cache control](#manual-cache-control)
 - [Session Management](#sessions)
     * [Start a new session](#start-a-new-session)
     * [Resume an active session](#resume-an-active-session)
@@ -443,6 +451,243 @@ Each TickeTing Error instance has a unique type, and provides an error message, 
         console.log(`${typeof error} (${error.code}): ${error.message}`)
       }
     })
+```
+
+## Request Caching
+
+The SDK can cache GET responses so your app stays fast on repeat reads and can fall back to
+previously fetched data when the network is slow or unavailable. Caching is **off by default**.
+
+### Enable caching
+
+Pass `cache: true` (or a configuration object) when constructing `TickeTing`:
+
+```javascript
+import { TickeTing } from '@ticketing/ticketing-nodejs-sdk'
+
+const ticketing = new TickeTing({
+  apiKey: "API_KEY",
+  cache: true
+})
+
+// Or with options:
+const ticketing = new TickeTing({
+  apiKey: "API_KEY",
+  cache: {
+    enabled: true,
+    defaultTtl: 60_000,       // serve as fresh for 1 minute
+    revalidateTimeout: 3_000, // wait up to 3s for newer data before returning stale
+    staleTtl: null,           // keep stale entries for offline fallback (default)
+    persistence: true         // persist to localStorage when available (default when caching is on)
+  }
+})
+```
+
+### How caching behaves
+
+Cached GET responses follow a **prefer-fresh** strategy:
+
+1. **Fresh** — If a cached response is still within its TTL, it is returned immediately (no network call).
+2. **Stale** — After the TTL expires, the SDK still keeps the entry and tries the network again.
+   - If a fresh response arrives within `revalidateTimeout`, that new data is returned.
+   - If the network is slow, the stale cache is returned right away and the refresh continues in the background so the next call can use updated data.
+3. **Offline / network error** — If the request fails and a stale entry exists, the cached data is returned instead of failing the call.
+
+Only `GET` (and `HEAD`) responses are cached. Successful mutations (`POST`, `PUT`, `PATCH`, `DELETE`)
+invalidate related cached GETs by default so lists and detail views do not stay out of date.
+
+### Cache options
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `enabled` | `true` when a cache object/`true` is passed | Turns caching on or off |
+| `defaultTtl` | `300000` (5 minutes) | Soft TTL in milliseconds. After this, data is considered stale and revalidated |
+| `revalidateTimeout` | `3000` | How long to wait for a fresh network response before returning stale data |
+| `staleTtl` | `null` (unlimited) | How long after soft expiry an entry may still be used as fallback. `null` keeps entries until LRU eviction (best for offline). Set `0` to discard entries as soon as the soft TTL ends |
+| `maxEntries` | `100` | Maximum number of cached responses retained in memory |
+| `invalidateOnMutation` | `true` | Clear related GET cache entries after mutations |
+| `persistence` | `true` when caching is enabled | Persist the cache (see [Persistence](#cache-persistence)) |
+
+### Force cache or bypass per call
+
+Use chainable helpers to override the global setting for a scoped call:
+
+```javascript
+// Force caching for this call even when global caching is off
+ticketing.cache().events.find(1)
+
+// Bypass the cache for this call even when global caching is on
+ticketing.nocache().events.list()
+
+// Per-call options
+ticketing.cache({ ttl: 10_000, revalidateTimeout: 1_500 }).events.find(1)
+```
+
+The same `cache()` / `nocache()` chaining is available on services (for example
+`ticketing.events.cache().find(1)`).
+
+### Cache persistence
+
+When persistence is enabled, cache entries are written to `localStorage` in browser-like
+environments (or `sessionStorage` if configured). This lets an app restart and still have
+fallback data while offline.
+
+```javascript
+const ticketing = new TickeTing({
+  apiKey: "API_KEY",
+  cache: {
+    enabled: true,
+    persistence: {
+      namespace: '@my-app/ticketing-cache',
+      storage: 'local' // or 'session', or a custom adapter
+    }
+  }
+})
+
+// Disable persistence (in-memory only)
+const ticketing = new TickeTing({
+  apiKey: "API_KEY",
+  cache: {
+    enabled: true,
+    persistence: false
+  }
+})
+```
+
+### Custom persistence adapters
+
+If `localStorage` / `sessionStorage` are not available (or you want to store the cache
+elsewhere — for example React Native, Capacitor, Electron, or a secure keystore), pass your
+own adapter as `persistence.storage`.
+
+An adapter must implement this synchronous interface:
+
+```typescript
+interface CachePersistenceAdapter {
+  read(): string | null   // return the full serialized cache blob, or null if empty
+  write(data: string): void  // replace the stored blob
+  remove(): void          // delete the stored blob (used by clear())
+}
+```
+
+The SDK owns the serialization format. Your adapter should treat `data` as an opaque string
+and round-trip it unchanged. Do not parse or reshape it unless you are building tooling on
+top of the cache.
+
+**In-memory adapter** (useful in tests, or as a base you hydrate from disk):
+
+```javascript
+import { TickeTing, MemoryCachePersistence } from '@ticketing/ticketing-nodejs-sdk'
+
+const persistence = new MemoryCachePersistence()
+
+const ticketing = new TickeTing({
+  apiKey: "API_KEY",
+  cache: {
+    enabled: true,
+    persistence: { storage: persistence }
+  }
+})
+```
+
+**Custom adapter example** (sync key/value store):
+
+```javascript
+import { TickeTing } from '@ticketing/ticketing-nodejs-sdk'
+
+const CACHE_KEY = '@my-app/ticketing-cache'
+
+const filePersistence = {
+  read() {
+    try {
+      return mySyncStore.getItem(CACHE_KEY)
+    } catch {
+      return null
+    }
+  },
+  write(data) {
+    try {
+      mySyncStore.setItem(CACHE_KEY, data)
+    } catch {
+      // Ignore quota / write failures; the in-memory cache still works
+    }
+  },
+  remove() {
+    try {
+      mySyncStore.removeItem(CACHE_KEY)
+    } catch {
+      // Ignore remove failures
+    }
+  }
+}
+
+const ticketing = new TickeTing({
+  apiKey: "API_KEY",
+  cache: {
+    enabled: true,
+    persistence: { storage: filePersistence }
+  }
+})
+```
+
+**Async backends** (AsyncStorage, IndexedDB, etc.): the adapter API is synchronous, so
+hydrate into memory before creating `TickeTing`, then write through on each change:
+
+```javascript
+import { TickeTing, MemoryCachePersistence } from '@ticketing/ticketing-nodejs-sdk'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
+const CACHE_KEY = '@my-app/ticketing-cache'
+
+async function createTicketing(apiKey) {
+  const persistence = new MemoryCachePersistence()
+  const existing = await AsyncStorage.getItem(CACHE_KEY)
+  if (existing) {
+    persistence.write(existing)
+  }
+
+  const originalWrite = persistence.write.bind(persistence)
+  persistence.write = (data) => {
+    originalWrite(data)
+    AsyncStorage.setItem(CACHE_KEY, data).catch(() => {})
+  }
+
+  const originalRemove = persistence.remove.bind(persistence)
+  persistence.remove = () => {
+    originalRemove()
+    AsyncStorage.removeItem(CACHE_KEY).catch(() => {})
+  }
+
+  return new TickeTing({
+    apiKey,
+    cache: {
+      enabled: true,
+      persistence: { storage: persistence }
+    }
+  })
+}
+```
+
+Notes:
+
+- `read()` is called once when the cache store is constructed; later updates go through `write()`.
+- `remove()` is called when you invoke `ticketing.cacheControls.clear()`.
+- Failed `write` / `remove` calls should not throw if you can avoid it — the in-memory cache continues to serve requests even when persistence fails.
+
+### Manual cache control
+
+Use `cacheControls` to clear or invalidate entries when your app knows data has changed
+outside of a normal mutation through the SDK:
+
+```javascript
+// Remove every cached response
+ticketing.cacheControls.clear()
+
+// Invalidate entries whose key matches a predicate
+ticketing.cacheControls.invalidate(key => key.includes('/events/'))
+
+// Invalidate cached GETs related to a URL path
+ticketing.cacheControls.invalidateUrl('/events/42')
 ```
 
 ## Session Management
