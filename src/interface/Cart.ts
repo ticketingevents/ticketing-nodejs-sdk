@@ -4,8 +4,6 @@ import type { TierListing } from './TierListing'
 
 export interface Cart{
   created: string
-  subtotal: number
-  fees: number
   total: number
   items: Array<{tier: TierListing, quantity: number, total: number}>
 

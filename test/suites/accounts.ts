@@ -17,9 +17,9 @@ describe("Accounts", function(){
   before(async function(){
     //Initialise test data for suite
     this.testAccountData = {
-      username: "zzzzzz.mothers.milk",
+      username: "zzzzzz.mothers.milk"+Math.floor(Math.random() * 999999),
       password: "WuT4NGcl4n",
-      email: "marvin.milk@usmc.gov",
+      email: "marvin.milk@usmc.gov"+Math.floor(Math.random() * 999999),
       firstName: "Marvin",
       lastName: "Milk",
       title: "Mr",

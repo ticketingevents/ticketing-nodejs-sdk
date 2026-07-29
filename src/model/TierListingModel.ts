@@ -9,6 +9,7 @@ export class TierListingModel extends BaseModel implements TierListing{
 	public available_from: string
 	public available_to: string
 	public unit_size: number
+	public purchase_limit: number
 	public remaining: number
 	public upgrades: Array<TierListing>
 
@@ -24,6 +25,8 @@ export class TierListingModel extends BaseModel implements TierListing{
 		this.available_from = tier.available_from
 		this.available_to = tier.available_to
 		this.unit_size = tier.unit_size
+		this.purchase_limit = tier.purchase_limit
+		this.remaining = tier.remaining
 
 		this.upgrades = []
 		for(const upgrade of tier.upgrades){

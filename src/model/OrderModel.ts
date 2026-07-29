@@ -4,6 +4,9 @@ import type { Account } from '../interface/Account'
 import type { CreditCard } from '../interface/CreditCard'
 import type { Order } from '../interface/Order'
 import type { OrderData } from '../interface/data/OrderData'
+import type { Payment } from '../interface/Payment'
+import type { TierListing } from '../interface/TierListing'
+import { TierListingModel } from '../model/TierListingModel'
 import { BadDataError, InvalidStateError, PermissionError } from '../errors'
 
 export class OrderModel extends BaseModel implements Order{
@@ -14,14 +17,11 @@ export class OrderModel extends BaseModel implements Order{
   public fees: number
   public total: number
   public items: Array<{
-  	section: string,
-  	number: string,
-  	name: string,
-  	description: string,
-  	price: number,
-  	quantity: number
+    tier: TierListing,
+    quantity: number
   }>
   public customer: Account
+  public payment: Payment
 
   private __paymentsURI: string
   private __refundsURI: string
@@ -35,11 +35,18 @@ export class OrderModel extends BaseModel implements Order{
     this.subtotal = order.subtotal
     this.fees = order.fees
     this.total = order.total
-    this.items = order.items
     this.customer = customer
+    this.payment = order.payment
+
+    this.items = []
+    for(const item of order.items){
+      this.items.push({
+        tier: new TierListingModel(item.tier, adapter),
+        quantity: item.quantity
+      })
+    }
 
     this.__paymentsURI = order.payments
-    this.__refundsURI = order.refunds
   }
 
   cancel(): Promise<boolean>{
@@ -92,9 +99,12 @@ export class OrderModel extends BaseModel implements Order{
   }
 
   serialise(): OrderData{
-  	const items = {}
+  	const items = []
   	for(const item of this.items){
-  		items[item.section] = item.quantity
+  		items.push({
+        tier: item.tier.id,
+        quantity: item.quantity
+      })
   	}
 
     return {

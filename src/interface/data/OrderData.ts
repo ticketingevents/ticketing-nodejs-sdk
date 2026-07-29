@@ -1,4 +1,4 @@
 export interface OrderData{
   customer: string
-  items: {[key: string]: number}
+  items: Array<{tier: string, quantity: number}>
 }

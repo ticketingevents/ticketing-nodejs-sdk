@@ -6,6 +6,7 @@ export interface Tier extends Base{
 	description: string
 	price: number
 	capacity: number
+	remaining: number
 	available_from: string
 	available_to: string
 	events: Promise<Array<{

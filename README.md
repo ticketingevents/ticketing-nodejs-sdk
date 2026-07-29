@@ -166,7 +166,6 @@ export class TickeTingService extends TickeTing{
     * [Fetch an order](#retrieve-an-order)
     * [Cancel an order](#cancel-an-order)
     * [Settle an order](#settle-an-order)
-    * [Refund an order](#refund-an-order)
 - [Transferring Tickets](#transferring-tickets)
     * [Initiate a transfer](#initiate-a-transfer)
     * [Add tickets to a transfer](#add-tickets-to-a-transfer)
@@ -1965,7 +1964,10 @@ SDK functionality related to shopping cart management and checkout.
 ### Create a shopping cart
 
 ```javascript
-  ticketing.orders.start().then(cart => {
+  //An account is required to manage shopping carts
+  let account = (await ticketing.session.info()).account
+  
+  account.carts.create().then(cart => {
     //Retrieve cart information
     let created = cart.created //Date and time that the cart was created
     let subtotal = cart.subtotal //The total cost of all items in the cart before fees
@@ -1980,8 +1982,11 @@ SDK functionality related to shopping cart management and checkout.
 ### Add items to cart
 
 ```javascript
+  //An account is required to manage shopping carts
+  let account = (await ticketing.session.info()).account
+  
   //Create a new shopping cart
-  let cart = await ticketing.orders.start()
+  let cart = await account.carts.create()
 
   //Retrieve a specific event using its ID
   let event = await ticketing.events.find(16993717817996)
@@ -2012,8 +2017,11 @@ SDK functionality related to shopping cart management and checkout.
 ### Remove items from cart
 
 ```javascript
+  //An account is required to manage shopping carts
+  let account = (await ticketing.session.info()).account
+  
   //Create a new shopping cart
-  let cart = await ticketing.orders.start()
+  let cart = await ticketing.carts.create()
 
   //Retrieve a specific event using its ID
   let event = await ticketing.events.find(16993717817996)
@@ -2044,8 +2052,11 @@ SDK functionality related to shopping cart management and checkout.
 ### Set item quantity in cart
 
 ```javascript
+  //An account is required to manage shopping carts
+  let account = (await ticketing.session.info()).account
+
   //Create a new shopping cart
-  let cart =  ticketing.orders.start()
+  let cart =  account.carts.create()
 
   //Retrieve a specific event using its ID
   let event = await ticketing.events.find(16993717817996)
@@ -2078,17 +2089,17 @@ SDK functionality related to shopping cart management and checkout.
 [API Reference](https://docs.ticketingevents.com/openapi/placing-an-order/place_order)
 
 ```javascript
+  //An account is required to manage shopping carts
+  let account = (await ticketing.session.info()).account
+
   //Create a new shopping cart
-  let cart = await ticketing.orders.start()
+  let cart = await account.carts.create()
 
   //Add items to cart
   let event = await ticketing.events.find(16993717817996)
   await cart.add(event.sections[0], 2)
-
-  //Checkout cart (Requires an account)
-  let account = (await ticketing.session.info()).account
   
-  cart.checkout(account).then(order => {
+  cart.checkout().then(order => {
     //See order settlement for details on settling or cancelling the order
   }).catch(error => {
     if(error instanceof PermissionError){
@@ -2106,18 +2117,18 @@ SDK functionality related to shopping cart management and checkout.
 
 SDK functionality allowing for manipulating and settling ticket orders.
 
-### List all orders (Admin Only)
+### List customer orders
 
-[API Reference](https://docs.ticketingevents.com/openapi/placing-an-order/list_orders)
+[API Reference](https://docs.ticketingevents.com/openapi/ordering-tickets/list_customer_orders)
 
 ```javascript
   //Retrieve a specific account using its account number
   let account = await ticketing.accounts.find("MO-6A39EE8D")
 
-  ticketing.orders.list()
+  account.orders.list()
     // Supported filters with examples
     .filter({
-      customer: account,
+      number: "E8D946240203",
       status: "Cancelled" //One of "Placed", "Cancelled", "Timed Out", "Fulfilled", "Voided", "Returned"
     })
     // Supported sort fields
@@ -2144,11 +2155,14 @@ SDK functionality allowing for manipulating and settling ticket orders.
 
 ### Fetch an order
 
-[API Reference](https://docs.ticketingevents.com/openapi/placing-an-order/retrieve_order)
+[API Reference](https://docs.ticketingevents.com/openapi/ordering-tickets/retrieve_order)
 
 ```javascript
+  //Retrieve a specific account using its account number
+  let account = await ticketing.accounts.find(17189259825853)
+
   //Retrieve a specific order using its number
-  ticketing.orders.find("E8D946240203")
+  account.orders.find(17189259825853)
     .then(order => {
       //Do something with the order resource
     })
@@ -2166,11 +2180,14 @@ SDK functionality allowing for manipulating and settling ticket orders.
 
 ### Cancel an order
 
-[API Reference](https://docs.ticketingevents.com/openapi/placing-an-order/cancel_order)
+[API Reference](https://docs.ticketingevents.com/openapi/ordering-tickets/cancel_order)
 
 ```javascript
+  //Retrieve a specific account using its account number
+  let account = await ticketing.accounts.find("MO-6A39EE8D")
+
   //Retrieve a specific order using its number
-  let order = await ticketing.orders.find("E8D946240203")
+  let order = await account.orders.find(17189259825853)
 
   //Cancel the order
   order.cancel().then(cancelled => {
@@ -2193,11 +2210,14 @@ SDK functionality allowing for manipulating and settling ticket orders.
 
 ### Settle an order
 
-[API Reference](https://docs.ticketingevents.com/openapi/order-settlement/settle_order)
+[API Reference](https://docs.ticketingevents.com/openapi/ordering-tickets/settle_order)
 
 ```javascript
+  //Retrieve a specific account using its account number
+  let account = await ticketing.accounts.find("MO-6A39EE8D")
+
   //Retrieve a specific order using its number
-  let order = await ticketing.orders.find("E8D946240203")
+  let order = await account.orders.find(17189259825853)
 
   let paymentDetails = {
     "number": "5555555555555555",
@@ -2228,35 +2248,6 @@ SDK functionality allowing for manipulating and settling ticket orders.
       console.log("The authenticating user is not authorised to settle orders on behalf of the ordering customer.")
     }else if(error instanceof InvalidStateError){
       console.log("The order has already timed out, been cancelled or was settled previously.")
-    }else{
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
-    }
-  })
-```
-
-### Refund an order (Admin Only)
-
-[API Reference](https://docs.ticketingevents.com/openapi/order-settlement/refund_order)
-
-```javascript
-  //Retrieve a specific order using its number
-  let order = await ticketing.orders.find("E8D946240203")
-
-  //Settle the order
-  order.refund(
-    "Event host requested an order for this customer." //Reason for the refund
-  ).then(refunded => {
-    if(refunded){
-      //Do something on payment success
-    }else{
-      //Do something on payment failure
-    }
-  }).catch(error => {
-    //Handle errors
-    if(error instanceof BadDataError){
-      console.log("The reason for the refund was not provided.")
-    }else if(error instanceof InvalidStateError){
-      console.log("The order has already timed out, been cancelled or was refunded previously.")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
