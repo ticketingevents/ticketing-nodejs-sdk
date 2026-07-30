@@ -25,7 +25,7 @@ export class TransferService extends BaseService<TransferData, Transfer>{
   }
 
   create(): Promise<Transfer>{
-  return new Promise<Transfer>((_resolve, reject) => {
+    return new Promise<Transfer>((_resolve, reject) => {
       reject(new UnsupportedOperationError(0, "Operation not supported"))
     })
   }

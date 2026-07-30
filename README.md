@@ -524,7 +524,7 @@ ticketing.cache({ ttl: 10_000, revalidateTimeout: 1_500 }).events.find(1)
 ```
 
 The same `cache()` / `nocache()` chaining is available on services (for example
-`ticketing.events.cache().find(1)`).
+`ticketing.events.cache().find(1)`) and nested services (e.g. `host.tiers.nocache().list()`).
 
 ### Cache persistence
 
