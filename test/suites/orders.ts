@@ -5,7 +5,7 @@ import {
 	TickeTing, BadDataError, InvalidStateError, PermissionError,
 	ResourceNotFoundError, UnsupportedOperationError, ResourceIndelibleError
 } from '../../src'
-import { CartModel, OrderModel } from  '../../src/model'
+import { CartModel, OrderModel, TierListingModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
 import { expect, ticketing, api, unauthorised_sdk } from '../setup'
 
@@ -13,16 +13,16 @@ import { expect, ticketing, api, unauthorised_sdk } from '../setup'
 let testCart = null
 let testOrder = null
 
-describe.skip("Orders", function(){
+describe("Orders", function(){
   //Set hook timeout
   this.timeout(60000)
 
 	before(async function(){
 		//Create a customer
 		this.customer = await ticketing.accounts.create({
-			  username: "mothers.milk",
+			  username: "mothers.milk"+Math.floor(Math.random() * 999999),
 			  password: "WuT4NGcl4n",
-			  email: "marvin.milk@usmc.gov",
+			  email: "marvin.milk@usmc.gov"+Math.floor(Math.random() * 999999),
 			  firstName: "Marvin",
 			  lastName: "Milk",
 			  title: "Mr",
@@ -44,7 +44,7 @@ describe.skip("Orders", function(){
 		//Create an event category
 		this.category = await ticketing.categories.create({
 		  name: "Event Category "+Math.floor(Math.random() * 999999),
-		  subcategories: ["Event Subcategory"]
+		  subcategories: ["Event Subcategory "+Math.floor(Math.random() * 999999),]
 		})
 
 		//Create an event venue
@@ -62,26 +62,27 @@ describe.skip("Orders", function(){
 		})
 
 		//Create test event
-		this.event = await ticketing.events.create({
-			host: this.host,
-			title: "Test Event "+Math.floor(Math.random() * 999999),
-			description: "Event Description",
-			type: "Standard",
-			public: true,
-			category: this.category,
-			subcategory: "Event Subcategory",
-			venue: this.venue,
-			start: (new Date()).toISOString(),
-			end: "9999-12-31T23:59:59.999Z"
-		})
+    this.event = await this.host.events.create({
+      title: "Test Event "+Math.floor(Math.random() * 999999),
+      description: "Event Description",
+      type: "Standard",
+      public: true,
+      category: this.category,
+      subcategory: this.category.subcategories[0],
+      start: "2025-05-02T21:00:00",
+      end: "2125-07-01T00:00:00",
+      venue: this.venue,
+      banner: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAIBAQIBAQICAgICAgICAwUDAwMDAwYEBAMFBwYHBwcGBwcICQsJCAgKCAcHCg0KCgsMDAwMBwkODw0MDgsMDAz/2wBDAQICAgMDAwYDAwYMCAcIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAz/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9/KKKKAP/2Q==",
+      thumbnail: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAIBAQIBAQICAgICAgICAwUDAwMDAwYEBAMFBwYHBwcGBwcICQsJCAgKCAcHCg0KCgsMDAwMBwkODw0MDgsMDAz/2wBDAQICAgMDAwYDAwYMCAcIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAz/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9/KKKKAP/2Q=="
+    })
 
   	//Create event tiers
   	this.tier = await this.host.tiers.create({
-  		name: "Test Section "+Math.floor(Math.random() * 999999),
+  		name: "Test tier "+Math.floor(Math.random() * 999999),
   		description: "Test admissions with this.",
   		price: 50,
-  		available_from: (new Date()).toISOString(),
-  		available_to: "9999-12-31T23:59:59.999Z",
+      available_from: "2025-05-02T21:00:00",
+      available_to: "2125-07-01T00:00:00",
   		capacity: 15,
       events: [{
         "event": this.event,
@@ -89,13 +90,18 @@ describe.skip("Orders", function(){
       }]
   	})
 
+  	//Publish event
+    let submission = await this.event.submissions.create()
+    await submission.approve("Event approved")
+    await this.event.publish()
+
 		//Place order for fulfillment tests
-		let cart = await ticketing.orders.start()
-		cart.add(this.section, 5)
-		this.activeOrder = await cart.checkout(this.customer)
+		let cart = await this.customer.carts.create()
+		cart.add(this.tier, 5)
+		this.activeOrder = await cart.checkout()
 
 		this.paymentDetails = {
-			cvv: 123,
+			cvv: "123",
 			expiryDate: "12/30",
 			name: "Marvin M. Milk",
 			email: "marvin.milk@usmc.gov",
@@ -109,7 +115,7 @@ describe.skip("Orders", function(){
 	})
 
 	after(async function(){
-		if(this.activeOrder.status != "Refunded"){
+		if(this.activeOrder.status == "pending"){
 			await this.activeOrder.cancel()
 		}
 
@@ -125,13 +131,11 @@ describe.skip("Orders", function(){
 	describe('Create a shopping cart', function () {
 		it('Should return a valid cart object', function () {
 			return new Promise((resolve, reject) => {
-				ticketing.orders.start().then((cart => {
+				this.customer.carts.create().then((cart => {
 					testCart = cart
 
 					expect(cart).to.be.an.instanceof(CartModel)
 					expect(cart.created).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}/)
-					expect(cart.subtotal).to.equal(0)
-					expect(cart.fees).to.equal(0)
 					expect(cart.total).to.equal(0)
 					expect(cart.items).to.be.empty
 
@@ -147,19 +151,17 @@ describe.skip("Orders", function(){
 		it('Should add items to the shopping cart', function () {
 			return new Promise((resolve, reject) => {
 				let quantity = 5
-				testCart.add(this.section, quantity).then(success => {
+				testCart.add(this.tier, quantity).then(success => {
 		      expect(success).to.be.true
 
-					expect(testCart.subtotal).to.equal(this.section.price.base * quantity)
-					expect(testCart.fees).to.equal(this.section.fees * quantity)
-					expect(testCart.total).to.equal(testCart.subtotal + testCart.fees)
+					expect(testCart.total).to.equal(this.tier.price * quantity)
 					
 					expect(testCart.items.length).to.eq(1)
 					if(testCart.items.length > 0){
 						expect(testCart.items[0]).to.include({
-							section: this.section,
+							tier: this.tier,
 							quantity: quantity,
-							total: quantity * this.section.price.base
+							total: quantity * this.tier.price
 						})
 					}
 
@@ -171,14 +173,14 @@ describe.skip("Orders", function(){
 		})
 
 		it('Should throw a BadDataError if a non-positive integer quantity of tickets is added', function () {
-			return expect(testCart.add(this.section, -5))
+			return expect(testCart.add(this.tier, -5))
 			  .to.eventually.be.rejectedWith("The number of items to be added to the cart must be a positive integer.")
 			  .and.be.an.instanceOf(BadDataError)
 		})
 
-		it('Should throw an UnsupportedOperationError if adding more tickets than the section has available', function () {
-			return expect(testCart.add(this.section, 101))
-			  .to.eventually.be.rejectedWith("Adding the specified quantity of this item would exceed the section capacity.")
+		it('Should throw an UnsupportedOperationError if adding more tickets than the tier has available', function () {
+			return expect(testCart.add(this.tier, 101))
+			  .to.eventually.be.rejectedWith("Adding the specified quantity of this item would exceed the tier capacity.")
 			  .and.be.an.instanceOf(UnsupportedOperationError)
 		})
 	})
@@ -189,19 +191,17 @@ describe.skip("Orders", function(){
 				let originalQuantity = testCart.items[0].quantity
 				let quantity = 2
 
-				testCart.remove(this.section, quantity).then((success => {
+				testCart.remove(this.tier, quantity).then((success => {
 		         expect(success).to.be.true
 
-					expect(testCart.subtotal).to.equal(this.section.price.base * (originalQuantity - quantity))
-					expect(testCart.fees).to.equal(this.section.fees * (originalQuantity - quantity))
-					expect(testCart.total).to.equal(testCart.subtotal + testCart.fees)
+					expect(testCart.total).to.equal(this.tier.price * (originalQuantity - quantity))
 
 					expect(testCart.items.length).to.eq(1)
 					if(testCart.items.length > 0){
 						expect(testCart.items[0]).to.include({
-							section: this.section,
+							tier: this.tier,
 							quantity: (originalQuantity - quantity),
-							total: (originalQuantity - quantity) * this.section.price.base
+							total: (originalQuantity - quantity) * this.tier.price
 						})
 					}
 
@@ -213,13 +213,13 @@ describe.skip("Orders", function(){
 		})
 
 		it('Should throw a BadDataError if a non-positive integer quantity of tickets is removed', function () {
-			return expect(testCart.remove(this.section, 0))
+			return expect(testCart.remove(this.tier, 0))
 			  .to.eventually.be.rejectedWith("The number of items to be removed from the cart must be a positive integer.")
 			  .and.be.an.instanceOf(BadDataError)
 		})
 
 		it('Should throw an UnsupportedOperationError if removing more tickets than are present in the cart', function () {
-			return expect(testCart.remove(this.section, 51))
+			return expect(testCart.remove(this.tier, 51))
 			  .to.eventually.be.rejectedWith("The cart contains fewer items than the quantity to be removed.")
 			  .and.be.an.instanceOf(UnsupportedOperationError)
 		})
@@ -230,19 +230,17 @@ describe.skip("Orders", function(){
 			return new Promise((resolve, reject) => {
 				let quantity = 7
 
-				testCart.set(this.section, quantity).then((success => {
+				testCart.set(this.tier, quantity).then((success => {
 		    	expect(success).to.be.true
 
-					expect(testCart.subtotal).to.equal(this.section.price.base * quantity)
-					expect(testCart.fees).to.equal(0.99 * quantity)
-					expect(testCart.total).to.equal(testCart.subtotal + testCart.fees)
+					expect(testCart.total).to.equal(this.tier.price * quantity)
 					
 					expect(testCart.items.length).to.eq(1)
 					if(testCart.items.length > 0){
 						expect(testCart.items[0]).to.include({
-							section: this.section,
+							tier: this.tier,
 							quantity: quantity,
-							total: quantity * this.section.price.base
+							total: quantity * this.tier.price
 						})
 					}
 
@@ -254,14 +252,14 @@ describe.skip("Orders", function(){
 		})
 
 		it('Should throw a BadDataError if a non-positive integer quantity of tickets is set', function () {
-			return expect(testCart.set(this.section, -10))
+			return expect(testCart.set(this.tier, -10))
 			  .to.eventually.be.rejectedWith("The target item quantity must be a positive integer.")
 			  .and.be.an.instanceOf(BadDataError)
 		})
 
-		it('Should throw an UnsupportedOperationError if the specified quantity would exceed section capacity', function () {
-			return expect(testCart.set(this.section, 100))
-			  .to.eventually.be.rejectedWith("Setting the item quantity to the specified value would exceed the section capacity.")
+		it('Should throw an UnsupportedOperationError if the specified quantity would exceed tier capacity', function () {
+			return expect(testCart.set(this.tier, 100))
+			  .to.eventually.be.rejectedWith("Setting the item quantity to the specified value would exceed the tier capacity.")
 			  .and.be.an.instanceOf(UnsupportedOperationError)
 		})
 	})
@@ -269,23 +267,39 @@ describe.skip("Orders", function(){
 	describe('Checkout a shopping cart', function () {
 		it('Should return a valid order object', function () {
 			return new Promise((resolve, reject) => {
-				testCart.checkout(this.customer).then((order => {
+				testCart.checkout().then((order => {
 					testOrder = order
 
 					expect(order).to.be.an.instanceof(OrderModel)
 					expect(order.number).to.match(/[0-9A-F]{12}/)
-					expect(order.status).to.eq("Placed")
+					expect(order.status).to.eq("pending")
 					expect(order.placed).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}/)
-					expect(order.subtotal).to.equal(testCart.subtotal)
-					expect(order.fees).to.equal(testCart.fees)
-					expect(order.total).to.equal(testCart.total)
+					expect(order.subtotal).to.equal(testCart.total)
 					expect(order.customer).to.equal(this.customer)
 
 					expect(order.items.length).to.eq(1)
-					expect(order.items[0].number).to.match(/[a-z0-9]{32}/)
-					expect(order.items[0].name).to.equal(`${this.event.title}: ${this.section.name}`)
-					expect(order.items[0].quantity).to.eq(testCart.items[0].quantity)
-					expect(order.items[0].price).to.eq(this.section.price.base)
+          expect(order.items[0].quantity).to.eq(testCart.items[0].quantity)
+          expect(order.items[0].tier).to.be.an.instanceof(TierListingModel)
+          expect(order.items[0].tier.name).to.eq(testCart.items[0].tier.name)
+          expect(order.items[0].tier.description).to.eq(testCart.items[0].tier.description)
+          expect(order.items[0].tier.price).to.eq(testCart.items[0].tier.price)
+          expect(order.items[0].tier.available_from).to.eq(testCart.items[0].tier.available_from)
+          expect(order.items[0].tier.available_to).to.eq(testCart.items[0].tier.available_to)
+          expect(order.items[0].tier.artwork).to.eq("")
+          expect(order.items[0].tier.unit_size).to.eq(testCart.items[0].tier.unit_size)
+          expect(order.items[0].tier.purchase_limit).to.eq(testCart.items[0].tier.purchase_limit)
+
+          expect(order.items[0].tier.upgrades.length).to.eq(testCart.items[0].tier.upgrades.length)
+          for(let i=0; i < order.items[0].tier.upgrades.length; i++){
+              expect(order.items[0].tier.upgrades[i]).to.be.an.instanceOf(TierListingModel)
+                  .and.to.have.property("uri", testCart.items[0].tier.upgrades[i].uri)
+          }
+
+          expect(order.payment.method.cardholder).to.eq("")
+          expect(order.payment.method.card_type).to.eq("")
+          expect(order.payment.method.card_digits).to.eq("")
+          expect(order.payment.uri).to.eq("")
+          expect(order.payment.status).to.eq("Pending")
 
 					resolve(true)
 				})).catch(error=>{
@@ -294,48 +308,52 @@ describe.skip("Orders", function(){
 			})
 		})
 
-		it('Should throw a PermissionError if the authenticated user is unauthorised to manage orders for this customer', function () {
-			return new Promise((resolve, reject) => {
-				unauthorised_sdk.orders.start().then(unauthorised_cart => {
-					unauthorised_cart.add(this.section, 5)
-					expect(unauthorised_cart.checkout(this.customer))
-					  .to.eventually.be.rejectedWith("The authenticated user is not permtited to manage orders for this account.")
-					  .and.be.an.instanceOf(PermissionError)
-
-					resolve(true)
-				})
-			})
-		})
-
 		it('Should throw a BadDataError if there is insufficient capacity to fulfil the order', function () {
 			return expect(testCart.checkout(this.customer))
-			  .to.eventually.be.rejectedWith("An order for the requested tickets could not be placed at this time. Please try again.")
+			  .to.eventually.be.rejectedWith("One or more of the specified items does not have sufficient capacity to fulfil the request.")
 			  .and.be.an.instanceOf(BadDataError)
 		})
 	})
 
-	describe('List all orders', function () {
+	describe('List customer orders', function () {
 		it('Should return a collection of Order resources', function () {
-			return expect(ticketing.orders.list(5)).to.eventually.all.be.instanceof(OrderModel)
+			return expect(this.customer.orders.list(5)).to.eventually.all.be.instanceof(OrderModel)
 		})
 
 		it('Should contain the newly created order as its first resource', function () {
 			return new Promise((resolve, reject) => {
-				ticketing.orders.list(1).sort("date", false).first().then(orders => {
-					expect(orders[0]).to.be.an.instanceof(OrderModel)
-					expect(orders[0].number).to.match(/[0-9A-F]{12}/)
-					expect(orders[0].status).to.eq("Placed")
-					expect(orders[0].placed).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}/)
-					expect(orders[0].subtotal).to.equal(testCart.subtotal)
-					expect(orders[0].fees).to.equal(testCart.fees)
-					expect(orders[0].total).to.equal(testCart.total)
-					expect(orders[0].customer.number).to.equal(this.customer.number)
+				this.customer.orders.list().then(orders => {
 
-					expect(orders[0].items.length).to.eq(1)
-					expect(orders[0].items[0].number).to.match(/[a-z0-9]{32}/)
-					expect(orders[0].items[0].name).to.equal(`${this.event.title}: ${this.section.name}`)
-					expect(orders[0].items[0].quantity).to.eq(testCart.items[0].quantity)
-					expect(orders[0].items[0].price).to.eq(this.section.price.base)
+					expect(orders[1]).to.be.an.instanceof(OrderModel)
+					expect(orders[1].number).to.match(/[0-9A-F]{12}/)
+					expect(orders[1].status).to.eq("pending")
+					expect(orders[1].placed).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}/)
+					expect(orders[1].subtotal).to.equal(testCart.total)
+					expect(orders[1].customer).to.equal(this.customer)
+
+					expect(orders[1].items.length).to.eq(1)
+          expect(orders[1].items[0].quantity).to.eq(testCart.items[0].quantity)
+          expect(orders[1].items[0].tier).to.be.an.instanceof(TierListingModel)
+          expect(orders[1].items[0].tier.name).to.eq(testCart.items[0].tier.name)
+          expect(orders[1].items[0].tier.description).to.eq(testCart.items[0].tier.description)
+          expect(orders[1].items[0].tier.price).to.eq(testCart.items[0].tier.price)
+          expect(orders[1].items[0].tier.available_from).to.eq(testCart.items[0].tier.available_from)
+          expect(orders[1].items[0].tier.available_to).to.eq(testCart.items[0].tier.available_to)
+          expect(orders[1].items[0].tier.artwork).to.eq("")
+          expect(orders[1].items[0].tier.unit_size).to.eq(testCart.items[0].tier.unit_size)
+          expect(orders[1].items[0].tier.purchase_limit).to.eq(testCart.items[0].tier.purchase_limit)
+
+          expect(orders[1].items[0].tier.upgrades.length).to.eq(testCart.items[0].tier.upgrades.length)
+          for(let i=0; i < orders[1].items[0].tier.upgrades.length; i++){
+              expect(orders[1].items[0].tier.upgrades[i]).to.be.an.instanceOf(TierListingModel)
+                  .and.to.have.property("uri", testCart.items[0].tier.upgrades[i].uri)
+          }
+
+          expect(orders[1].payment.method.cardholder).to.eq("")
+          expect(orders[1].payment.method.card_type).to.eq("")
+          expect(orders[1].payment.method.card_digits).to.eq("")
+          expect(orders[1].payment.uri).to.eq("")
+          expect(orders[1].payment.status).to.eq("Pending")
 
 					resolve(true)
 				}).catch(error => {
@@ -344,13 +362,13 @@ describe.skip("Orders", function(){
 			})
 		})
 
-		it('Should return a collection of orders matching the customer filter', function () {
+		it('Should return a collection of orders matching the number filter', function () {
 			return new Promise((resolve, reject) => {
-				ticketing.orders.list(5).filter({customer: this.customer}).then(orders => {
+				this.customer.orders.list(5).filter({number: testOrder.number}).then(orders => {
 					expect(orders.length).to.be.least(1)
 
 					for(let order of orders){
-						expect(order.customer.uri).to.equal(this.customer.uri)
+						expect(order.number).to.equal(testOrder.number)
 					}
 
 					resolve(true)
@@ -362,11 +380,11 @@ describe.skip("Orders", function(){
 
 		it('Should return a collection of orders matching the status filter', function () {
 			return new Promise((resolve, reject) => {
-				ticketing.orders.list(5).filter({status: "Placed"}).then(orders => {
+				this.customer.orders.list(5).filter({status: "pending"}).then(orders => {
 					expect(orders.length).to.be.least(1)
 
 					for(let order of orders){
-						expect(order.status).to.equal("Placed")
+						expect(order.status).to.equal("pending")
 					}
 
 					resolve(true)
@@ -378,7 +396,7 @@ describe.skip("Orders", function(){
 
 		it('Should return orders sorted by creation date in ascending order', function () {
 			return new Promise((resolve, reject) => {
-				ticketing.orders.list(5).sort("date").then(orders => {
+				this.customer.orders.list(5).sort("date").then(orders => {
 					expect(orders).to.have.lengthOf.at.least(1)
 						.and.to.be.ascendingBy("placed")
 
@@ -393,20 +411,37 @@ describe.skip("Orders", function(){
 	describe('Fetch an order', function () {
 		it('Should return the identified Order resource', function () {
 			return new Promise((resolve, reject) => {
-				ticketing.orders.find(testOrder.number).then(order => {
+				this.customer.orders.find(testOrder.id).then(order => {
 					expect(order).to.be.an.instanceof(OrderModel)
-					expect(order.number).to.eq(testOrder.number)
-					expect(order.status).to.eq(testOrder.status)
-					expect(order.placed).to.eq(testOrder.placed)
-					expect(order.subtotal).to.equal(testOrder.subtotal)
-					expect(order.fees).to.equal(testOrder.fees)
-					expect(order.total).to.equal(testOrder.total)
-					expect(order.customer.number).to.equal(testOrder.customer.number)
+					expect(order.number).to.match(/[0-9A-F]{12}/)
+					expect(order.status).to.eq("pending")
+					expect(order.placed).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}/)
+					expect(order.subtotal).to.equal(testCart.total)
+					expect(order.customer).to.equal(this.customer)
 
-					expect(order.items.length).to.eq(testOrder.items.length)
-					for(let i = 0; i < order.items.length; i++){
-						expect(order.items[i]).to.include(testOrder.items[i])	
-					}
+					expect(order.items.length).to.eq(1)
+          expect(order.items[0].quantity).to.eq(testCart.items[0].quantity)
+          expect(order.items[0].tier).to.be.an.instanceof(TierListingModel)
+          expect(order.items[0].tier.name).to.eq(testCart.items[0].tier.name)
+          expect(order.items[0].tier.description).to.eq(testCart.items[0].tier.description)
+          expect(order.items[0].tier.price).to.eq(testCart.items[0].tier.price)
+          expect(order.items[0].tier.available_from).to.eq(testCart.items[0].tier.available_from)
+          expect(order.items[0].tier.available_to).to.eq(testCart.items[0].tier.available_to)
+          expect(order.items[0].tier.artwork).to.eq("")
+          expect(order.items[0].tier.unit_size).to.eq(testCart.items[0].tier.unit_size)
+          expect(order.items[0].tier.purchase_limit).to.eq(testCart.items[0].tier.purchase_limit)
+
+          expect(order.items[0].tier.upgrades.length).to.eq(testCart.items[0].tier.upgrades.length)
+          for(let i=0; i < order.items[0].tier.upgrades.length; i++){
+              expect(order.items[0].tier.upgrades[i]).to.be.an.instanceOf(TierListingModel)
+                  .and.to.have.property("uri", testCart.items[0].tier.upgrades[i].uri)
+          }
+
+          expect(order.payment.method.cardholder).to.eq("")
+          expect(order.payment.method.card_type).to.eq("")
+          expect(order.payment.method.card_digits).to.eq("")
+          expect(order.payment.uri).to.eq("")
+          expect(order.payment.status).to.eq("Pending")
 
 					resolve(true)
 				}).catch(error => {
@@ -416,15 +451,9 @@ describe.skip("Orders", function(){
 		})
 
 		it('Should throw a ResourceNotFoundError when using a non-existant order number', function () {
-			return expect(ticketing.orders.find("AB12345"))
-				.to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
+			return expect(this.customer.orders.find(12345678901234))
+				.to.eventually.be.rejectedWith("There is presently no order with the given URI.")
 				.and.be.an.instanceOf(ResourceNotFoundError)
-		})
-
-		it('Should throw a PermissionError if the authenticated user is unauthorised to manage orders for this customer', function () {
-			return expect(unauthorised_sdk.orders.find(testOrder.number))
-			  .to.eventually.be.rejectedWith("This account is not permitted to manage orders on behalf of the ordering customer.")
-			  .and.be.an.instanceOf(PermissionError)
 		})
 	})
 
@@ -434,13 +463,13 @@ describe.skip("Orders", function(){
 		})
 
 		it('Should persist order cancellation', function () {
-			return expect(ticketing.orders.find(testOrder.number))
-				.to.eventually.include({status: "Cancelled"})
+			return expect(this.customer.orders.find(testOrder.id))
+				.to.eventually.include({status: "cancelled"})
 		})
 
 		it('Should throw a ResourceIndelibleError if the order has already been cancelled', function () {
 			return expect(testOrder.cancel())
-			  .to.eventually.be.rejectedWith( "A cancelled order cannot be cancelled.")
+			  .to.eventually.be.rejectedWith("A cancelled order cannot be cancelled.")
 			  .and.be.an.instanceOf(ResourceIndelibleError)
 		})
 	})
@@ -448,7 +477,7 @@ describe.skip("Orders", function(){
 	describe('Settle an order', function () {
 		it('Should throw a BadDataError for missing or invalid payment details', function () {
 			return expect(this.activeOrder.settle(this.paymentDetails))
-				.to.eventually.be.rejectedWith( "The following arguments are required, but have not been supplied: number.")
+				.to.eventually.be.rejectedWith("Your request payload is invalid. Please ensure you have included all required fields and values are well-formed.")
 				.and.be.an.instanceOf(BadDataError)
 		})
 
@@ -463,36 +492,13 @@ describe.skip("Orders", function(){
 		})
 
 		it('Should persist order fulfillment', function () {
-			return expect(ticketing.orders.find(this.activeOrder.number))
-				.to.eventually.include({status: "Fulfilled"})
+			return expect(this.customer.orders.find(this.activeOrder.id))
+				.to.eventually.include({status: "fulfilled"})
 		})
 
 		it('Should throw an InvalidStateError if the order has already been settled', function () {
 			return expect(this.activeOrder.settle(this.paymentDetails))
-			  .to.eventually.be.rejectedWith( "You cannot pay for a Fulfilled order.")
-			  .and.be.an.instanceOf(InvalidStateError)
-		})
-	})
-
-	describe('Refund an order', function () {
-		it('Should throw a BadDataError for missing or invalid refund reason', function () {
-			return expect(this.activeOrder.refund(""))
-				.to.eventually.be.rejectedWith( "The following arguments are required, but have not been supplied: reason.")
-				.and.be.an.instanceOf(BadDataError)
-		})
-
-		it('Should refund the order', function () {
-			return expect(this.activeOrder.refund("Host requested customer refund.")).to.eventually.be.true
-		})
-
-		it('Should persist order refund', function () {
-			return expect(ticketing.orders.find(this.activeOrder.number))
-				.to.eventually.include({status: "Refunded"})
-		})
-
-		it('Should throw an InvalidStateError if the order has already been refunded', function () {
-			return expect(this.activeOrder.refund("Host requested customer refund."))
-			  .to.eventually.be.rejectedWith( "You cannot refund a refunded order.")
+			  .to.eventually.be.rejectedWith( "You cannot settle a fulfilled order.")
 			  .and.be.an.instanceOf(InvalidStateError)
 		})
 	})

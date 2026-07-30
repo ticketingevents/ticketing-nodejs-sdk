@@ -8,6 +8,7 @@ export interface TierListing extends Base{
 	available_to: string
   	artwork: string
 	unit_size: number
+	purchase_limit: number
 	remaining: number
 	upgrades: Array<TierListing>
 }

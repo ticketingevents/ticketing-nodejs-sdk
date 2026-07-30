@@ -11,34 +11,23 @@ export class CartModel implements Cart{
   public items: Array<{tier: TierListing, quantity: number, total: number}>
 
   private __apiAdapter: APIAdapter
+  private __customer: Account
 
-  constructor(apiAdapter: APIAdapter){
+  constructor(apiAdapter: APIAdapter, customer: Account){
     this.created = (new Date()).toISOString()
     this.items = []
 
     this.__apiAdapter = apiAdapter
-  }
-
-  get subtotal(): number{
-    let subtotal = 0
-    for(const item of this.items){
-      subtotal += item.total
-    }
-
-    return subtotal
-  }
-
-  get fees(): number{
-    const fees = 0
-    /*for(const item of this.items){
-      fees += item.tier.fees * item.quantity
-    }*/
-
-    return fees
+    this.__customer = customer
   }
 
   get total(): number{
-    return this.subtotal + this.fees
+    let total = 0
+    for(const item of this.items){
+      total += item.total
+    }
+
+    return total
   }
 
   add(tier: TierListing, quantity: number): Promise<boolean>{
@@ -114,18 +103,20 @@ export class CartModel implements Cart{
     })
   }
 
-  checkout(customer: Account): Promise<Order>{
+  checkout(): Promise<Order>{
     return new Promise<Order>((resolve, reject) => {
-      const items = {}
+      const items = []
       for(const item of this.items){
-        items[item.tier.uri] = item.quantity
+        items.push({
+          tier: item.tier.id,
+          quantity: item.quantity
+        })
       }
 
-      this.__apiAdapter.post("/orders", {
-        customer: customer.number,
+      this.__apiAdapter.post(`/accounts/${this.__customer.id}/orders`, {
         items: items
       }).then(order => {
-        resolve(new OrderModel(order.data, customer, this.__apiAdapter))
+        resolve(new OrderModel(order.data, this.__customer, this.__apiAdapter))
       }).catch(error => {
         if(error.code == 400){
           error = new BadDataError(error.code, error.message)

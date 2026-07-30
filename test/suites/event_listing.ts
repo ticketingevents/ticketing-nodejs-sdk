@@ -377,6 +377,8 @@ describe("Event Listing", function(){
             expect(tiers[0].available_to).to.eq(this.testTier.available_to)
             expect(tiers[0].artwork).to.match(new RegExp(`\/tier\/artwork\/[0-9]{14}.jpe?g`))
             expect(tiers[0].unit_size).to.eq(this.testTier.unit_size)
+            expect(tiers[0].purchase_limit).to.eq(this.testTier.purchase_limit)
+            expect(tiers[0].remaining).to.eq(this.testTier.remaining)
 
             expect(tiers[0].upgrades.length).to.eq(this.testTier.upgrades.length)
             for(let i=0; i < tiers[0].upgrades.length; i++){

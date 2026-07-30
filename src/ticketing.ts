@@ -4,7 +4,6 @@ import {
   CategoryService,
   EventService,
   HostService,
-  OrderService,
   PresetService,
   RegionService,
   SubmissionService,
@@ -56,10 +55,6 @@ export class TickeTing{
 
   get hosts(): HostService{
     return new HostService(this.__apiAdapter)
-  }
-
-  get orders(): OrderService{
-    return new OrderService(this.__apiAdapter)
   }
 
   get presets(): PresetService{

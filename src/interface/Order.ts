@@ -1,6 +1,8 @@
 import type { Base } from './Base'
 import type { Account } from './Account'
 import type { CreditCard } from './CreditCard'
+import type { Payment } from './Payment'
+import type { TierListing } from './TierListing'
 
 export interface Order extends Base{
   number: string
@@ -10,13 +12,10 @@ export interface Order extends Base{
   fees: number
   total: number
   items: Array<{
-  	section: string,
-  	number: string,
-  	name: string,
-  	description: string,
-  	price: number,
-  	quantity: number
+    tier: TierListing,
+    quantity: number
   }>
+  payment: Payment
   customer: Account
 
   cancel(): Promise<boolean>

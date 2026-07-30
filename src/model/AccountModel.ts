@@ -9,16 +9,21 @@ import type { Account } from '../interface/Account'
 import type { AccountData } from '../interface/data/AccountData'
 import type { AccountPreferences } from '../interface/AccountPreferences'
 import { AccountPreferencesModel } from './AccountPreferencesModel'
+import type { Cart } from '../interface/Cart'
+import { CartModel } from './CartModel'
 import type { Host } from '../interface/Host'
 import type { HostData } from '../interface/data/HostData'
 import { HostModel } from './HostModel'
+import type { Order } from '../interface/Order'
+import type { OrderData } from '../interface/data/OrderData'
+import { OrderModel } from './OrderModel'
 import type { Privilege } from '../interface/Privilege'
 import type { PrivilegeData } from '../interface/data/PrivilegeData'
 import { PrivilegeModel } from './PrivilegeModel'
 import type { EventListing } from '../interface/EventListing'
 import type { Ticket } from '../interface/Ticket'
 import type { Transfer } from '../interface/Transfer'
-import { PermissionError } from '../errors'
+import { PermissionError, UnsupportedOperationError } from '../errors'
 
 export class AccountModel extends BaseModel implements Account{
   public number: string
@@ -41,6 +46,8 @@ export class AccountModel extends BaseModel implements Account{
   private __preferences: string
   private __accountPrivilegeService: AccountPrivilegeService
   private __privilegedHostService: PrivilegedHostService
+  private __cartService: CartService
+  private __customerOrderService: CustomerOrderService
 
 
   private __itineraryService: ItineraryService
@@ -70,6 +77,8 @@ export class AccountModel extends BaseModel implements Account{
     this.__preferences = account.preferences
     this.__privilegedHostService = new PrivilegedHostService(this._apiAdapter, this)
     this.__accountPrivilegeService = new AccountPrivilegeService(this._apiAdapter, this)
+    this.__cartService = new CartService(this._apiAdapter, this)
+    this.__customerOrderService = new CustomerOrderService(this._apiAdapter, this)
 
     this.__itineraryService = new ItineraryService(this._apiAdapter, this)
     this.__walletService = new WalletService(this._apiAdapter, this)
@@ -92,6 +101,14 @@ export class AccountModel extends BaseModel implements Account{
 
   get hosts(): PrivilegedHostService{
     return this.__privilegedHostService
+  }
+
+  get carts(): CartService{
+    return this.__cartService
+  }
+
+  get orders(): CustomerOrderService{
+    return this.__customerOrderService
   }
 
   get inbox(): Collection<Transfer>{
@@ -156,5 +173,51 @@ export class AccountPrivilegeService extends BaseService<PrivilegeData, Privileg
 export class PrivilegedHostService extends BaseService<HostData, Host>{
   constructor(apiAdapter: APIAdapter, account: Account){
     super(apiAdapter, `${account.uri}/hosts`, HostModel)
+  }
+}
+
+export class CartService{
+  private __apiAdapter: APIAdapter
+  private __customer: Account
+
+  constructor(apiAdapter: APIAdapter, customer: Account){
+    this.__apiAdapter = apiAdapter
+    this.__customer = customer
+  }
+
+  create(): Promise<Cart>{
+    return new Promise<Cart>((resolve) => {
+      resolve(new CartModel(this.__apiAdapter, this.__customer))
+    })
+  }
+}
+
+export class CustomerOrderService extends BaseService<OrderData, Order>{
+  private __apiAdapter: APIAdapter
+  private __customer: Account
+
+  constructor(apiAdapter: APIAdapter, customer: Account){
+    super(apiAdapter, `/accounts/${customer.number}/orders`, OrderModel,
+      ["number", "status"],
+      ["date"]
+    )
+
+    this.__customer = customer
+  }
+
+  create(): Promise<Order>{
+    return new Promise<Order>((_resolve, reject) => {
+      reject(new UnsupportedOperationError(0, "Operation not supported"))
+    })
+  }
+
+  batchCreate(): Promise<Array<Order>>{
+    return new Promise<Array<Order>>((_resolve, reject) => {
+      reject(new UnsupportedOperationError(0, "Operation not supported"))
+    })
+  }
+
+  protected _instantiateModel(data: any){
+    return new OrderModel(data, this.__customer, this.__apiAdapter)
   }
 }

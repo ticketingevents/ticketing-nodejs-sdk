@@ -11,6 +11,7 @@ export class TierModel extends BaseModel implements Tier{
 	public description: string
 	public price: number
 	public capacity: number
+	public remaining: number
 	public available_from: string
 	public available_to: string
 	public unit_size: number
@@ -32,6 +33,7 @@ export class TierModel extends BaseModel implements Tier{
 		this.description = tier.description
 		this.price = tier.price
 		this.capacity = tier.capacity
+		this.remaining = tier.remaining
 		this.available_from = tier.available_from
 		this.available_to = tier.available_to
 		this.unit_size = tier.unit_size
