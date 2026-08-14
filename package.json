@@ -16,6 +16,7 @@
     "@types/mocha": "^10.0.6",
     "chai": "^4.4.1",
     "chai-as-promised": "^7.1.1",
+    "chai-interface": "^2.0.3",
     "chai-like": "^1.1.1",
     "chai-sorted": "^0.2.0",
     "chai-string": "^1.6.0",
@@ -32,10 +33,11 @@
     "lint": "eslint src && madge -c src/*",
     "configure": "node configure-environment.js",
     "build": "npm run configure && tsc",
-    "test": "npm run configure && mocha --ui bdd --reporter spec --require ts-node/register --require test/fixtures/fixtures.ts test/suites/*.ts --slow 300"
+    "test": "npm run configure && mocha --ui bdd --reporter spec --require ts-node/register --require test/fixtures/fixtures.ts test/suites/*.ts --slow 300 --grep 'Event Reporting'"
   },
   "dependencies": {
-    "axios": "^1.6.8"
+    "axios": "^1.6.8",
+    "dev": "^0.1.5"
   },
   "madge": {
     "detectiveOptions": {

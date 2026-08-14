@@ -9,13 +9,16 @@ import type { Host } from '../interface/Host'
 import type { HostData } from '../interface/data/HostData'
 import type { Privilege } from '../interface/Privilege'
 import type { PrivilegeData } from '../interface/data/PrivilegeData'
+import type { Sale } from '../interface/Sale'
+import type { SaleData } from '../interface/data/SaleData'
 import { EventRevisionModel } from './EventRevisionModel'
 import { TierModel } from './TierModel'
 import { PrivilegeModel } from './PrivilegeModel'
 import { CategoryModel } from './CategoryModel'
 import { VenueModel } from './VenueModel'
+import { SaleModel } from './SaleModel'
+import { StatisticsModel } from './StatisticsModel'
 import { BadDataError, PermissionError, ResourceExistsError } from '../errors'
-import { HostStatisticsModel } from './reporting/HostStatisticsModel'
 
 export class HostModel extends BaseModel implements Host{
   public name: string
@@ -34,6 +37,7 @@ export class HostModel extends BaseModel implements Host{
   private __eventRevisionService: EventRevisionService
   private __tierService: TierService
   private __privilegeService: HostPrivilegeService
+  private __salesService: HostSalesService
 
   constructor(host: any, adapter: APIAdapter){
     super(host.self, adapter)
@@ -54,6 +58,7 @@ export class HostModel extends BaseModel implements Host{
     this.__eventRevisionService = new EventRevisionService(this._apiAdapter, this)
     this.__tierService = new TierService(this._apiAdapter, this)
     this.__privilegeService = new HostPrivilegeService(this._apiAdapter, this)
+    this.__salesService = new HostSalesService(this._apiAdapter, this)
   }
 
   get events(): EventRevisionService{
@@ -68,10 +73,18 @@ export class HostModel extends BaseModel implements Host{
     return this.__privilegeService
   }
 
-  public statistics(): Promise<HostStatisticsModel>{
+  get sales(): HostSalesService{
+    return this.__salesService
+  }
+
+  public statistics(parameters: {
+    after: string,
+    before: string,
+    interval: string
+  }): Promise<StatisticsModel>{
     return new Promise((resolve, reject) => {
-      this._apiAdapter.get(`${this.uri}/statistics`).then(response => {
-        resolve(new HostStatisticsModel(response.data, this._apiAdapter))
+      this._apiAdapter.get(`${this.uri}/statistics`, parameters).then(response => {
+        resolve(new StatisticsModel(response.data, this._apiAdapter))
       }).catch(error => {
         reject(error)
       })
@@ -234,6 +247,20 @@ export class HostPrivilegeService extends BaseService<PrivilegeData, Privilege>{
 
   constructor(apiAdapter: APIAdapter, host: Host){
     super(apiAdapter, `${host.uri}/privileges`, PrivilegeModel, ["role"])
+    this.__apiAdapter = apiAdapter
+  }
+}
+
+export class HostSalesService extends BaseService<SaleData, Sale>{
+  private __apiAdapter: APIAdapter
+
+  constructor(apiAdapter: APIAdapter, host: Host){
+    super(apiAdapter, `${host.uri}/sales`, SaleModel,
+      ["after", "before", "event", "tier", "number", "customer", "status"],
+      ["recorded", "total"],
+      {event: "id", tier: "id", customer: "id"}
+    )
+
     this.__apiAdapter = apiAdapter
   }
 }

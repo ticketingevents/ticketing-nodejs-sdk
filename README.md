@@ -174,6 +174,11 @@ export class TickeTingService extends TickeTing{
     * [Fetch an order](#retrieve-an-order)
     * [Cancel an order](#cancel-an-order)
     * [Settle an order](#settle-an-order)
+- [Reporting](#reporting)
+    * [List host sales](#list-host-sales)
+    * [Fetch host statistics](#fetch-host-statistics)
+    * [List event sales](#list-event-sales)
+    * [Fetch event statistics](#fetch-event-statistics)
 - [Transferring Tickets](#transferring-tickets)
     * [Initiate a transfer](#initiate-a-transfer)
     * [Add tickets to a transfer](#add-tickets-to-a-transfer)
@@ -183,9 +188,6 @@ export class TickeTingService extends TickeTing{
     * [Fetch a transfer](#fetch-a-transfer)
     * [Cancel a transfer](#cancel-a-transfer)
     * [Claim a transfer](#claim-a-transfer)
-- [Reporting](#reporting)
-    * [View host statistics](#view-host-statistics)
-    * [View event statistics](#view-event-statistics)
 - [Admissions](#admissions)
     * [Admissions tokens](#admissions-tokens)
         * [List admissions tokens](#list-admissions-tokens)
@@ -2499,6 +2501,78 @@ SDK functionality allowing for manipulating and settling ticket orders.
   })
 ```
 
+## Reporting
+
+The TickeTing SDK provides a set of functionality that lets you report on hosts, events,
+users and more. These features are documented below.
+
+### List host sales
+
+[API Reference](https://docs.ticketingevents.com/openapi/sales-reporting/list_host_sales)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific event using its ID
+  let event = await host.events.find(16993717817996)
+
+  //Retrieve a specific tier using its ID
+  let tier = await host.tiers.find(19240249258262)
+
+  host.sales.list()
+    // Supported filters with examples
+    .filter({
+      after: new Date("2026-07-01T00:00:00"), //Return sales after date
+      before: new Date("2026-08-01T00:00:00"), //Return sales before date
+      event: event, //Specific event sales
+      tier: tier, //Specific tier sales
+      number: 17189259825853, //Return sales linked to a specific order number
+      customer: "AZ-4918SF92", //Return sales linked to a specific customer
+      status: "confirmed", //Can be one of pending, cancelled, confirmed, refunded
+    })
+    // Supported sort fields
+    .sort(
+      "recorded", //One of "recorded", "total"
+      false //Set true for ascending sort (default), or false for descending order
+    )
+    .then(sales => {
+      //Do something with the collection of sales
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch host statistics
+
+[API Reference](https://docs.ticketingevents.com/openapi/sales-reporting/retrieve_host_statistics)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Access the host's statistics resource
+  host.statistics({
+      after: "2026-07-01T00:00:00", //Only aggregate statistics after this date
+      before: "2026-08-01T00:00:00", //Only aggregate statistics before this date
+      interval: "month" //The intervals over which to breakdown the aggregated statistics. Can be one of hour, day, week, month or year
+  }).then(statistics => {
+    console.log(statistics) //See documentation for list of available statisitics
+  })
+  .catch(error => {
+    //Handle errors
+    console.log(`${typeof error} (${error.code}): ${error.message}`)
+  })
+```
+
 ## Transferring tickets
 
 SDK functionality for transferring tickets in the customer's wallet to another user.
@@ -2712,55 +2786,6 @@ SDK functionality for transferring tickets in the customer's wallet to another u
       console.log("Only pending transfers can be claimed.")
     }else{
       //Handle errors
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
-    }
-  })
-```
-
-## Reporting
-
-The TickeTing SDK provides a set of functionality that let you report on hosts, events,
-users, advertisements and more. These features are documented below.
-
-### View host statistics
-
-[API Reference](https://docs.ticketingevents.com/openapi/event-reporting/view_host_statistics)
-
-```javascript
-  //Retrieve a specific event using its ID
-  let host = await ticketing.hosts.find(17327135633743)
-
-  //Access the host's statistics resource
-  host.statistics().then(statistics => {
-    console.log(statistics) //See documentation for list of available statisitics
-  })
-  .catch(error => {
-    //Handle errors
-    if(error instanceof ResourceNotFoundError){
-      console.log("There is no host with the given ID")
-    }else{
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
-    }
-  })
-```
-
-### View event statistics
-
-[API Reference](https://docs.ticketingevents.com/openapi/event-reporting/view_event_statistics)
-
-```javascript
-  //Retrieve a specific event using its ID
-  let event = await ticketing.events.find(16993717817996)
-
-  //Access the event's statistics resource
-  event.statistics().then(statistics => {
-    console.log(statistics) //See documentation for list of available statisitics
-  })
-  .catch(error => {
-    //Handle errors
-    if(error instanceof ResourceNotFoundError){
-      console.log("There is no event with the given ID")
-    }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
   })

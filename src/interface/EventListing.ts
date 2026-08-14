@@ -19,5 +19,5 @@ export interface EventListing extends Base{
   banner: string
   thumbnail: string
 
-  tiers: EventTierService
+  tiers?: EventTierService
 }

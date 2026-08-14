@@ -24,17 +24,17 @@ export interface Account extends Base{
   city: string
   state: string
 
-  preferences: Promise<AccountPreferences>
-  privileges: AccountPrivilegeService
-  hosts: PrivilegedHostService
-  carts: CartService
-  orders: CustomerOrderService
+  preferences?: Promise<AccountPreferences>
+  privileges?: AccountPrivilegeService
+  hosts?: PrivilegedHostService
+  carts?: CartService
+  orders?: CustomerOrderService
 
-  inbox: Collection<Transfer>
-  outbox: Collection<Transfer>
+  inbox?: Collection<Transfer>
+  outbox?: Collection<Transfer>
 
-  itinerary(pageLength: number): Collection<EventListing>
-  wallet(pageLength: number): Collection<Ticket>
+  itinerary?(pageLength: number): Collection<EventListing>
+  wallet?(pageLength: number): Collection<Ticket>
   
-  deactivate(message?: string): Promise<boolean>
+  deactivate?(message?: string): Promise<boolean>
 }

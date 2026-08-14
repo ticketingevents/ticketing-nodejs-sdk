@@ -1,6 +1,6 @@
 import { Base } from './Base'
-import { HostStatistics } from './reporting/HostStatistics'
-import { EventRevisionService, TierService, HostPrivilegeService } from '../model/HostModel'
+import { EventRevisionService, TierService, HostPrivilegeService, HostSalesService } from '../model/HostModel'
+import { StatisticsModel } from '../model/StatisticsModel'
 
 export interface Host extends Base{
   name: string
@@ -19,5 +19,11 @@ export interface Host extends Base{
   events: EventRevisionService
   tiers: TierService
   privileges: HostPrivilegeService
-  statistics(): Promise<HostStatistics>
+  sales: HostSalesService
+
+  statistics(parameters: {
+    after: string,
+    before: string,
+    interval: string
+  }): Promise<StatisticsModel>
 }

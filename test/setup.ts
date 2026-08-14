@@ -11,6 +11,7 @@ chai.use(require('chai-string'))
 chai.use(require('chai-things'))
 chai.use(require("chai-as-promised"))
 chai.use(require("chai-sorted"))
+chai.use(require("chai-interface"))
 
 export const expect = chai.expect
 
