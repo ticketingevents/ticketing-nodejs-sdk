@@ -20,4 +20,6 @@ export interface Tier extends Base{
 	complimentary: boolean
 	transferrable: boolean
 	upgrades: Array<Tier>
+	gross_sales: number
+	units_sold: number
 }

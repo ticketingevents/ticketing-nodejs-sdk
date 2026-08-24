@@ -20,6 +20,8 @@ export class TierModel extends BaseModel implements Tier{
 	public complimentary: boolean
 	public transferrable: boolean
 	public upgrades: Array<Tier>
+	public gross_sales: number
+	public units_sold: number
 
 	private __events: Array<{id: string, share: number}>
 	private __loaded_events: Array<{event: EventRevision, share: number}>
@@ -41,6 +43,8 @@ export class TierModel extends BaseModel implements Tier{
 		this.purchase_note = tier.purchase_note
 		this.complimentary = tier.complimentary
 		this.transferrable = tier.transferrable
+		this.gross_sales = tier.gross_sales
+		this.units_sold = tier.units_sold
 
 		this.upgrades = []
 		for(const upgrade of tier.upgrades){

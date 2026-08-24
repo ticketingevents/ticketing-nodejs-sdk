@@ -287,14 +287,176 @@ describe("Event Reporting", function(){
 					expect(statistics.start).to.deep.equal(new Date("2026-07-01T00:00:00"))
 					expect(statistics.end).to.deep.equal(new Date("2126-08-01T00:00:00"))
 					expect(statistics.gross_sales).to.eq(this.secondOrder.subtotal)
-					expect(statistics.tickets_sold).to.eq(this.secondOrder.items.quantity)
+					expect(statistics.tickets_sold).to.eq(this.secondOrder.items[0].quantity)
 
-					expect(statistics.breakdown).to.be.an.instanceof(StatisticsModel)
-					expect(statistics.breakdown.start).to.be.null
-					expect(statistics.breakdown.end).to.be.null
-					expect(statistics.breakdown.interval).to.eq((new Date()).toLocaleString('en-US', { month: 'long' }))
-					expect(statistics.breakdown.gross_sales).to.eq(this.secondOrder.subtotal)
-					expect(statistics.breakdown.tickets_sold).to.eq(this.secondOrder.items.quantity)
+					expect(statistics.breakdown[0]).to.be.an.instanceof(StatisticsModel)
+					expect(statistics.breakdown[0].start).to.be.null
+					expect(statistics.breakdown[0].end).to.be.null
+					expect(statistics.breakdown[0].interval).to.eq((new Date()).toLocaleString('en-US', { month: 'long', year: 'numeric' }))
+					expect(statistics.breakdown[0].gross_sales).to.eq(this.secondOrder.subtotal)
+					expect(statistics.breakdown[0].tickets_sold).to.eq(this.secondOrder.items[0].quantity)
+
+					resolve(true)
+				}).catch(error => {
+					reject(error)
+				})
+			})
+		})
+	})
+
+	describe('List event sales', function () {
+		it('Should return a collection of Sale resources', function () {
+			return expect(this.event.sales.list()).eventually.to.all.be.instanceof(SaleModel)
+		})
+
+		it('Should contain the newly created sale as its first resource', function () {
+			return new Promise((resolve, reject) => {
+				this.event.sales.list().then(sales => {
+					expect(sales[0]).to.be.an.instanceof(SaleModel)
+					expect(sales[0].recorded)
+						.to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}/)
+					expect(sales[0].order).to.eq(this.order.number)
+					expect(sales[0].event).to.have.property("uri", this.event.uri)
+					expect(sales[0].tier).to.have.property("uri", this.tier.uri)
+					expect(sales[0].customer).to.have.property("uri", this.customer.uri)
+					expect(sales[0].quantity).to.eq(this.order.items[0].quantity)
+					expect(sales[0].total).to.eq(this.order.subtotal)
+					expect(sales[0].status).to.eq("pending")
+
+					resolve(true)
+				}).catch(error => {
+					reject(error)
+				})
+			})
+		})
+
+		it('Should return a collection of sales matching the after filter', function () {
+			return new Promise((resolve, reject) => {
+				let cutoff = new Date("2026-08-03T00:00")
+
+				this.event.sales.list().filter({after: cutoff}).then(sales => {
+					expect(sales).to.have.lengthOf.at.least(1)
+
+					for(let sale of sales){
+						expect(new Date(sale.recorded)).to.be.above(cutoff)
+					}
+
+					resolve(true)
+				}).catch(error => {
+					reject(error)
+				})
+			})
+		})
+
+		it('Should return a collection of sales matching the before filter', function () {
+			let cutoff = new Date("2026-08-03T00:00")
+
+			return expect(this.event.sales.list().filter({before: cutoff}))
+				.to.eventually.be.rejectedWith("The specified page does not exist for the given records per page.")
+				.and.be.an.instanceOf(PageAccessError)
+		})
+
+		it('Should return a collection of sales matching the tier filter', function () {
+			return new Promise((resolve, reject) => {
+				this.event.sales.list().filter({tier: this.tier}).then(sales => {
+					for(let sale of sales){
+						expect(sale.tier.uri).to.eq(this.tier.uri)
+					}
+
+					resolve(true)
+				}).catch(error => {
+					reject(error)
+				})
+			})
+		})
+
+		it('Should return a collection of sales matching the number filter', function () {
+			return new Promise((resolve, reject) => {
+				this.event.sales.list().filter({number: this.order.number}).then(sales => {
+					for(let sale of sales){
+						expect(sale.order).to.eq(this.order.number)
+					}
+
+					resolve(true)
+				}).catch(error => {
+					reject(error)
+				})
+			})
+		})
+
+		it('Should return a collection of sales matching the customer filter', function () {
+			return new Promise((resolve, reject) => {
+				this.event.sales.list().filter({customer: this.customer}).then(sales => {
+					for(let sale of sales){
+						expect(sale.customer.uri).to.eq(this.customer.uri)
+					}
+
+					resolve(true)
+				}).catch(error => {
+					reject(error)
+				})
+			})
+		})
+
+		it('Should return a collection of sales matching the status filter', function () {
+			return new Promise((resolve, reject) => {
+				this.event.sales.list().filter({status: "pending"}).then(sales => {
+					for(let sale of sales){
+						expect(sale.status).to.eq("pending")
+					}
+
+					resolve(true)
+				}).catch(error => {
+					reject(error)
+				})
+			})
+		})
+
+	    it('Should return sales sorted by recorded in ascending order', function () {
+	      return new Promise((resolve, reject) => {
+	        this.event.sales.list().sort("recorded").then(sales => {
+	          expect(sales).to.be.ascendingBy("recorded")
+
+	          resolve(true)
+	        }).catch(error => {
+	          reject(error)
+	        })
+	      })
+	    })
+
+	    it('Should return sales sorted by sale total in descending order', function () {
+	      return new Promise((resolve, reject) => {
+	        this.event.sales.list().sort("total", false).then(sales => {
+	          expect(sales).to.be.descendingBy("total")
+
+	          resolve(true)
+	        }).catch(error => {
+	          reject(error)
+	        })
+	      })
+		})
+	})
+
+	describe('Fetch event statistics', function () {
+		it('Should return the relevant Statistics resource', function () {
+			return new Promise((resolve, reject) => {
+				this.event.statistics({
+					after: "2026-07-01T00:00:00",
+					before: "2126-08-01T00:00:00",
+					interval: "month" 
+				}).then(statistics => {
+					expect(statistics).to.be.an.instanceof(StatisticsModel)
+					expect(statistics.start).to.deep.equal(new Date("2026-07-01T00:00:00"))
+					expect(statistics.end).to.deep.equal(new Date("2126-08-01T00:00:00"))
+					expect(statistics.gross_sales).to.eq(this.secondOrder.subtotal)
+					expect(statistics.tickets_sold).to.eq(this.secondOrder.items[0].quantity)
+
+					expect(statistics.breakdown[0]).to.be.an.instanceof(StatisticsModel)
+					expect(statistics.breakdown[0].start).to.be.null
+					expect(statistics.breakdown[0].end).to.be.null
+					expect(statistics.breakdown[0].interval).to.eq((new Date()).toLocaleString('en-US', { month: 'long', year: 'numeric' }))
+					expect(statistics.breakdown[0].gross_sales).to.eq(this.secondOrder.subtotal)
+					expect(statistics.breakdown[0].tickets_sold).to.eq(this.secondOrder.items[0].quantity)
 
 					resolve(true)
 				}).catch(error => {

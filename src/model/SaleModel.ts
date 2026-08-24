@@ -2,14 +2,14 @@ import { APIAdapter } from '../util/APIAdapter'
 import type { Sale } from '../interface/Sale'
 import { BaseModel } from './BaseModel'
 import type { EventListing } from '../interface/EventListing'
-import { TierModel } from './TierModel'
+import type { Tier } from '../interface/Tier'
 import type { Account } from '../interface/Account'
 
 export class SaleModel extends BaseModel implements Sale{
   public recorded: string
   public order: string
   public event: EventListing
-  public tier: TierModel
+  public tier: Tier
   public customer: Account
   public quantity: number
   public total: number
@@ -63,7 +63,27 @@ export class SaleModel extends BaseModel implements Sale{
     }
 
     if(sale.tier){
-      this.tier = new TierModel(sale.tier, adapter)
+      this.tier = {
+        id: sale.tier.self ? /([A-Za-z0-9\-]+)$/.exec(sale.tier.self)[1] : "",
+        uri: sale.tier.self,
+        name: sale.tier.name,
+        description: sale.tier.description,
+        price: sale.tier.price,
+        capacity: sale.tier.capacity,
+        remaining: sale.tier.remaining,
+        available_from: sale.tier.available_from,
+        available_to: sale.tier.available_to,
+        events: sale.tier.events,
+        artwork: sale.tier.artwork,
+        unit_size: sale.tier.unit_size,
+        purchase_limit: sale.tier.purchase_limit,
+        purchase_note: sale.tier.purchase_note,
+        complimentary: sale.tier.complimentary,
+        transferrable: sale.tier.transferrable,
+        upgrades: sale.tier.upgrades,
+        gross_sales: sale.tier.gross_sales,
+        units_sold: sale.tier.units_sold
+      }
     }
   }
 }

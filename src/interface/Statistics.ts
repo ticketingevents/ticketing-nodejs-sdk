@@ -6,5 +6,5 @@ export interface Statistics extends Base{
   interval?: string
   gross_sales: number
   tickets_sold: number
-  breakdown?: Statistics
+  breakdown?: Array<Statistics>
 }

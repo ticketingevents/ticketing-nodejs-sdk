@@ -10,7 +10,11 @@ import type { SubmissionData } from '../interface/data/SubmissionData'
 import { SubmissionModel } from './SubmissionModel'
 import type { Publication } from '../interface/Publication'
 import type { PublicationData } from '../interface/data/PublicationData'
+import type { Sale } from '../interface/Sale'
+import type { SaleData } from '../interface/data/SaleData'
 import { PublicationModel } from './PublicationModel'
+import { SaleModel } from './SaleModel'
+import { StatisticsModel } from './StatisticsModel'
 import { InvalidStateError } from '../errors'
 
 export class EventRevisionModel extends BaseModel implements EventRevision{
@@ -36,6 +40,7 @@ export class EventRevisionModel extends BaseModel implements EventRevision{
 
   private __submissionService: RevisionSubmissionService
   private __publicationService: RevisionPublicationService
+  private __salesService: EventSalesService
 
   constructor(revision: any, adapter: APIAdapter){
     super(revision.self, adapter)
@@ -71,6 +76,7 @@ export class EventRevisionModel extends BaseModel implements EventRevision{
 
     this.__submissionService = new RevisionSubmissionService(this._apiAdapter, this)
     this.__publicationService = new RevisionPublicationService(this._apiAdapter, this)
+    this.__salesService = new EventSalesService(this._apiAdapter, this)
   }
 
   get banner(){
@@ -95,6 +101,24 @@ export class EventRevisionModel extends BaseModel implements EventRevision{
 
   get publications(): RevisionPublicationService{
     return this.__publicationService
+  }
+
+  get sales(): EventSalesService{
+    return this.__salesService
+  }
+
+  public statistics(parameters: {
+    after: string,
+    before: string,
+    interval: string
+  }): Promise<StatisticsModel>{
+    return new Promise((resolve, reject) => {
+      this._apiAdapter.get(`${this.uri}/statistics`, parameters).then(response => {
+        resolve(new StatisticsModel(response.data, this._apiAdapter))
+      }).catch(error => {
+        reject(error)
+      })
+    })
   }
 
   serialise(): EventRevisionData{
@@ -193,5 +217,19 @@ export class RevisionPublicationService extends BaseService<PublicationData, Pub
         reject(error)
       })
     })
+  }
+}
+
+export class EventSalesService extends BaseService<SaleData, Sale>{
+  private __apiAdapter: APIAdapter
+
+  constructor(apiAdapter: APIAdapter, event: EventRevision){
+    super(apiAdapter, `${event.uri}/sales`, SaleModel,
+      ["after", "before", "tier", "number", "customer", "status"],
+      ["recorded", "total"],
+      {tier: "id", customer: "id"}
+    )
+
+    this.__apiAdapter = apiAdapter
   }
 }

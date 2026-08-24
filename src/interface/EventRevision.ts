@@ -2,8 +2,12 @@ import { Base } from './Base'
 import { Category } from './Category'
 import { Venue } from './Venue'
 import { Publication } from './Publication'
-import { RevisionSubmissionService } from '../model/EventRevisionModel'
-import { RevisionPublicationService } from '../model/EventRevisionModel'
+import {
+  RevisionSubmissionService,
+  RevisionPublicationService,
+  EventSalesService
+} from '../model/EventRevisionModel'
+import { StatisticsModel } from '../model/StatisticsModel'
 
 export interface EventRevision extends Base{
   title: string
@@ -24,6 +28,13 @@ export interface EventRevision extends Base{
   thumbnail: string
   submissions: RevisionSubmissionService
   publications: RevisionPublicationService
+  sales: EventSalesService
 
   publish(schedule: string): Promise<Publication>
+
+  statistics(parameters: {
+    after: string,
+    before: string,
+    interval: string
+  }): Promise<StatisticsModel>
 }

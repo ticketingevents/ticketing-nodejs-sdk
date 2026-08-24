@@ -15,6 +15,22 @@ describe("Tier Management", function(){
   this.timeout(60000)
 
   before(async function(){
+    //Create a customer
+    this.customer = await ticketing.accounts.create({
+      username: "mothers.milk"+Math.floor(Math.random() * 999999),
+      password: "WuT4NGcl4n",
+      email: "marvin.milk@usmc.gov"+Math.floor(Math.random() * 999999),
+      firstName: "Marvin",
+      lastName: "Milk",
+      title: "Mr",
+      dateOfBirth: "1974-09-14",
+      phone: "+1 (268) 555 0123",
+      country: "Antigua and Barbuda",
+      firstAddressLine: "Jennings New Extension",
+      city: "Jennings",
+      state: "Saint Mary's"
+    })
+
     //Create an event host
     this.host = await ticketing.hosts.create({
       name: "Host "+Math.floor(Math.random() * 999999),
@@ -52,8 +68,15 @@ describe("Tier Management", function(){
       subcategory: this.category.subcategories[0],
       start: "3033-06-07T20:00",
       end: "3035-06-07T23:00",
-      venue: this.venue
+      venue: this.venue,
+      banner: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAIBAQIBAQICAgICAgICAwUDAwMDAwYEBAMFBwYHBwcGBwcICQsJCAgKCAcHCg0KCgsMDAwMBwkODw0MDgsMDAz/2wBDAQICAgMDAwYDAwYMCAcIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAz/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9/KKKKAP/2Q==",
+      thumbnail: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAIBAQIBAQICAgICAgICAwUDAwMDAwYEBAMFBwYHBwcGBwcICQsJCAgKCAcHCg0KCgsMDAwMBwkODw0MDgsMDAz/2wBDAQICAgMDAwYDAwYMCAcIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAz/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9/KKKKAP/2Q=="
     })
+
+    //Publish event
+    let submission = await this.event.submissions.create()
+    await submission.approve("Event approved")
+    await this.event.publish()
 
     //Create a second event
     this.secondEvent = await this.host.events.create({
@@ -89,14 +112,14 @@ describe("Tier Management", function(){
         "price": 299.9,
         "capacity": 20,
         "available_from": "2025-05-02T21:00:00",
-        "available_to": "2025-07-01T00:00:00",
+        "available_to": "2035-07-01T00:00:00",
         "events": [{
           "event": this.event,
           "share": 100
         }],
         "artwork": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCAgJDBQNDAsLDBgREg4UHRkeHhwZHBsgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAf/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAH/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwApE//Z",
         "unit_size": 1,
-        "purchase_limit": 2,
+        "purchase_limit": 10,
         "purchase_note": "Your all set. Remember to give the codeword HOMELANDER when coming backstage.",
         "complimentary": false,
         "transferrable": false,
@@ -112,6 +135,7 @@ describe("Tier Management", function(){
     await this.host.delete()
     await this.venue.delete()
     await this.region.delete()
+    await this.customer.delete()
   })
 
   describe('Create a tier', function () {
@@ -133,6 +157,8 @@ describe("Tier Management", function(){
             expect(tier.purchase_note).to.eq(this.testTierData.purchase_note)
             expect(tier.complimentary).to.eq(this.testTierData.complimentary)
             expect(tier.transferrable).to.eq(this.testTierData.transferrable)
+            expect(tier.gross_sales).to.eq(0)
+            expect(tier.units_sold).to.eq(0)
 
             expect(tier.upgrades.length).to.eq(this.testTierData.upgrades.length)
             for(let i=0; i < tier.upgrades.length; i++){
@@ -151,7 +177,7 @@ describe("Tier Management", function(){
               resolve(true)
             })
         })).catch(error=>{
-            reject(error)
+          reject(error)
         })
       })
     })
@@ -191,6 +217,26 @@ describe("Tier Management", function(){
       .to.eventually.be.rejectedWith("One or more of the specified events already has a tier with the given name.")
       .and.be.an.instanceOf(ResourceExistsError)
     })
+
+    after(async function(){
+      //Order tickets from the new tier
+      let cart = await this.customer.carts.create()
+      cart.add(testTier, 5)
+      let order = await cart.checkout()
+      await order.settle({
+        number: "4111111111111111",
+        cvv: "123",
+        expiryDate: "12/30",
+        name: "Marvin M. Milk",
+        email: "marvin.milk@usmc.gov",
+        phone: "+1 (268) 555 0123",
+        address1: "Hermitage Rd.",
+        address2: "Jennings New Extension",
+        city: "Jennings",
+        district: "Saint Mary'\''s",
+        country: "Antigua and Barbuda"
+      })
+    })
   })
 
   describe('List tiers', function () {
@@ -214,6 +260,8 @@ describe("Tier Management", function(){
           expect(tiers[0].purchase_note).to.eq(this.testTierData.purchase_note)
           expect(tiers[0].complimentary).to.eq(this.testTierData.complimentary)
           expect(tiers[0].transferrable).to.eq(this.testTierData.transferrable)
+          expect(tiers[0].gross_sales).to.eq(1499.50)
+          expect(tiers[0].units_sold).to.eq(5)
 
           expect(tiers[0].upgrades.length).to.eq(this.testTierData.upgrades.length)
           for(let i=0; i < tiers[0].upgrades.length; i++){
@@ -278,6 +326,8 @@ describe("Tier Management", function(){
           expect(tier.purchase_note).to.eq(this.testTierData.purchase_note)
           expect(tier.complimentary).to.eq(this.testTierData.complimentary)
           expect(tier.transferrable).to.eq(this.testTierData.transferrable)
+          expect(tier.gross_sales).to.eq(1499.50)
+          expect(tier.units_sold).to.eq(5)
 
           expect(tier.upgrades.length).to.eq(this.testTierData.upgrades.length)
           for(let i=0; i < tier.upgrades.length; i++){
