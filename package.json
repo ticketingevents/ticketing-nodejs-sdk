@@ -36,8 +36,7 @@
     "test": "npm run configure && mocha --ui bdd --reporter spec --require ts-node/register --require test/fixtures/fixtures.ts test/suites/*.ts --slow 300"
   },
   "dependencies": {
-    "axios": "^1.6.8",
-    "dev": "^0.1.5"
+    "axios": "^1.6.8"
   },
   "madge": {
     "detectiveOptions": {
