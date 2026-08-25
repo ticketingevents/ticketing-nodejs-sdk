@@ -119,7 +119,7 @@ describe("Content Review", function(){
 
     it('Should contain valid submission data', function () {
       return new Promise((resolve, reject) => {
-        ticketing.submissions.list(50).then(submissions => {
+        ticketing.submissions.list(50).filter({status: "Pending"}).then(submissions => {
           expect(submissions[submissions.length - 3]).to.be.an.instanceof(SubmissionModel)
           expect(submissions[submissions.length - 3].type).to.equal("event")
           expect(submissions[submissions.length - 3].resource).to.equal(this.testEvent.id)
