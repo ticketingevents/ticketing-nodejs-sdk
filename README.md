@@ -128,10 +128,6 @@ export class TickeTingService extends TickeTing{
 - [Account Privileges](#account-privileges)
     * [List account privileges](#list-account-privileges)
     * [Retrieve privileged hosts](#retrieve-managed-hosts)
-- [Account Resources](#account-resources)
-    * [Retrieve event itinerary](#retrieve-event-itinerary)
-    * [Retrieve ticket wallet](#retrieve-ticket-wallet)
-    * [Retrieve transfer history](#retrieve-transfer-history)
 - [Hosts](#hosts)
     * [List event hosts](#list-event-hosts)
     * [Create an event host](#create-an-event-host)
@@ -174,11 +170,9 @@ export class TickeTingService extends TickeTing{
     * [Fetch an order](#retrieve-an-order)
     * [Cancel an order](#cancel-an-order)
     * [Settle an order](#settle-an-order)
-- [Reporting](#reporting)
-    * [List host sales](#list-host-sales)
-    * [Fetch host statistics](#fetch-host-statistics)
-    * [List event sales](#list-event-sales)
-    * [Fetch event statistics](#fetch-event-statistics)
+- [Customer Wallet](#customer-wallet)
+    * [Retrieve event itinerary](#retrieve-event-itinerary)
+    * [Retrieve customer tickets](#retrieve-ticket-wallet)
 - [Transferring Tickets](#transferring-tickets)
     * [Initiate a transfer](#initiate-a-transfer)
     * [Add tickets to a transfer](#add-tickets-to-a-transfer)
@@ -188,6 +182,11 @@ export class TickeTingService extends TickeTing{
     * [Fetch a transfer](#fetch-a-transfer)
     * [Cancel a transfer](#cancel-a-transfer)
     * [Claim a transfer](#claim-a-transfer)
+- [Reporting](#reporting)
+    * [List host sales](#list-host-sales)
+    * [Fetch host statistics](#fetch-host-statistics)
+    * [List event sales](#list-event-sales)
+    * [Fetch event statistics](#fetch-event-statistics)
 - [Admissions](#admissions)
     * [Admissions tokens](#admissions-tokens)
         * [List admissions tokens](#list-admissions-tokens)
@@ -1201,137 +1200,6 @@ Retrieval of account privileges for determining system access levels
         console.log(`${typeof error} (${error.code}): ${error.message}`)
       }
     })
-```
-
-## Account Resources
-
-Operations for accessing collections of resources linked to a user's account
-
-### Retrieve event itinerary
-
-[API Reference](https://docs.ticketingevents.com/openapi/account-activity/view_event_itinerary)
-
-```javascript
-  //Retrieve a specific account using its account number
-  account = await ticketing.accounts.find("MO-6A39EE8D")
-
-  account.itinerary(20) //Page length to use with the collection
-    // Supported filters with examples
-    .filter({
-      active: true //Return only future events
-    })
-    // Supported sort fields
-    .sort(
-      "start", //One of "alphabetical" "published" "popularity" "start"
-      true //Set true for ascending sort (default), or false for descending order
-    )
-    .then(events => {
-      //Do something with the collection of events
-    })
-    .catch(error => {
-      //Handle errors
-      if(error instanceof UnsupportedCriteriaError){
-        //Handle unsupported criteria error
-      }else if(error instanceof UnsupportedSortError){
-        //Handle unsupported sort field error
-      }else if(error instanceof PageAccessError){
-        //Handle non-existant page error
-      }else{
-        console.log(`${typeof error} (${error.code}): ${error.message}`)
-      }
-    })
-```
-
-### Retrieve ticket wallet
-
-[API Reference](https://docs.ticketingevents.com/openapi/account-activity/list_ticket_wallet)
-
-```javascript
-  //Retrieve a specific account using its account number
-  let account = await ticketing.accounts.find("MO-6A39EE8D")
-
-  //Load event by ID
-  let event = await ticketing.events.find(16993717817996)
-
-  //Load section by ID
-  let section = (await ticketing.events.find(16993717817996)).sections[0]
-
-  account.wallet(25) //Page length to use with collection
-    // Supported filters with examples
-    .filter({
-      event: event, //Return tickets for the given event
-      section: section, //Return tickets for the given section
-      serial: "DAWIER", //Return tickets with a serial number matching the pattern
-      status: "Held" //Return tickets with a matching status
-    })
-    .then(tickets => {
-      //Do something with the collection of tickets
-    })
-    .catch(error => {
-      //Handle errors
-      if(error instanceof UnsupportedCriteriaError){
-        //Handle unsupported criteria error
-      }else if(error instanceof PageAccessError){
-        //Handle non-existant page error
-      }else{
-        console.log(`${typeof error} (${error.code}): ${error.message}`)
-      }
-    })
-```
-
-### Retrieve transfer history
-
-[API Reference](https://docs.ticketingevents.com/openapi/account-activity/view_transfer_history)
-
-```javascript
-  //Retrieve a specific account using its account number
-  let account = await ticketing.accounts.find("MO-6A39EE8D")
-
-  //Load event by ID
-  let event = await ticketing.events.find(16993717817996)
-
-  //Load section by ID
-  let section = (await ticketing.events.find(16993717817996)).sections[0]
-
-  //Retrieve transfers received by the customer
-  account.inbox
-    // Supported filters with examples
-    .filter({
-      status: "Pending" //Return transfers with the given status
-    })
-    .then(transfers => {
-      //Do something with the collection of transfers
-    })
-    .catch(error => {
-      //Handle errors
-      if(error instanceof UnsupportedCriteriaError){
-        //Handle unsupported criteria error
-      }else if(error instanceof PageAccessError){
-        //Handle non-existant page error
-      }else{
-        console.log(`${typeof error} (${error.code}): ${error.message}`)
-      }
-    })
-
-    //Retrieve transfers sent by the customer
-    account.outbox
-      // Supported filters with examples
-      .filter({
-        status: "Pending" //Return transfers with the given status
-      })
-      .then(transfers => {
-        //Do something with the collection of transfers
-      })
-      .catch(error => {
-        //Handle errors
-        if(error instanceof UnsupportedCriteriaError){
-          //Handle unsupported criteria error
-        }else if(error instanceof PageAccessError){
-          //Handle non-existant page error
-        }else{
-          console.log(`${typeof error} (${error.code}): ${error.message}`)
-        }
-      })
 ```
 
 ## Hosts
@@ -2501,43 +2369,69 @@ SDK functionality allowing for manipulating and settling ticket orders.
   })
 ```
 
-## Reporting
+## Customer Wallet
 
-The TickeTing SDK provides a set of functionality that lets you report on hosts, events,
-users and more. These features are documented below.
+Operations for accessing and viewing tickets in a customer's wallet
 
-### List host sales
+### Retrieve event itinerary
 
-[API Reference](https://docs.ticketingevents.com/openapi/sales-reporting/list_host_sales)
+[API Reference](https://docs.ticketingevents.com/openapi/customer-wallet/retrieve_event_itinerary)
 
 ```javascript
-  //Retrieve a specific host using its ID
-  let host = await ticketing.hosts.find(17327135633743)
+  //Retrieve a specific account using its account number
+  let account = await ticketing.accounts.find("MO-6A39EE8D")
 
-  //Retrieve a specific event using its ID
-  let event = await host.events.find(16993717817996)
-
-  //Retrieve a specific tier using its ID
-  let tier = await host.tiers.find(19240249258262)
-
-  host.sales.list()
+  account.itinerary.list(20) //Page length to use with the collection
     // Supported filters with examples
     .filter({
-      after: new Date("2026-07-01T00:00:00"), //Return sales after date
-      before: new Date("2026-08-01T00:00:00"), //Return sales before date
-      event: event, //Specific event sales
-      tier: tier, //Specific tier sales
-      number: 17189259825853, //Return sales linked to a specific order number
-      customer: "AZ-4918SF92", //Return sales linked to a specific customer
-      status: "confirmed", //Can be one of pending, cancelled, confirmed, refunded
+      active: true //Return only future events
     })
     // Supported sort fields
     .sort(
-      "recorded", //One of "recorded", "total"
-      false //Set true for ascending sort (default), or false for descending order
+      "start", //One of "alphabetical" "published" "popularity" "start"
+      true //Set true for ascending sort (default), or false for descending order
     )
-    .then(sales => {
-      //Do something with the collection of sales
+    .then(events => {
+      //Do something with the collection of events
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof UnsupportedSortError){
+        //Handle unsupported sort field error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Retrieve customer tickets
+
+[API Reference](https://docs.ticketingevents.com/openapi/customer-wallet/retrieve_customer_tickets)
+
+```javascript
+  //Retrieve a specific account using its account number
+  let account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  //Load event by ID
+  let event = await ticketing.events.find(16993717817996)
+
+  //Load tier by ID
+  let tier = await host.tiers.find(19240249258262)
+
+  account.wallet.list(25) //Page length to use with collection
+    // Supported filters with examples
+    .filter({
+      event: event, //Return tickets for the given event
+      tier: tier, //Return tickets for the given tier
+      serial: "DAWIER", //Return tickets with a serial number matching the pattern
+      status: "held" //Return tickets with a matching status
+    })
+    .then(tickets => {
+      //Do something with the collection of tickets
     })
     .catch(error => {
       //Handle errors
@@ -2549,97 +2443,6 @@ users and more. These features are documented below.
         console.log(`${typeof error} (${error.code}): ${error.message}`)
       }
     })
-```
-
-### Fetch host statistics
-
-[API Reference](https://docs.ticketingevents.com/openapi/sales-reporting/retrieve_host_statistics)
-
-```javascript
-  //Retrieve a specific host using its ID
-  let host = await ticketing.hosts.find(17327135633743)
-
-  //Access the host's statistics resource
-  host.statistics({
-      after: "2026-07-01T00:00:00", //Only aggregate statistics after this date
-      before: "2026-08-01T00:00:00", //Only aggregate statistics before this date
-      interval: "month" //The intervals over which to breakdown the aggregated statistics. Can be one of hour, day, week, month or year
-  }).then(statistics => {
-    console.log(statistics) //See documentation for list of available statisitics
-  })
-  .catch(error => {
-    //Handle errors
-    console.log(`${typeof error} (${error.code}): ${error.message}`)
-  })
-```
-
-### List event sales
-
-[API Reference](https://docs.ticketingevents.com/openapi/sales-reporting/list_event_sales)
-
-```javascript
-  //Retrieve a specific host using its ID
-  let host = await ticketing.hosts.find(17327135633743)
-
-  //Retrieve a specific event using its ID
-  let event = await host.events.find(16993717817996)
-
-  //Retrieve a specific tier using its ID
-  let tier = await host.tiers.find(19240249258262)
-
-  event.sales.list()
-    // Supported filters with examples
-    .filter({
-      after: new Date("2026-07-01T00:00:00"), //Return sales after date
-      before: new Date("2026-08-01T00:00:00"), //Return sales before date
-      tier: tier, //Specific tier sales
-      number: 17189259825853, //Return sales linked to a specific order number
-      customer: "AZ-4918SF92", //Return sales linked to a specific customer
-      status: "confirmed", //Can be one of pending, cancelled, confirmed, refunded
-    })
-    // Supported sort fields
-    .sort(
-      "recorded", //One of "recorded", "total"
-      false //Set true for ascending sort (default), or false for descending order
-    )
-    .then(sales => {
-      //Do something with the collection of sales
-    })
-    .catch(error => {
-      //Handle errors
-      if(error instanceof UnsupportedCriteriaError){
-        //Handle unsupported criteria error
-      }else if(error instanceof PageAccessError){
-        //Handle non-existant page error
-      }else{
-        console.log(`${typeof error} (${error.code}): ${error.message}`)
-      }
-    })
-```
-
-### Fetch event statistics
-
-[API Reference](https://docs.ticketingevents.com/openapi/sales-reporting/retrieve_event_statistics)
-
-```javascript
-  //Retrieve a specific host using its ID
-  let host = await ticketing.hosts.find(17327135633743)
-
-  //Retrieve a specific event using its ID
-  let event = await host.events.find(16993717817996)
-
-  //Access the event's statistics resource
-  event.statistics({
-      after: "2026-08-24T00:00:00", //Only aggregate statistics after this date
-      before: "2026-08-25T00:00:00", //Only aggregate statistics before this date
-      interval: "hour" //The intervals over which to breakdown the aggregated statistics. Can be one of hour, day, week, month or year
-  }).then(statistics => {
-    console.log(statistics) //See documentation for list of available statisitics
-  })
-  .catch(error => {
-    //Handle errors
-    console.log(`${typeof error} (${error.code}): ${error.message}`)
-  })
 ```
 
 ## Transferring tickets
@@ -2857,6 +2660,147 @@ SDK functionality for transferring tickets in the customer's wallet to another u
       //Handle errors
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
+  })
+```
+
+## Reporting
+
+The TickeTing SDK provides a set of functionality that lets you report on hosts, events,
+users and more. These features are documented below.
+
+### List host sales
+
+[API Reference](https://docs.ticketingevents.com/openapi/sales-reporting/list_host_sales)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific event using its ID
+  let event = await host.events.find(16993717817996)
+
+  //Retrieve a specific tier using its ID
+  let tier = await host.tiers.find(19240249258262)
+
+  host.sales.list()
+    // Supported filters with examples
+    .filter({
+      after: new Date("2026-07-01T00:00:00"), //Return sales after date
+      before: new Date("2026-08-01T00:00:00"), //Return sales before date
+      event: event, //Specific event sales
+      tier: tier, //Specific tier sales
+      number: 17189259825853, //Return sales linked to a specific order number
+      customer: "AZ-4918SF92", //Return sales linked to a specific customer
+      status: "confirmed", //Can be one of pending, cancelled, confirmed, refunded
+    })
+    // Supported sort fields
+    .sort(
+      "recorded", //One of "recorded", "total"
+      false //Set true for ascending sort (default), or false for descending order
+    )
+    .then(sales => {
+      //Do something with the collection of sales
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch host statistics
+
+[API Reference](https://docs.ticketingevents.com/openapi/sales-reporting/retrieve_host_statistics)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Access the host's statistics resource
+  host.statistics({
+      after: "2026-07-01T00:00:00", //Only aggregate statistics after this date
+      before: "2026-08-01T00:00:00", //Only aggregate statistics before this date
+      interval: "month" //The intervals over which to breakdown the aggregated statistics. Can be one of hour, day, week, month or year
+  }).then(statistics => {
+    console.log(statistics) //See documentation for list of available statisitics
+  })
+  .catch(error => {
+    //Handle errors
+    console.log(`${typeof error} (${error.code}): ${error.message}`)
+  })
+```
+
+### List event sales
+
+[API Reference](https://docs.ticketingevents.com/openapi/sales-reporting/list_event_sales)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific event using its ID
+  let event = await host.events.find(16993717817996)
+
+  //Retrieve a specific tier using its ID
+  let tier = await host.tiers.find(19240249258262)
+
+  event.sales.list()
+    // Supported filters with examples
+    .filter({
+      after: new Date("2026-07-01T00:00:00"), //Return sales after date
+      before: new Date("2026-08-01T00:00:00"), //Return sales before date
+      tier: tier, //Specific tier sales
+      number: 17189259825853, //Return sales linked to a specific order number
+      customer: "AZ-4918SF92", //Return sales linked to a specific customer
+      status: "confirmed", //Can be one of pending, cancelled, confirmed, refunded
+    })
+    // Supported sort fields
+    .sort(
+      "recorded", //One of "recorded", "total"
+      false //Set true for ascending sort (default), or false for descending order
+    )
+    .then(sales => {
+      //Do something with the collection of sales
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch event statistics
+
+[API Reference](https://docs.ticketingevents.com/openapi/sales-reporting/retrieve_event_statistics)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific event using its ID
+  let event = await host.events.find(16993717817996)
+
+  //Access the event's statistics resource
+  event.statistics({
+      after: "2026-08-24T00:00:00", //Only aggregate statistics after this date
+      before: "2026-08-25T00:00:00", //Only aggregate statistics before this date
+      interval: "hour" //The intervals over which to breakdown the aggregated statistics. Can be one of hour, day, week, month or year
+  }).then(statistics => {
+    console.log(statistics) //See documentation for list of available statisitics
+  })
+  .catch(error => {
+    //Handle errors
+    console.log(`${typeof error} (${error.code}): ${error.message}`)
   })
 ```
 

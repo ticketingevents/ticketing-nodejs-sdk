@@ -1,5 +1,5 @@
 //Control execution order
-import './account_resources'
+import './transfers'
 
 import { 
 	TickeTing, BadDataError, InvalidStateError, ResourceImmutableError,

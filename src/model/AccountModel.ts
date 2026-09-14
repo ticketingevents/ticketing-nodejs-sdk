@@ -1,9 +1,5 @@
 import { APIAdapter } from '../util/APIAdapter'
-import { Collection } from '../util/Collection'
 import { BaseService } from '../service/BaseService'
-import { ItineraryService } from '../service/ItineraryService'
-import { WalletService } from '../service/WalletService'
-import { TransferHistoryService } from '../service/TransferHistoryService'
 import { BaseModel } from './BaseModel'
 import type { Account } from '../interface/Account'
 import type { AccountData } from '../interface/data/AccountData'
@@ -21,8 +17,10 @@ import type { Privilege } from '../interface/Privilege'
 import type { PrivilegeData } from '../interface/data/PrivilegeData'
 import { PrivilegeModel } from './PrivilegeModel'
 import type { EventListing } from '../interface/EventListing'
+import { EventListingModel } from './EventListingModel'
 import type { Ticket } from '../interface/Ticket'
-import type { Transfer } from '../interface/Transfer'
+import type { TicketData } from '../interface/data/TicketData'
+import { TicketModel } from './TicketModel'
 import { PermissionError, UnsupportedOperationError } from '../errors'
 
 export class AccountModel extends BaseModel implements Account{
@@ -48,11 +46,8 @@ export class AccountModel extends BaseModel implements Account{
   private __privilegedHostService: PrivilegedHostService
   private __cartService: CartService
   private __customerOrderService: CustomerOrderService
-
-
-  private __itineraryService: ItineraryService
-  private __walletService: WalletService
-  private __transferHistoryService: TransferHistoryService
+  private __customerItineraryService: CustomerItineraryService
+  private __customerWalletService: CustomerWalletService
 
   constructor(account: any, adapter: APIAdapter){
     super(account.self, adapter)
@@ -79,10 +74,8 @@ export class AccountModel extends BaseModel implements Account{
     this.__accountPrivilegeService = new AccountPrivilegeService(this._apiAdapter, this)
     this.__cartService = new CartService(this._apiAdapter, this)
     this.__customerOrderService = new CustomerOrderService(this._apiAdapter, this)
-
-    this.__itineraryService = new ItineraryService(this._apiAdapter, this)
-    this.__walletService = new WalletService(this._apiAdapter, this)
-    this.__transferHistoryService = new TransferHistoryService(this._apiAdapter, this)
+    this.__customerItineraryService = new CustomerItineraryService(this._apiAdapter, this)
+    this.__customerWalletService = new CustomerWalletService(this._apiAdapter, this)
   }
 
   get preferences(): Promise<AccountPreferences>{
@@ -111,20 +104,12 @@ export class AccountModel extends BaseModel implements Account{
     return this.__customerOrderService
   }
 
-  get inbox(): Collection<Transfer>{
-    return this.__transferHistoryService.list().filter({role: "recipient"})
+  get itinerary(): CustomerItineraryService{
+    return this.__customerItineraryService
   }
 
-  get outbox(): Collection<Transfer>{
-    return this.__transferHistoryService.list().filter({role: "sender"})
-  }
-
-  itinerary(pageLength: number = 25): Collection<EventListing>{
-    return this.__itineraryService.list(pageLength)
-  }
-
-  wallet(pageLength: number = 25): Collection<Ticket>{
-    return this.__walletService.list(pageLength)
+  get wallet(): CustomerWalletService{
+    return this.__customerWalletService
   }
 
   deactivate(message?: string): Promise<boolean>{
@@ -219,5 +204,58 @@ export class CustomerOrderService extends BaseService<OrderData, Order>{
 
   protected _instantiateModel(data: any){
     return new OrderModel(data, this.__customer, this.__apiAdapter)
+  }
+}
+
+export class CustomerItineraryService extends BaseService<EventListing, EventListing>{
+  constructor(apiAdapter: APIAdapter, customer: Account){
+    super(apiAdapter, `/accounts/${customer.number}/events`, EventListingModel,
+      ["active"],
+      ["alphabetical","published","popularity","start"]
+    )
+  }
+
+  create(): Promise<EventListing>{
+    return new Promise<EventListing>((_resolve, reject) => {
+      reject(new UnsupportedOperationError(0, "Operation not supported"))
+    })
+  }
+
+  batchCreate(): Promise<Array<EventListing>>{
+    return new Promise<Array<EventListing>>((_resolve, reject) => {
+      reject(new UnsupportedOperationError(0, "Operation not supported"))
+    })
+  }
+}
+
+export class CustomerWalletService extends BaseService<TicketData, Ticket>{
+  private __apiAdapter: APIAdapter
+  private __customer: Account
+
+  constructor(apiAdapter: APIAdapter, customer: Account){
+    super(apiAdapter, `/accounts/${customer.number}/tickets`, TicketModel,
+      ["event", "tier", "serial", "status"],
+      [],
+      {event: "id", tier: "id"}
+    )
+
+    this.__apiAdapter = apiAdapter
+    this.__customer = customer
+  }
+
+  create(): Promise<Ticket>{
+    return new Promise<Ticket>((_resolve, reject) => {
+      reject(new UnsupportedOperationError(0, "Operation not supported"))
+    })
+  }
+
+  batchCreate(): Promise<Array<Ticket>>{
+    return new Promise<Array<Ticket>>((_resolve, reject) => {
+      reject(new UnsupportedOperationError(0, "Operation not supported"))
+    })
+  }
+
+  protected _instantiateModel(data: any){
+    return new TicketModel(data, this.__customer, this.__apiAdapter)
   }
 }

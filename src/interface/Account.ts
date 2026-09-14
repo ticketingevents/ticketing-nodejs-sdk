@@ -1,10 +1,9 @@
 import { Base } from './Base'
-import { Collection } from '../util/Collection'
 import type { AccountPreferences } from './AccountPreferences'
-import type { EventListing } from './EventListing'
-import type { Ticket } from './Ticket'
-import type { Transfer } from './Transfer'
-import { AccountPrivilegeService, PrivilegedHostService, CartService, CustomerOrderService } from '../model/AccountModel'
+import {
+  AccountPrivilegeService, PrivilegedHostService, CartService,
+  CustomerOrderService, CustomerItineraryService, CustomerWalletService
+} from '../model/AccountModel'
 
 export interface Account extends Base{
   number: string
@@ -29,12 +28,8 @@ export interface Account extends Base{
   hosts?: PrivilegedHostService
   carts?: CartService
   orders?: CustomerOrderService
-
-  inbox?: Collection<Transfer>
-  outbox?: Collection<Transfer>
-
-  itinerary?(pageLength: number): Collection<EventListing>
-  wallet?(pageLength: number): Collection<Ticket>
+  itinerary?: CustomerItineraryService
+  wallet?: CustomerWalletService
   
   deactivate?(message?: string): Promise<boolean>
 }

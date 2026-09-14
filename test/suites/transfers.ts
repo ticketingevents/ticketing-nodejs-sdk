@@ -1,5 +1,5 @@
 //Control execution order
-import './orders'
+import './customer_wallet'
 
 import { 
 	TickeTing, BadDataError, InvalidStateError, PermissionError,
