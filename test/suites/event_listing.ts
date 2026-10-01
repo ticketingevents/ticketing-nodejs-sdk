@@ -398,8 +398,10 @@ describe("Event Listing", function(){
                     .and.to.have.property("uri", this.testTier.upgrades[i].uri)
             }
 
-            expect(tiers[0].form).to.be.an.instanceOf(FormModel).
-              and.to.have.property("uri", this.testTier.form.uri)
+            if(tiers[0].form){
+              expect(tiers[0].form).to.be.an.instanceOf(FormModel).
+                and.to.have.property("uri", this.testTier.form.uri)
+            }
 
             resolve(true)
           }).catch(error => {

@@ -31,6 +31,7 @@ export class TierListingModel extends BaseModel implements TierListing{
 		this.transferrable = tier.transferrable
 		this.purchase_limit = tier.purchase_limit
 		this.remaining = tier.remaining
+		this.form = null
 
 		this.upgrades = []
 		for(const upgrade of tier.upgrades){

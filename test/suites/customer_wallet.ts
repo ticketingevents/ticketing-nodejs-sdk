@@ -266,7 +266,7 @@ describe("Customer Wallet", function(){
     		  let sample = tickets[Math.floor(Math.random()*tickets.length)]
           expect(sample).to.be.an.instanceof(TicketModel)
     		  expect(sample.serial).to.match(/[0-9A-Z]{6}\-[0-9A-Z]{12}/)
-    		  expect(sample.status).to.be.oneOf(["issued", "unclaimed", "held", "redeemed"])
+    		  expect(sample.status).to.be.oneOf(["Issued", "Unclaimed", "Held", "Redeemed"])
     		  expect(sample.tier.uri).to.oneOf([this.tier.uri, this.secondTier.uri])
     		  expect(sample.issued).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}/)
     		  expect(sample.redeemed).to.eq("0000-00-00T00:00:00")
@@ -332,7 +332,7 @@ describe("Customer Wallet", function(){
           expect(tickets.length).to.be.least(1)
 
           for(let ticket of tickets){
-            expect(ticket.status).to.eq("issued")
+            expect(ticket.status).to.eq("Issued")
           }
 
           resolve(true)

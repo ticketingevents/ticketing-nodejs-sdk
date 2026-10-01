@@ -11,4 +11,5 @@ export interface Cart{
   remove(tier: TierListing, quantity: number): Promise<boolean>
   set(tier: TierListing, quantity: number): Promise<boolean>
   checkout(customer: Account): Promise<Order>
+  add_details(tier: TierListing, details: Array<{[key: string]: any}>): Promise<boolean>
 }
