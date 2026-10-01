@@ -4,6 +4,7 @@ import type { TierData } from '../interface/data/TierData'
 import { BaseModel } from './BaseModel'
 import type { EventRevision } from '../interface/EventRevision'
 import { EventRevisionModel } from './EventRevisionModel'
+import { FormModel } from './FormModel'
 import { BadDataError } from '../errors'
 
 export class TierModel extends BaseModel implements Tier{
@@ -22,6 +23,7 @@ export class TierModel extends BaseModel implements Tier{
 	public upgrades: Array<Tier>
 	public gross_sales: number
 	public units_sold: number
+  public form: FormModel
 
 	private __events: Array<{id: string, share: number}>
 	private __loaded_events: Array<{event: EventRevision, share: number}>
@@ -50,6 +52,10 @@ export class TierModel extends BaseModel implements Tier{
 		for(const upgrade of tier.upgrades){
 			this.upgrades.push(new TierModel(upgrade, adapter))
 		}
+
+    if(tier.form && tier.form.self){
+      this.form = new FormModel(tier.form, adapter)
+    }
 
 		this.__events = tier.events
 		this.__loaded_events = []
@@ -149,7 +155,8 @@ export class TierModel extends BaseModel implements Tier{
 			purchase_note: this.purchase_note,
 			complimentary: this.complimentary,
 			transferrable: this.transferrable,
-			upgrades: upgrades
+			upgrades: upgrades,
+      form: this.form.id
 		}
 
     if(this.__artworkData){

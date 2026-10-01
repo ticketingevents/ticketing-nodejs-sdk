@@ -2,7 +2,7 @@
 import './content_review'
 
 import { TickeTing, BadDataError, InvalidStateError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
-import { CategoryModel, EventListingModel, TierListingModel, VenueModel, HostModel } from  '../../src/model'
+import { CategoryModel, EventListingModel, TierListingModel, VenueModel, HostModel, FormModel} from  '../../src/model'
 import { Collection } from  '../../src/util'
 import { expect, ticketing, api, unauthorised_sdk } from '../setup'
 
@@ -40,6 +40,16 @@ describe("Event Listing", function(){
       longitude: -70.99214,
       latitude: 43.75518,
       address: "Miami Beach, Miami, Florida"
+    })
+
+    //Create test form
+    this.form = await this.host.forms.create({
+      "name": "Meal Preferences "+Math.floor(Math.random() * 999999),
+      "description": "Provide information on any dietary requirements or allergens.",
+      "fields": [
+        {"name": "Allergies", "type": "short_text", "required": true},
+        {"name": "Milk Type", "type": "short_text", "required": true}
+      ]
     })
 
     //An event to test listing
@@ -110,6 +120,7 @@ describe("Event Listing", function(){
     await this.testTier.delete()
     await this.secondEvent.delete()
     await this.testEvent.delete()
+    await this.form.delete()
     await this.venue.delete()
     await this.region.delete()
     await this.category.delete()
@@ -379,12 +390,16 @@ describe("Event Listing", function(){
             expect(tiers[0].unit_size).to.eq(this.testTier.unit_size)
             expect(tiers[0].purchase_limit).to.eq(this.testTier.purchase_limit)
             expect(tiers[0].remaining).to.eq(this.testTier.remaining)
+            expect(tiers[0].transferrable).to.eq(this.testTier.transferrable)
 
             expect(tiers[0].upgrades.length).to.eq(this.testTier.upgrades.length)
             for(let i=0; i < tiers[0].upgrades.length; i++){
                 expect(tiers[0].upgrades[i]).to.be.an.instanceOf(TierListingModel)
                     .and.to.have.property("uri", this.testTier.upgrades[i].uri)
             }
+
+            expect(tiers[0].form).to.be.an.instanceOf(FormModel).
+              and.to.have.property("uri", this.testTier.form.uri)
 
             resolve(true)
           }).catch(error => {

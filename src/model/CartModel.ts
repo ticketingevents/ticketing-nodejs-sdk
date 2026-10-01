@@ -4,11 +4,16 @@ import type { Cart } from '../interface/Cart'
 import type { Order } from '../interface/Order'
 import { OrderModel } from './OrderModel'
 import type { TierListing } from '../interface/TierListing'
-import { BadDataError, UnsupportedOperationError } from '../errors'
+import { BadDataError, InvalidStateError, UnsupportedOperationError } from '../errors'
 
 export class CartModel implements Cart{
   public created: string
-  public items: Array<{tier: TierListing, quantity: number, total: number}>
+  public items: Array<{
+    tier: TierListing,
+    quantity: number,
+    details?: Array<{[key: string]: any}>
+    total: number
+  }>
 
   private __apiAdapter: APIAdapter
   private __customer: Account
@@ -103,14 +108,42 @@ export class CartModel implements Cart{
     })
   }
 
+  add_details(tier: TierListing, details: Array<{[key: string]: any}>): Promise<boolean>{
+    return new Promise<boolean>((resolve, reject) => {
+      const tierIndex = this.__hasTier(tier)
+
+      //See if tier exists in cart and whether it requires additional details
+      if(tierIndex < 0 || !tier.form){
+        reject(
+          new InvalidStateError(409, "The specified tier does not require additional details."
+          )
+        )
+      }
+      //See if provided details match tier item quantity
+      else if(details.length != this.items[tierIndex].quantity){
+        reject(new BadDataError(400, "The number of provided details must match the item quantity for this tier."))
+      //Add details to items array
+      }else{
+        this.items[tierIndex].details = details
+        resolve(true)
+      }
+    })
+  }
+
   checkout(): Promise<Order>{
     return new Promise<Order>((resolve, reject) => {
       const items = []
       for(const item of this.items){
-        items.push({
+        const payload = {
           tier: item.tier.id,
           quantity: item.quantity
-        })
+        }
+
+        if(item.details){
+          payload["details"] = item.details
+        }
+
+        items.push(payload)
       }
 
       this.__apiAdapter.post(`/accounts/${this.__customer.id}/orders`, {

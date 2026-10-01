@@ -61,6 +61,16 @@ describe("Orders", function(){
 		  address: "Miami Beach, Miami, Florida"
 		})
 
+		//Create test form
+    this.form = await this.host.forms.create({
+      "name": "Meal Preferences "+Math.floor(Math.random() * 999999),
+      "description": "Provide information on any dietary requirements or allergens.",
+      "fields": [
+      	{"name": "Allergies", "type": "short_text", "required": true},
+      	{"name": "Milk Type", "type": "short_text", "required": true}
+      ]
+    })
+
 		//Create test event
     this.event = await this.host.events.create({
       title: "Test Event "+Math.floor(Math.random() * 999999),
@@ -88,6 +98,20 @@ describe("Orders", function(){
         "event": this.event,
         "share": 100
       }]
+  	})
+
+  	this.second_tier = await this.host.tiers.create({
+  		name: "Test tier "+Math.floor(Math.random() * 999999),
+  		description: "Test admissions with this.",
+  		price: 50,
+      available_from: "2025-05-02T21:00:00",
+      available_to: "2125-07-01T00:00:00",
+  		capacity: 15,
+      events: [{
+        "event": this.event,
+        "share": 100
+      }],
+      form: this.form
   	})
 
   	//Publish event
@@ -119,9 +143,11 @@ describe("Orders", function(){
 			await this.activeOrder.cancel()
 		}
 
+		await this.second_tier.delete()
 		await this.tier.delete()
 		await this.event.delete()
 		await this.category.delete()
+    await this.form.delete()
 		await this.venue.delete()
 		await this.region.delete()
 		await this.host.delete()
@@ -264,6 +290,46 @@ describe("Orders", function(){
 		})
 	})
 
+	describe('Set item details in shopping cart', function () {
+		it('Should set item details in the shopping cart', function () {
+			return new Promise((resolve, reject) => {
+				let additional_details = [
+					{"Allergies": "None", "Milk Type": "Coconut"},
+					{"Allergies": "Nut", "Milk Type": "Cow"},
+					{"Allergies": "None", "Milk Type": "Oat"},
+					{"Allergies": "Egg", "Milk Type": "Soy"},
+					{"Allergies": "Lactose", "Milk Type": "Almond"}
+				]
+
+				testCart.set(this.second_tier, 5)
+				testCart.add_details(this.second_tier, additional_details).then((success => {
+		    	expect(success).to.be.true
+					
+					expect(testCart.items[1]).to.include({
+						tier: this.second_tier,
+						details: additional_details
+					})
+
+					resolve(true)
+				})).catch(error=>{
+					reject(error)
+				})
+			})
+		})
+
+		it('Should throw a BadDataError if the nunber of additional detail records does not match item quantity', function () {
+			return expect(testCart.add_details(this.second_tier, []))
+			  .to.eventually.be.rejectedWith("The number of provided details must match the item quantity for this tier.")
+			  .and.be.an.instanceOf(BadDataError)
+		})
+
+		it('Should throw an InvalidStateError if the tier does not require additional details', function () {
+			return expect(testCart.add_details(this.tier, [{"Allergies": "None", "Milk Type": "Soy"}]))
+			  .to.eventually.be.rejectedWith("The specified tier does not require additional details.")
+			  .and.be.an.instanceOf(InvalidStateError)
+		})
+	})
+
 	describe('Checkout a shopping cart', function () {
 		it('Should return a valid order object', function () {
 			return new Promise((resolve, reject) => {
@@ -277,7 +343,7 @@ describe("Orders", function(){
 					expect(order.subtotal).to.equal(testCart.total)
 					expect(order.customer).to.equal(this.customer)
 
-					expect(order.items.length).to.eq(1)
+					expect(order.items.length).to.eq(2)
           expect(order.items[0].quantity).to.eq(testCart.items[0].quantity)
           expect(order.items[0].tier).to.be.an.instanceof(TierListingModel)
           expect(order.items[0].tier.name).to.eq(testCart.items[0].tier.name)
@@ -294,6 +360,9 @@ describe("Orders", function(){
               expect(order.items[0].tier.upgrades[i]).to.be.an.instanceOf(TierListingModel)
                   .and.to.have.property("uri", testCart.items[0].tier.upgrades[i].uri)
           }
+
+					expect(order.items[0].details).to.be.an("array").and.to.have.length(0)
+					expect(order.items[1].details).to.be.an("array").and.to.have.length(5)
 
           expect(order.payment.method.cardholder).to.eq("")
           expect(order.payment.method.card_type).to.eq("")
@@ -331,7 +400,7 @@ describe("Orders", function(){
 					expect(orders[1].subtotal).to.equal(testCart.total)
 					expect(orders[1].customer).to.equal(this.customer)
 
-					expect(orders[1].items.length).to.eq(1)
+					expect(orders[1].items.length).to.eq(2)
           expect(orders[1].items[0].quantity).to.eq(testCart.items[0].quantity)
           expect(orders[1].items[0].tier).to.be.an.instanceof(TierListingModel)
           expect(orders[1].items[0].tier.name).to.eq(testCart.items[0].tier.name)
@@ -348,6 +417,9 @@ describe("Orders", function(){
               expect(orders[1].items[0].tier.upgrades[i]).to.be.an.instanceOf(TierListingModel)
                   .and.to.have.property("uri", testCart.items[0].tier.upgrades[i].uri)
           }
+
+					expect(orders[1].items[0].details).to.be.an("array").and.to.have.length(0)
+					expect(orders[1].items[1].details).to.be.an("array").and.to.have.length(5)
 
           expect(orders[1].payment.method.cardholder).to.eq("")
           expect(orders[1].payment.method.card_type).to.eq("")
@@ -419,7 +491,7 @@ describe("Orders", function(){
 					expect(order.subtotal).to.equal(testCart.total)
 					expect(order.customer).to.equal(this.customer)
 
-					expect(order.items.length).to.eq(1)
+					expect(order.items.length).to.eq(2)
           expect(order.items[0].quantity).to.eq(testCart.items[0].quantity)
           expect(order.items[0].tier).to.be.an.instanceof(TierListingModel)
           expect(order.items[0].tier.name).to.eq(testCart.items[0].tier.name)
@@ -436,6 +508,9 @@ describe("Orders", function(){
               expect(order.items[0].tier.upgrades[i]).to.be.an.instanceOf(TierListingModel)
                   .and.to.have.property("uri", testCart.items[0].tier.upgrades[i].uri)
           }
+
+					expect(order.items[0].details).to.be.an("array").and.to.have.length(0)
+					expect(order.items[1].details).to.be.an("array").and.to.have.length(5)
 
           expect(order.payment.method.cardholder).to.eq("")
           expect(order.payment.method.card_type).to.eq("")

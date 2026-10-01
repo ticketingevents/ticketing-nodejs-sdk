@@ -18,7 +18,8 @@ export class OrderModel extends BaseModel implements Order{
   public total: number
   public items: Array<{
     tier: TierListing,
-    quantity: number
+    quantity: number,
+    details?: Array<{[key: string]: string}>
   }>
   public customer: Account
   public payment: Payment
@@ -42,7 +43,8 @@ export class OrderModel extends BaseModel implements Order{
     for(const item of order.items){
       this.items.push({
         tier: new TierListingModel(item.tier, adapter),
-        quantity: item.quantity
+        quantity: item.quantity,
+        details: item.details
       })
     }
 

@@ -1,6 +1,7 @@
 import { APIAdapter } from '../util/APIAdapter'
 import type { TierListing } from '../interface/TierListing'
 import { BaseModel } from './BaseModel'
+import { FormModel } from './FormModel'
 
 export class TierListingModel extends BaseModel implements TierListing{
 	public name: string
@@ -9,9 +10,11 @@ export class TierListingModel extends BaseModel implements TierListing{
 	public available_from: string
 	public available_to: string
 	public unit_size: number
+	public transferrable: boolean
 	public purchase_limit: number
 	public remaining: number
 	public upgrades: Array<TierListing>
+  public form: FormModel
 
 	private __artworkUrl: string
 	private __artworkData: string
@@ -25,6 +28,7 @@ export class TierListingModel extends BaseModel implements TierListing{
 		this.available_from = tier.available_from
 		this.available_to = tier.available_to
 		this.unit_size = tier.unit_size
+		this.transferrable = tier.transferrable
 		this.purchase_limit = tier.purchase_limit
 		this.remaining = tier.remaining
 
@@ -32,6 +36,10 @@ export class TierListingModel extends BaseModel implements TierListing{
 		for(const upgrade of tier.upgrades){
 			this.upgrades.push(new TierListingModel(upgrade, adapter))
 		}
+
+    if(tier.form && tier.form.self){
+      this.form = new FormModel(tier.form, adapter)
+    }
 
 		this.__artworkUrl = tier.artwork
 		this.__artworkData = ""

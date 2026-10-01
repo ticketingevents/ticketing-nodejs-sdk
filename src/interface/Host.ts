@@ -1,5 +1,8 @@
 import { Base } from './Base'
-import { EventRevisionService, TierService, HostPrivilegeService, HostSalesService } from '../model/HostModel'
+import {
+  EventRevisionService, TierService, HostPrivilegeService,
+  HostSalesService, HostFormService
+} from '../model/HostModel'
 import { StatisticsModel } from '../model/StatisticsModel'
 
 export interface Host extends Base{
@@ -20,6 +23,7 @@ export interface Host extends Base{
   tiers: TierService
   privileges: HostPrivilegeService
   sales: HostSalesService
+  forms: HostFormService
 
   statistics(parameters: {
     after: string,

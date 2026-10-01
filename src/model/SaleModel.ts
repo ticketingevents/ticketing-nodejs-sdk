@@ -82,7 +82,8 @@ export class SaleModel extends BaseModel implements Sale{
         transferrable: sale.tier.transferrable,
         upgrades: sale.tier.upgrades,
         gross_sales: sale.tier.gross_sales,
-        units_sold: sale.tier.units_sold
+        units_sold: sale.tier.units_sold,
+        form: sale.tier.form
       }
     }
   }

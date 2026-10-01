@@ -1,5 +1,6 @@
 import { Base } from './Base'
 import { EventRevision } from './EventRevision'
+import { Form } from './Form'
 
 export interface Tier extends Base{
 	name: string
@@ -22,4 +23,5 @@ export interface Tier extends Base{
 	upgrades: Array<Tier>
 	gross_sales: number
 	units_sold: number
+  	form: Form
 }

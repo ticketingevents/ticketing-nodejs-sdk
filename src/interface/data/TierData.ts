@@ -1,5 +1,6 @@
 import { Tier } from '../Tier'
 import { EventRevision } from '../EventRevision'
+import { Form } from '../Form'
 
 export interface TierData{
 	name: string
@@ -19,5 +20,6 @@ export interface TierData{
 	purchase_note?: string
 	complimentary?: boolean
 	transferrable?: boolean
-	upgrades?: Array<Tier>
+	upgrades?: Array<Tier | string>
+  	form?: Form | string
 }

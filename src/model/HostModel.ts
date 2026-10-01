@@ -11,14 +11,17 @@ import type { Privilege } from '../interface/Privilege'
 import type { PrivilegeData } from '../interface/data/PrivilegeData'
 import type { Sale } from '../interface/Sale'
 import type { SaleData } from '../interface/data/SaleData'
+import type { Form } from '../interface/Form'
+import type { FormData } from '../interface/data/FormData'
 import { EventRevisionModel } from './EventRevisionModel'
 import { TierModel } from './TierModel'
 import { PrivilegeModel } from './PrivilegeModel'
 import { CategoryModel } from './CategoryModel'
 import { VenueModel } from './VenueModel'
 import { SaleModel } from './SaleModel'
+import { FormModel } from './FormModel'
 import { StatisticsModel } from './StatisticsModel'
-import { BadDataError, PermissionError, ResourceExistsError } from '../errors'
+import { BadDataError, PermissionError, ResourceExistsError, UnsupportedOperationError } from '../errors'
 
 export class HostModel extends BaseModel implements Host{
   public name: string
@@ -38,6 +41,7 @@ export class HostModel extends BaseModel implements Host{
   private __tierService: TierService
   private __privilegeService: HostPrivilegeService
   private __salesService: HostSalesService
+  private __formService: HostFormService
 
   constructor(host: any, adapter: APIAdapter){
     super(host.self, adapter)
@@ -59,6 +63,7 @@ export class HostModel extends BaseModel implements Host{
     this.__tierService = new TierService(this._apiAdapter, this)
     this.__privilegeService = new HostPrivilegeService(this._apiAdapter, this)
     this.__salesService = new HostSalesService(this._apiAdapter, this)
+    this.__formService = new HostFormService(this._apiAdapter, this)
   }
 
   get events(): EventRevisionService{
@@ -75,6 +80,10 @@ export class HostModel extends BaseModel implements Host{
 
   get sales(): HostSalesService{
     return this.__salesService
+  }
+
+  get forms(): HostFormService{
+    return this.__formService
   }
 
   public statistics(parameters: {
@@ -177,7 +186,11 @@ export class TierService extends BaseService<TierData, Tier>{
 
   create(data: TierData): Promise<Tier>{
     return new Promise<Tier>((resolve, reject) => {
-      const payload = {
+      if(data.form && !(data.form instanceof FormModel)){
+        reject(new BadDataError(400, "Please provide a valid form for the tier"))
+      }
+
+      const payload: TierData = {
         name: data.name,
         description: data.description,
         price: data.price,
@@ -191,7 +204,11 @@ export class TierService extends BaseService<TierData, Tier>{
         purchase_note: data.purchase_note,
         complimentary: data.complimentary,
         transferrable: data.transferrable,
-        upgrades: []
+        upgrades: [],
+      }
+
+      if(data.form){
+        payload.form = (data.form as FormModel).id
       }
 
       for(const entry of ('events' in data?data.events:[])){
@@ -210,7 +227,7 @@ export class TierService extends BaseService<TierData, Tier>{
           reject(new BadDataError(400, "One or more of the specified tiers is not a valid Tier."))
         }
 
-        payload.upgrades.push(upgrade.id)
+        payload.upgrades.push((upgrade as TierModel).id)
       }
 
       super.create(
@@ -262,5 +279,20 @@ export class HostSalesService extends BaseService<SaleData, Sale>{
     )
 
     this.__apiAdapter = apiAdapter
+  }
+}
+
+export class HostFormService extends BaseService<FormData, Form>{
+  private __apiAdapter: APIAdapter
+
+  constructor(apiAdapter: APIAdapter, host: Host){
+    super(apiAdapter, `${host.uri}/forms`, FormModel)
+    this.__apiAdapter = apiAdapter
+  }
+
+  batchCreate(): Promise<Array<Form>>{
+    return new Promise<Array<Form>>((_resolve, reject) => {
+      reject(new UnsupportedOperationError(0, "Operation not supported"))
+    })
   }
 }

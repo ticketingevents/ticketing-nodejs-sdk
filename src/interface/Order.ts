@@ -13,7 +13,8 @@ export interface Order extends Base{
   total: number
   items: Array<{
     tier: TierListing,
-    quantity: number
+    quantity: number,
+    details?: Array<{[key: string]: string}>
   }>
   payment: Payment
   customer: Account

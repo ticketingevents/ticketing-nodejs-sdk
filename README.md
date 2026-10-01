@@ -149,6 +149,12 @@ export class TickeTingService extends TickeTing{
     * [Submit event for review](#submit-event-for-review)
     * [List event publications](#list-event-publications)
     * [Publish event changes](#publish-event-changes)
+- [Form Management](#form-management)
+    * [List forms](#list-forms)
+    * [Create a form](#create-a-form)
+    * [Fetch a form](#fetch-a-form)
+    * [Update a form](#update-a-form)
+    * [Delete a form](#delete-a-form)
 - [Tier Management](#tier-management)
     * [List tiers](#list-tiers)
     * [Create a tier](#create-a-tier)
@@ -164,6 +170,7 @@ export class TickeTingService extends TickeTing{
     * [Add items to cart](#add-items-to-cart)
     * [Remove items from cart](#remove-items-from-cart)
     * [Set item quantity in cart](#set-item-quantity-in-cart)
+    * [Set item details in cart](#set-item-details-in-cart)
     * [Checkout cart](#checkout-cart)
 - [Order Settlement](#order-settlement)
     * [List orders](#list-orders)
@@ -191,7 +198,7 @@ export class TickeTingService extends TickeTing{
     * [Admissions tokens](#admissions-tokens)
         * [List admissions tokens](#list-admissions-tokens)
         * [Issue admissions token](#issue-admissions-token)
-        * [Update admissions token sections](#update-admissions-token-sections)
+        * [Update admissions token tiers](#update-admissions-token-tiers)
         * [Invalidate an admissions token](#invalidate-an-admissions-token)
     * [Admitting patrons](#admitting-patrons)
         * [Start admission session](#start-admission-session)
@@ -241,7 +248,7 @@ regionCollection.then(regions => {
 
 Collections are Promises that allow you to filter, sort and page through the potentially thousands of 
 resources the API can return in response to a request, while reducing bandwidth and
-response times. In this section you will learn how to manipulate collections to
+response times. In this tier you will learn how to manipulate collections to
 get at the resources you are interested in.
 
 ### Filters
@@ -697,7 +704,7 @@ API resources (with the exception of an administrative key). Resource management
 restricted to specific users and you will need to authenticate against the API to unlock
 these features.
 
-The SDK offers user authentication in the form of sessions. This section details how to
+The SDK offers user authentication in the form of sessions. This tier details how to
 work with user sessions.
 
 ### Start a new session
@@ -1770,6 +1777,166 @@ Operations for managing events in the TickeTing system.
     })
 ```
 
+## Form Management
+
+Operations for managing forms in the TickeTing system.
+
+### List forms
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-forms/list_host_forms)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  host.forms.list()
+    .then(forms => {
+      //Do something with the collection of forms
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Create a form
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-forms/create_form)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  let formData = {
+    "name": "Meal Preferences", //Required
+    "description": "Provide information on any dietary requirements or allergens.", //Required
+    "fields": [{ //Required
+      "name": "Allergies",
+      "type": "short_text",
+      "required": true
+    }]
+  }
+
+  host.forms.create(formData)
+    .then(form => {
+      //Do something with the created form resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log("One or more fields in your request payload is invalid.")
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to manage resources on behalf of this host.")
+      }else if(error instanceof ResourceExistsError){
+        console.log("The host already owns a form with the given name.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch a form
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-forms/retrieve_form)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific form using its ID
+  host.forms.find(17907745285617)
+    .then(form => {
+      //Do something with the form resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no form with the given ID")
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to manage resources on behalf of this host.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Update a form
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-forms/update_forms)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific form using its ID
+  let form = await host.forms.find(17907745285617)
+
+  //Make changes to the resource
+  form.name = "Dietary Requirements"
+
+  let formFields = form.fields
+  formFields[0].name = "Allergens"
+  formFields.push({
+    name: "Milk Preference",
+    type: "short_text",
+    required: false
+  })
+
+  //Save changes
+  form.save().then(saved => {
+    if(saved){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log(error.message)
+    }else if(error instanceof PermissionError){
+      console.log("You are not authorised to manage resources on behalf of this host.")
+    }else if(error instanceof ResourceExistsError){
+      console.log("The host already owns a form with the given name.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Delete a form
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-forms/delete_form)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific form using its ID
+  let form = await host.forms.find(17907745285617)
+
+  //Delete the form
+  form.delete().then(deleted => {
+    if(deleted){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof PermissionError){
+      console.log("You are not authorised to manage resources on behalf of this host.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
 ## Tier Management
 
 Operations for managing tiers in the TickeTing system.
@@ -1819,6 +1986,9 @@ Operations for managing tiers in the TickeTing system.
   //Retrieve a specific tier using its ID
   let upgrade_tier = await host.tiers.find(19240249258262)
 
+  //Retrieve a specific form using its ID
+  let form = await host.forms.find(17907745285617)
+
   let tierData = {
     "name": "Backstage Pass", //Required
     "description": "Gain exclusive access to meet the Supes and hang out after the show.", //Required
@@ -1836,7 +2006,8 @@ Operations for managing tiers in the TickeTing system.
     "purchase_note": "Your all set. Remember to give the codeword HOMELANDER when coming backstage.",
     "complimentary": false,
     "transferrable": false,
-    "upgrades": [upgrade_tier]
+    "upgrades": [upgrade_tier],
+    "form": form
   }
 
   host.tiers.create(tierData)
@@ -2088,7 +2259,7 @@ SDK functionality related to shopping cart management and checkout.
     let subtotal = cart.subtotal //The total cost of all items in the cart before fees
     let fees = cart.fees //The total fees applicable on the items in the cart
     let total = cart.total //The total cost of all items in the cart inclusive of fees
-    let items = cart.items //Array of items in cart including the section, quantity and subtotal of each.
+    let items = cart.items //Array of items in cart including the tier, quantity and subtotal of each.
   }).catch(error => {
     console.log(`${typeof error} (${error.code}): ${error.message}`)
   })
@@ -2108,7 +2279,7 @@ SDK functionality related to shopping cart management and checkout.
 
   //Add items to the shopping cart
   cart.add(
-    event.sections[0], //Add tickets for this section to the cart
+    event.tiers[0], //Add tickets for this tier to the cart
     2 //Default to 1 if omitted
   ).then(success => {
     if(success){
@@ -2122,7 +2293,7 @@ SDK functionality related to shopping cart management and checkout.
     if(error instanceof BadDataError){
       console.log("The number of items to be added to the cart must be a positive integer.")
     }else if(error instanceof UnsupportedOperationError){
-      console.log("Adding the specified quantity of this item would exceed the section capacity.")
+      console.log("Adding the specified quantity of this item would exceed the tier capacity.")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
@@ -2143,7 +2314,7 @@ SDK functionality related to shopping cart management and checkout.
 
   //Remove items from the shopping cart
   cart.remove(
-    event.sections[0], //Remove tickets for this section from the cart
+    event.tiers[0], //Remove tickets for this tier from the cart
     3 //Default to 1 if omitted
   ).then(success => {
     if(success){
@@ -2178,7 +2349,7 @@ SDK functionality related to shopping cart management and checkout.
 
   //Set the number of items in the shopping cart to a particular quantity
   cart.set(
-    event.sections[2], //Set the number of tickets for this section in the cart
+    event.tiers[2], //Set the number of tickets for this tier in the cart
     5
   ).then(success => {
     if(success){
@@ -2192,7 +2363,49 @@ SDK functionality related to shopping cart management and checkout.
     if(error instanceof BadDataError){
       console.log("The item quantity must be a positive integer.")
     }else if(error instanceof UnsupportedOperationError){
-      console.log("Setting the item quantity to the specified value would exceed the section capacity.")
+      console.log("Setting the item quantity to the specified value would exceed the tier capacity.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Set item details in cart
+
+```javascript
+  //An account is required to manage shopping carts
+  let account = (await ticketing.session.info()).account
+
+  //Create a new shopping cart
+  let cart =  account.carts.create()
+
+  //Add items to cart
+  let event = await ticketing.events.find(16993717817996)
+  await cart.add(event.tiers[0], 5)
+
+  //Provide additional customer details for a particular item in the cart
+  cart.add_details(
+    event.tiers[0], //Set the details of tickets for this tier in the cart
+    [
+      {"Field 1": "A", "Field 2": "B"},
+      {"Field 1": "C", "Field 2": "D"},
+      {"Field 1": "E", "Field 2": "F"},
+      {"Field 1": "G", "Field 2": "H"},
+      {"Field 1": "I", "Field 2": "J"},
+    ]
+  ).then(success => {
+    if(success){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("The number of provided details must match the item quantity for this tier.")
+    }else if(error instanceof InvalidStateError){
+      console.log("The specified tier does not require additional details.")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
@@ -2212,7 +2425,7 @@ SDK functionality related to shopping cart management and checkout.
 
   //Add items to cart
   let event = await ticketing.events.find(16993717817996)
-  await cart.add(event.sections[0], 2)
+  await cart.add(event.tiers[0], 2)
   
   cart.checkout().then(order => {
     //See order settlement for details on settling or cancelling the order
@@ -2220,7 +2433,7 @@ SDK functionality related to shopping cart management and checkout.
     if(error instanceof PermissionError){
       console.log("The authenticated user is not permtited to manage orders for this account.")
     }else if(error instanceof BadDataError){
-      console.log("One or more of the requested sections does not have sufficient capacity to fulfil the order.")
+      console.log("One or more of the requested tiers does not have sufficient capacity to fulfil the order.")
     }else{
       //Handle errors
       console.log(`${typeof error} (${error.code}): ${error.message}`)
@@ -2455,7 +2668,7 @@ SDK functionality for transferring tickets in the customer's wallet to another u
   ticketing.transfers.start().then(parcel => {
     //Retrieve parcel information.
     let created = parcel.created //Date and time that the parcel was created
-    let tickets = parcel.tickets //Array of tickets in the parcel including the section and quantity of each.
+    let tickets = parcel.tickets //Array of tickets in the parcel including the tier and quantity of each.
   }).catch(error => {
     console.log(`${typeof error} (${error.code}): ${error.message}`)
   })
@@ -2472,7 +2685,7 @@ SDK functionality for transferring tickets in the customer's wallet to another u
 
   //Pack the parcel with tickets to be transferred
   parcel.add(
-    event.sections[0], //Add tickets for this section to the parcel
+    event.tiers[0], //Add tickets for this tier to the parcel
     2 //Quantity to remove. Defaults to 1 if omitted
   ).then(success => {
     if(success){
@@ -2502,7 +2715,7 @@ SDK functionality for transferring tickets in the customer's wallet to another u
 
   //Remove tickets from the parcel
   parcel.remove(
-    event.sections[0], //Remove tickets for this section from the parcel
+    event.tiers[0], //Remove tickets for this tier from the parcel
     3 //Quantity to remove. Defaults to 1 if omitted
   ).then(success => {
     if(success){
@@ -2534,7 +2747,7 @@ SDK functionality for transferring tickets in the customer's wallet to another u
 
   //Set the number of tickets in the parcel to a particular quantity
   parcel.set(
-    event.sections[2], //Set the number of tickets for this section in the parcel
+    event.tiers[2], //Set the number of tickets for this tier in the parcel
     5 //Quantity to set. Defaults to 1 if omitted
   ).then(success => {
     if(success){
@@ -2563,7 +2776,7 @@ SDK functionality for transferring tickets in the customer's wallet to another u
 
   //Retrieve a specific event using its ID
   let event = await ticketing.events.find(16993717817996)
-  await parcel.add(event.sections[0], 2)
+  await parcel.add(event.tiers[0], 2)
 
   //Send the parcel (Requires sender and recipient to have accounts)
   let sender = (await ticketing.session.info()).account
@@ -2809,8 +3022,8 @@ users and more. These features are documented below.
 ---
 ### Admissions Tokens
 
-Event admissions tokens allow staff to admit patrons to one or more of an event's sections. Tokens
-are anonymous and can be shared for use with multiple scanning devices. This subsection covers the
+Event admissions tokens allow staff to admit patrons to one or more of an event's tiers. Tokens
+are anonymous and can be shared for use with multiple scanning devices. This subtier covers the
 operations used to manage admissions tokens.
 
 ---
@@ -2849,14 +3062,14 @@ operations used to manage admissions tokens.
 ```javascript
   let event = await ticketing.events.find(16993717817996)
 
-  event.issue_token(event.sections)  //We are required to provide the subset of an event's sections to link the token to
+  event.issue_token(event.tiers)  //We are required to provide the subset of an event's tiers to link the token to
     .then(token => {
       //Do something with the created token resource
     })
     .catch(error => {
       //Handle errors
       if(error instanceof BadDataError){
-        console.log("One or more of the specified sections does not belong to this event.")
+        console.log("One or more of the specified tiers does not belong to this event.")
       }else if(error instanceof PermissionError){
         console.log("You are not authorised to manage events on behalf of this host.")
       }else{
@@ -2865,7 +3078,7 @@ operations used to manage admissions tokens.
     })
 ```
 
-### Update admissions token sections
+### Update admissions token tiers
 
 [API Reference](https://docs.ticketingevents.com/openapi/event-admissions/update_admission_token)
 
@@ -2874,8 +3087,8 @@ operations used to manage admissions tokens.
 
   event.tokens
     .then(tokens => {
-      tokens[0].allow(event.sections[0]) //Allow admission to a section using this token
-      tokens[0].deny(event.sections[1]) //Deny admission to a section using this token
+      tokens[0].allow(event.tiers[0]) //Allow admission to a tier using this token
+      tokens[0].deny(event.tiers[1]) //Deny admission to a tier using this token
 
       //Save changes
       tokens[0].save().then(saved => {
@@ -2889,7 +3102,7 @@ operations used to manage admissions tokens.
     .catch(error => {
       //Handle errors
       if(error instanceof BadDataError){
-        console.log("You can only allow or deny sections of the token's event")
+        console.log("You can only allow or deny tiers of the token's event")
       }else if(error instanceof PermissionError){
         console.log("You are not authorised to manage events on behalf of this host.")
       }else if(error instanceof ResourceImmutableError){
@@ -2934,7 +3147,7 @@ operations used to manage admissions tokens.
 
 Valid ticket holders are allowed entry to an event through admission sessions. Admission sessions
 allow gate staff to verify tickets and permit entry to the event. A session can be started using
-an admissions token which allows the staff member to grant access to designated event sections.
+an admissions token which allows the staff member to grant access to designated event tiers.
 
 ---
 
@@ -2943,7 +3156,7 @@ an admissions token which allows the staff member to grant access to designated 
 [API Reference](https://docs.ticketingevents.com/openapi/token-authentication/retrieve_token_auth)
 
 Before retrieving a list of valid tickets or redeeming them, an admissions session must be commenced.
-This is done by providing an admissions token which is linked to a specific event and sections.
+This is done by providing an admissions token which is linked to a specific event and tiers.
 
 ```javascript
   //Start a session using an admission token
@@ -2959,7 +3172,7 @@ This is done by providing an admissions token which is linked to a specific even
     let device = session.device //Device that initiated this sesson
     let code = session.code //Admissions token code used to start this session
     let event = session.event //The event this session can admit patrons to
-    let sections = session.sections //The event sections this session can admit patrons to
+    let tiers = session.tiers //The event tiers this session can admit patrons to
   })
   .catch(error => {
     //Handle errors
@@ -3018,7 +3231,7 @@ This is done by providing an admissions token which is linked to a specific even
     if(error instanceof InvalidStateError){
       console.log("The admission session has ended, you must start a new one.")
     }else if(error instanceof BadDataError){
-      console.log("None of the provided ticket serials grants admission to the designated event sections")
+      console.log("None of the provided ticket serials grants admission to the designated event tiers")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
@@ -3034,7 +3247,7 @@ This is done by providing an admissions token which is linked to a specific even
 
   let ticket = await ticketing.tickets.find("DAWIER-BACK75580348")
   let patron = await ticketing.accounts.find("AZ-4918SF92")
-  let section = (await ticketing.events.find(16993717817996)).sections[0]
+  let tier = (await ticketing.events.find(16993717817996)).tiers[0]
 
   session.admissions(25 //page size) // The admissions() method returns a standard collection
     // Supported filters with examples
@@ -3043,7 +3256,7 @@ This is done by providing an admissions token which is linked to a specific even
       device: "Google Pixel Pro 6", //Only return admissions granted from this device
       ticket: ticket, //Only return the admission granted on this ticket
       patron: patron, //Only return admissions granted to the specified patron
-      section: section //Only return admissions granted to this event section
+      tier: tier //Only return admissions granted to this event tier
     })
     .then(admissions => {
       //Do something with the admissions collection

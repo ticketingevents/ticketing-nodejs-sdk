@@ -1,8 +1,8 @@
 //Control execution order
-import './event_management'
+import './form_management'
 
 import { TickeTing, EventRevision, BadDataError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
-import { CategoryModel, EventRevisionModel, TierModel, VenueModel, HostModel } from  '../../src/model'
+import { CategoryModel, EventRevisionModel, TierModel, VenueModel, HostModel, FormModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
 import { expect, ticketing, api, unauthorised_sdk } from '../setup'
 
@@ -56,6 +56,17 @@ describe("Tier Management", function(){
       longitude: -70.99214,
       latitude: 43.75518,
       address: "Miami Beach, Miami, Florida"
+    })
+
+    //Create a form to associate with the tier
+    this.form = await this.host.forms.create({
+      "name": "Meal Preferences "+Math.floor(Math.random() * 999999),
+      "description": "Provide information on any dietary requirements or allergens.",
+      "fields": [{
+        "name": "Allergies",
+        "type": "short_text",
+        "required": true
+      }]
     })
 
     //Create an event
@@ -123,7 +134,8 @@ describe("Tier Management", function(){
         "purchase_note": "Your all set. Remember to give the codeword HOMELANDER when coming backstage.",
         "complimentary": false,
         "transferrable": false,
-        "upgrades": [this.upgrade_tier]
+        "upgrades": [this.upgrade_tier],
+        "form": this.form
     }
   })
 
@@ -132,6 +144,7 @@ describe("Tier Management", function(){
     await this.secondEvent.delete()
     await this.event.delete()
     await this.category.delete()
+    await this.form.delete()
     await this.host.delete()
     await this.venue.delete()
     await this.region.delete()
@@ -176,6 +189,9 @@ describe("Tier Management", function(){
 
               resolve(true)
             })
+
+            expect(tier.form).to.be.an.instanceOf(FormModel).
+              and.to.have.property("uri", this.testTierData.form.uri)
         })).catch(error=>{
           reject(error)
         })
@@ -201,6 +217,14 @@ describe("Tier Management", function(){
       .and.be.an.instanceOf(BadDataError)
     })
 
+    it('Should throw a BadDataError if a non-form is passed in', function () {
+      return expect(this.host.tiers.create({
+        form: "Not a Form Object"
+      }))
+      .to.eventually.be.rejectedWith("Please provide a valid form for the tier")
+      .and.be.an.instanceOf(BadDataError)
+    })
+
     it('Should throw a ResourceExistsError if a duplicate name is submitted', function () {
       return expect(this.host.tiers.create({
         name: "Backstage Pass",
@@ -222,6 +246,13 @@ describe("Tier Management", function(){
       //Order tickets from the new tier
       let cart = await this.customer.carts.create()
       cart.add(testTier, 5)
+      cart.add_details(testTier, [
+        {"Allergies": "None", "Milk Type": "Coconut"},
+        {"Allergies": "Nut", "Milk Type": "Cow"},
+        {"Allergies": "None", "Milk Type": "Oat"},
+        {"Allergies": "Egg", "Milk Type": "Soy"},
+        {"Allergies": "Lactose", "Milk Type": "Almond"}
+      ])
       let order = await cart.checkout()
       await order.settle({
         number: "4111111111111111",
@@ -279,6 +310,9 @@ describe("Tier Management", function(){
 
             resolve(true)
           })
+
+          expect(tiers[0].form).to.be.an.instanceof(FormModel)
+            .and.to.have.property("uri", this.testTierData.form.uri)
         }).catch(error => {
           reject(error)
         })
@@ -345,6 +379,9 @@ describe("Tier Management", function(){
 
             resolve(true)
           })
+
+          expect(tier.form).to.be.an.instanceof(FormModel)
+            .and.to.have.property("uri", this.testTierData.form.uri)
         }).catch(error => {
           reject(error)
         })
