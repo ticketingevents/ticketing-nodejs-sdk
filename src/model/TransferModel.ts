@@ -1,72 +1,62 @@
 import { APIAdapter } from '../util/APIAdapter'
 import { BaseModel } from './BaseModel'
-import type { Account } from '../interface/Account'
-import type { EventListing } from '../interface/EventListing'
-import type { TierListing } from '../interface/TierListing'
 import type { Transfer } from '../interface/Transfer'
-import type { TransferData } from '../interface/data/TransferData'
-import { EventListingModel } from './EventListingModel'
-import { TierListingModel } from './TierListingModel'
-import { BadDataError, InvalidStateError, PermissionError } from '../errors'
+import type { TierListing } from '../interface/TierListing'
+import { TierListingModel } from '../model/TierListingModel'
+import type { AccountListing } from '../interface/AccountListing'
+import { AccountListingModel } from '../model/AccountListingModel'
+import { InvalidStateError, PermissionError } from '../errors'
 
 export class TransferModel extends BaseModel implements Transfer{
   public status: string
   public initiated: string
+  public completed: string
+  public sender: AccountListing
+  public recipient: AccountListing
   public tickets: Array<{
-    event: EventListing,
     tier: TierListing,
-  	quantity: number
+    quantity: number
   }>
-  public sender: Account | string
-  public recipient: Account | string
 
-  private __claimsURI: string
-
-  constructor(transfer: any, sender: Account | string, recipient: Account | string, adapter: APIAdapter){
+  constructor(transfer: any, adapter: APIAdapter){
     super(transfer.self, adapter)
 
     this.status = transfer.status
     this.initiated = transfer.initiated
-    this.sender = sender
-    this.recipient = recipient
-
+    this.completed = transfer.completed
+    this.sender = new AccountListingModel(transfer.sender, adapter)
+    this.recipient = new AccountListingModel(transfer.recipient, adapter)
 
     this.tickets = []
     for(const ticket of transfer.tickets){
       this.tickets.push({
-        event: new EventListingModel(ticket.event, adapter),
         tier: new TierListingModel(ticket.tier, adapter),
         quantity: ticket.quantity
       })
     }
-
-    this.__claimsURI = transfer.claims
   }
 
   cancel(): Promise<boolean>{
-  	return new Promise((resolve, reject) => {
-  		this.delete().then(deleted => {
-  			this.status = "Cancelled"
-  			resolve(deleted)
-  		}).catch(error => {
-			if(error.code == 409){
-				error = new InvalidStateError(error.code, error.message)
-			}
-
-			reject(error)
-  		})
-  	})
+    return this.__complete("cancelled")
   }
 
-  claim(): Promise<boolean>{
+  accept(): Promise<boolean>{
+    return this.__complete("accepted")
+  }
+
+  reject(): Promise<boolean>{
+    return this.__complete("rejected")
+  }
+
+  private __complete(status: string): Promise<boolean>{
     return new Promise((resolve, reject) => {
-      this._apiAdapter.post(this.__claimsURI, {}).then(response => {
-      	this.status = "Claimed"
-    	resolve(response.data.success)
+      this._apiAdapter.patch(
+        this.uri,
+        {status: status}
+      ).then(() => {
+        resolve(true)
       }).catch(error => {
-        if(error.code == 400){
-          error = new BadDataError(error.code, error.message)
-        }else if(error.code == 403){
+        if(error.code == 403){
           error = new PermissionError(error.code, error.message)
         }else if(error.code == 409){
           error = new InvalidStateError(error.code, error.message)
@@ -75,18 +65,5 @@ export class TransferModel extends BaseModel implements Transfer{
         reject(error)
       })
     })
-  }
-
-  serialise(): TransferData{
-  	const tickets = {}
-  	for(const ticket of this.tickets){
-  		tickets[ticket.tier.uri] = ticket.quantity
-  	}
-
-    return {
-      sender: (typeof this.sender == "object")?this.sender.number:this.sender,
-      recipient: (typeof this.recipient == "object")?this.recipient.number:this.recipient,
-      tickets: tickets
-    }
   }
 }

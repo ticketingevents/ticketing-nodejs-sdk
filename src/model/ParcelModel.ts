@@ -3,22 +3,23 @@ import type { Account } from '../interface/Account'
 import type { Parcel } from '../interface/Parcel'
 import type { Transfer } from '../interface/Transfer'
 import type { Lookup } from '../interface/Lookup'
-import { AccountModel } from './AccountModel'
 import { TransferModel } from './TransferModel'
 import type { TierListing } from '../interface/TierListing'
-import { BadDataError, InvalidStateError, UnsupportedOperationError } from '../errors'
+import { BadDataError, InvalidStateError, UnsupportedOperationError, PermissionError } from '../errors'
 
 export class ParcelModel implements Parcel{
-  public initiated: string
+  public created: string
   public tickets: Array<{tier: TierListing, quantity: number}>
 
   private __apiAdapter: APIAdapter
+  private __sender: Account
 
-  constructor(apiAdapter: APIAdapter){
-    this.initiated = (new Date()).toISOString()
+  constructor(apiAdapter: APIAdapter, sender: Account){
+    this.created = (new Date()).toISOString()
     this.tickets = []
 
     this.__apiAdapter = apiAdapter
+    this.__sender = sender
   }
 
   add(tier: TierListing, quantity: number): Promise<boolean>{
@@ -27,20 +28,22 @@ export class ParcelModel implements Parcel{
       const tierIndex = this.__hasTier(tier)
 
       //Check that quantity is a valid number
-      if(quantity < 1){
-        reject(new BadDataError(400, "The number of tickets to be added to the parcel must be a positive integer."))
-      }else if(tierIndex < 0){
-        this.tickets.push({
-          tier: tier,
-          quantity: quantity
-        })
+      this.__sender.wallet.list().filter({tier: tier}).then(tickets => {
+        if(quantity < 1){
+          reject(new BadDataError(400, "The number of tickets to be added to the parcel must be a positive integer."))
+        }else if(quantity > tickets.length){
+          reject(new UnsupportedOperationError(400, "The customer does not own sufficient tickets in this tier to add to the parcel."))
+        }else if(tierIndex < 0){
+          this.tickets.push({
+            tier: tier,
+            quantity: quantity
+          })
+        }else{
+          this.tickets[tierIndex].quantity += quantity
+        }
 
         resolve(true)
-      }else{
-        this.tickets[tierIndex].quantity += quantity
-
-        resolve(true)
-      }
+      })
     })
   }
 
@@ -68,46 +71,53 @@ export class ParcelModel implements Parcel{
       const tierIndex = this.__hasTier(tier)
 
       //Check that quantity is a valid number
-      if(quantity < 1){
-        reject(new BadDataError(400, "The ticket quantity must be a positive integer."))
-      }else if(tierIndex < 0){
-        this.add(tier, quantity).then(success => {
-          resolve(success)
-        }).catch(error => {
-          reject(error)
-        })
-      }else{
-        this.tickets[tierIndex].quantity = quantity
-
-        resolve(true)
-      }
+      this.__sender.wallet.list().filter({tier: tier}).then(tickets => {
+        if(quantity < 1){
+          reject(new BadDataError(400, "The target ticket quantity must be a positive integer."))
+        }else if(quantity > tickets.length){
+          reject(new UnsupportedOperationError(400, "The customer does not own sufficient tickets to set the quantity to the specified value."))
+        }else if(tierIndex < 0){
+          this.add(tier, quantity).then(success => {
+            resolve(success)
+          }).catch(error => {
+            reject(error)
+          })
+        }else{
+          this.tickets[tierIndex].quantity = quantity
+          resolve(true)
+        }
+      })
     })
   }
 
-  send(sender: Account, recipient: Lookup): Promise<Transfer>{
+  send(recipient: Lookup): Promise<Transfer>{
     return new Promise<Transfer>((resolve, reject) => {
-		if(recipient.identification == sender.username || recipient.identification == sender.email){
-      reject(new InvalidStateError(409, "The sender cannot transfer tickets to themselves."))
-		}else{
-			const tickets = {}
-			for(const ticket of this.tickets){
-				tickets[ticket.tier.uri] = ticket.quantity
-			}
+      const tickets = []
+      for(const item of this.tickets){
+        const payload = {
+          tier: item.tier.id,
+          quantity: item.quantity
+        }
 
-			this.__apiAdapter.post("/transfers", {
-				sender: sender.number,
-				recipient: recipient.identification,
-				tickets: tickets
-			}).then(transfer => {
-				resolve(new TransferModel(transfer.data, sender, new AccountModel(transfer.data.recipient, this.__apiAdapter), this.__apiAdapter))
-			}).catch(error => {
-				if(error.code == 400){
-			  		error = new BadDataError(error.code, error.message)
-				}
+        tickets.push(payload)
+      }
 
-				reject(error)
-			})
-		}
+      this.__apiAdapter.post(`/accounts/${this.__sender.id}/transfers`, {
+        recipient: recipient.number,
+        tickets: tickets
+      }).then(transfer => {
+        resolve(new TransferModel(transfer.data, this.__apiAdapter))
+      }).catch(error => {
+        if(error.code == 400){
+          error = new BadDataError(error.code, error.message)
+        }else if(error.code == 403){
+          error = new PermissionError(error.code, error.message)
+        }else if(error.code == 409){
+          error = new InvalidStateError(error.code, error.message)
+        }
+
+        reject(error)
+      })
     })
   }
 

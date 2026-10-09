@@ -1,4 +1,5 @@
 export { AccountModel } from './AccountModel'
+export { AccountListingModel } from './AccountListingModel'
 export { AccountPreferencesModel } from './AccountPreferencesModel'
 export { AccountVerificationModel } from './AccountVerificationModel'
 export { AdmissionModel } from './AdmissionModel'

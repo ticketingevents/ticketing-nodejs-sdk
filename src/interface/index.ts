@@ -1,4 +1,5 @@
 export { Account } from './Account'
+export { AccountListing } from './AccountListing'
 export { AccountData } from './data/AccountData'
 export { AccountPreferences } from './AccountPreferences'
 export { AccountPreferencesData } from './data/AccountPreferencesData'

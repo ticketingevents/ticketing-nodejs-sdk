@@ -7,7 +7,6 @@ import {
   PresetService,
   RegionService,
   SubmissionService,
-  TransferService,
   VenueService
 } from './service'
 
@@ -67,10 +66,6 @@ export class TickeTing{
 
   get submissions(): SubmissionService{
     return new SubmissionService(this.__apiAdapter)
-  }
-
-  get transfers(): TransferService{
-    return new TransferService(this.__apiAdapter)
   }
 
   get venues(): VenueService{

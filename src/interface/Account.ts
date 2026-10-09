@@ -2,7 +2,8 @@ import { Base } from './Base'
 import type { AccountPreferences } from './AccountPreferences'
 import {
   AccountPrivilegeService, PrivilegedHostService, CartService,
-  CustomerOrderService, CustomerItineraryService, CustomerWalletService
+  CustomerOrderService, CustomerItineraryService, CustomerWalletService,
+  ParcelService, CustomerTransferService
 } from '../model/AccountModel'
 
 export interface Account extends Base{
@@ -30,6 +31,8 @@ export interface Account extends Base{
   orders?: CustomerOrderService
   itinerary?: CustomerItineraryService
   wallet?: CustomerWalletService
+  parcels?: ParcelService
+  transfers?: CustomerTransferService
   
   deactivate?(message?: string): Promise<boolean>
 }

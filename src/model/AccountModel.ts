@@ -1,4 +1,5 @@
 import { APIAdapter } from '../util/APIAdapter'
+import { Collection } from '../util/Collection'
 import { BaseService } from '../service/BaseService'
 import { BaseModel } from './BaseModel'
 import type { Account } from '../interface/Account'
@@ -13,6 +14,8 @@ import { HostModel } from './HostModel'
 import type { Order } from '../interface/Order'
 import type { OrderData } from '../interface/data/OrderData'
 import { OrderModel } from './OrderModel'
+import type { Parcel } from '../interface/Parcel'
+import { ParcelModel } from './ParcelModel'
 import type { Privilege } from '../interface/Privilege'
 import type { PrivilegeData } from '../interface/data/PrivilegeData'
 import { PrivilegeModel } from './PrivilegeModel'
@@ -21,6 +24,9 @@ import { EventListingModel } from './EventListingModel'
 import type { Ticket } from '../interface/Ticket'
 import type { TicketData } from '../interface/data/TicketData'
 import { TicketModel } from './TicketModel'
+import type { Transfer } from '../interface/Transfer'
+import type { TransferData } from '../interface/data/TransferData'
+import { TransferModel } from './TransferModel'
 import { PermissionError, UnsupportedOperationError } from '../errors'
 
 export class AccountModel extends BaseModel implements Account{
@@ -48,6 +54,8 @@ export class AccountModel extends BaseModel implements Account{
   private __customerOrderService: CustomerOrderService
   private __customerItineraryService: CustomerItineraryService
   private __customerWalletService: CustomerWalletService
+  private __parcelService: ParcelService
+  private __customerTransferService: CustomerTransferService
 
   constructor(account: any, adapter: APIAdapter){
     super(account.self, adapter)
@@ -76,6 +84,8 @@ export class AccountModel extends BaseModel implements Account{
     this.__customerOrderService = new CustomerOrderService(this._apiAdapter, this)
     this.__customerItineraryService = new CustomerItineraryService(this._apiAdapter, this)
     this.__customerWalletService = new CustomerWalletService(this._apiAdapter, this)
+    this.__parcelService = new ParcelService(this._apiAdapter, this)
+    this.__customerTransferService = new CustomerTransferService(this._apiAdapter, this)
   }
 
   get preferences(): Promise<AccountPreferences>{
@@ -110,6 +120,14 @@ export class AccountModel extends BaseModel implements Account{
 
   get wallet(): CustomerWalletService{
     return this.__customerWalletService
+  }
+
+  get parcels(): ParcelService{
+    return this.__parcelService
+  }
+
+  get transfers(): CustomerTransferService{
+    return this.__customerTransferService
   }
 
   deactivate(message?: string): Promise<boolean>{
@@ -257,5 +275,78 @@ export class CustomerWalletService extends BaseService<TicketData, Ticket>{
 
   protected _instantiateModel(data: any){
     return new TicketModel(data, this.__customer, this.__apiAdapter)
+  }
+}
+
+export class ParcelService{
+  private __apiAdapter: APIAdapter
+  private __sender: Account
+
+  constructor(apiAdapter: APIAdapter, sender: Account){
+    this.__apiAdapter = apiAdapter
+    this.__sender = sender
+  }
+
+  create(): Promise<Parcel>{
+    return new Promise<Parcel>((resolve) => {
+      resolve(new ParcelModel(this.__apiAdapter, this.__sender))
+    })
+  }
+
+  batchCreate(): Promise<Array<Parcel>>{
+    return new Promise<Array<Parcel>>((_resolve, reject) => {
+      reject(new UnsupportedOperationError(0, "Operation not supported"))
+    })
+  }
+
+  list(): Collection<Parcel>{
+    return new Collection<Parcel>((_resolve, reject) => {
+      reject(new UnsupportedOperationError(0, "Operation not supported"))
+    })
+  }
+}
+
+export class CustomerTransferService extends BaseService<TransferData, Transfer>{
+  private __apiAdapter: APIAdapter
+
+  constructor(apiAdapter: APIAdapter, sender: Account){
+    super(
+      apiAdapter,
+      `/accounts/${sender.number}/transfers`,
+      TransferModel,
+      ["outgoing","status"]
+    )
+
+    this.__apiAdapter = apiAdapter
+  }
+
+  create(): Promise<Transfer>{
+    return new Promise<Transfer>((_resolve, reject) => {
+      reject(new UnsupportedOperationError(0, "Operation not supported"))
+    })
+  }
+
+  batchCreate(): Promise<Array<Transfer>>{
+    return new Promise<Array<Transfer>>((_resolve, reject) => {
+      reject(new UnsupportedOperationError(0, "Operation not supported"))
+    })
+  }
+
+  list(_pageLength: number = 25): Collection<Transfer>{
+    return new Collection<Transfer>((_resolve, reject) => {
+      reject(new UnsupportedOperationError(0, "Operation not supported"))
+    })
+  }
+
+  outgoing(pageLength: number = 25): Collection<Transfer>{
+    return super.list(pageLength).filter({outgoing: true})
+  }
+
+  incoming(pageLength: number = 25): Collection<Transfer>{
+    return super.list(pageLength).filter({outgoing: false})
+  }
+
+  protected _instantiateModel(data: any){
+    return new TransferModel(data, this.__apiAdapter)
   }
 }
