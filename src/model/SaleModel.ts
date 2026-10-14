@@ -38,7 +38,9 @@ export class SaleModel extends BaseModel implements Sale{
       tags: sale.event.tags,
       published: sale.event.published,
       banner: sale.event.banner,
-      thumbnail: sale.event.thumbnail
+      thumbnail: sale.event.thumbnail,
+      save: (() => new Promise<boolean>((resolve) => {resolve(false)})),
+      delete: (() => new Promise<boolean>((resolve) => {resolve(false)}))
     }
 
     this.customer = {
@@ -60,6 +62,8 @@ export class SaleModel extends BaseModel implements Sale{
         secondAddressLine: sale.customer.secondAddressLine,
         city: sale.customer.city,
         state: sale.customer.state,
+        save: (() => new Promise<boolean>((resolve) => {resolve(false)})),
+        delete: (() => new Promise<boolean>((resolve) => {resolve(false)}))
     }
 
     if(sale.tier){
@@ -83,7 +87,9 @@ export class SaleModel extends BaseModel implements Sale{
         upgrades: sale.tier.upgrades,
         gross_sales: sale.tier.gross_sales,
         units_sold: sale.tier.units_sold,
-        form: sale.tier.form
+        form: sale.tier.form,
+        save: (() => new Promise<boolean>((resolve) => {resolve(false)})),
+        delete: (() => new Promise<boolean>((resolve) => {resolve(false)}))
       }
     }
   }
