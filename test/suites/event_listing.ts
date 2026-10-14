@@ -86,6 +86,13 @@ describe("Event Listing", function(){
     await submission.approve("Your event is approved!")
     await this.testEvent.publish()
 
+    //Feature test event
+    api.post(`${this.testEvent.uri}/features`, {
+      start: "2026-10-01T20:00:00",
+      end: "3035-06-07T23:00:00",
+      exclusive: false
+    })
+
     //Event to test inaccessibility of unlisted events
     this.secondEvent = await this.host.events.create({
       title: "Test Event "+Math.floor(Math.random() * 999999),
@@ -256,14 +263,18 @@ describe("Event Listing", function(){
       })
     })
 
-    it.skip('Should return a collection of events matching the featured filter', function () {
+    it('Should return a collection of events matching the featured filter', function () {
       return new Promise((resolve, reject) => {
         ticketing.events.list(5).filter({featured: true}).then(events => {
           expect(events.length).to.be.least(1)
 
+          let event_uris = []
           for(let event of events){
-            expect(event.featured).to.be.true
+            event_uris.push(event.id)
           }
+
+          expect(event_uris).to.include(this.testEvent.id)
+          expect(event_uris).to.not.include(this.secondEvent.id)
 
           resolve(true)
         }).catch(error => {

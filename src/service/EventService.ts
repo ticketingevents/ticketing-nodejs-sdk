@@ -9,7 +9,7 @@ import { UnsupportedOperationError } from '../errors'
 export class EventService extends BaseService<EventListing, EventListing>{
   constructor(apiAdapter: APIAdapter){
     super(apiAdapter, "/events", EventListingModel,
-      ["region", "host", "title", "active", "category", "subcategory", "after", "before"],
+      ["region", "host", "title", "active", "category", "subcategory", "after", "before", "featured"],
       ["alphabetical","published","popularity","start"],
       {region: "id", host: "id", category: "id", subcategory: "id", }
     )
