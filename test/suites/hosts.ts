@@ -225,6 +225,8 @@ describe("Host Management", function(){
             .and.be.an.instanceOf(PermissionError)
 
           resolve(true)
+        }).catch(error => {
+          reject(error)
         })
       })
     })
@@ -396,6 +398,8 @@ describe("Host Management", function(){
             .and.be.an.instanceOf(PermissionError)
 
           resolve(true)
+        }).catch(error => {
+          reject(error)
         })
       })
     })

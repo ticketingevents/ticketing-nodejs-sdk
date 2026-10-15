@@ -82,7 +82,7 @@ describe("Regions", function(){
           expect(region)
             .to.be.an.instanceof(RegionModel)
             .and.to.include(this.testRegionData)
-            .and.to.have.property("icon", `${ticketing.mediaURL}/antigua_and_barbuda.png`)
+            .and.to.have.property("icon", `${ticketing.mediaURL}/country/flag/antigua_and_barbuda.png`)
 
           resolve(true)
         })).catch(error=>{
