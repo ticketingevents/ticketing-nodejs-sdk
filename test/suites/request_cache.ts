@@ -8,6 +8,7 @@ import {
   shouldCacheRequest
 } from '../../src/util'
 import { TickeTing } from '../../src'
+import { TickeTingError } from '../../src/errors'
 import { expect } from '../setup'
 
 function createMockAdapter<T>(payload: T, delay = 0) {
@@ -536,8 +537,9 @@ describe('Request cache', function () {
       }
 
       const firstInstance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
-      attachRequestCache(firstInstance, cacheOptions)
+      const firstCache = attachRequestCache(firstInstance, cacheOptions)
       await firstInstance.get('/events/7')
+      firstCache.flush()
 
       const secondInstance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
       attachRequestCache(secondInstance, cacheOptions)
@@ -556,8 +558,9 @@ describe('Request cache', function () {
       }
 
       const firstInstance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
-      attachRequestCache(firstInstance, cacheOptions)
+      const firstCache = attachRequestCache(firstInstance, cacheOptions)
       await firstInstance.get('/events/8')
+      firstCache.flush()
 
       await delay(25)
 
@@ -579,8 +582,9 @@ describe('Request cache', function () {
       }
 
       const firstInstance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
-      attachRequestCache(firstInstance, cacheOptions)
+      const firstCache = attachRequestCache(firstInstance, cacheOptions)
       await firstInstance.get('/events/persisted-stale')
+      firstCache.flush()
 
       await delay(25)
 
@@ -605,6 +609,7 @@ describe('Request cache', function () {
       const firstInstance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
       const cache = attachRequestCache(firstInstance, cacheOptions)
       await firstInstance.get('/events/persist-clear')
+      cache.flush()
       expect(persistence.read()).to.not.equal(null)
 
       cache.clear()
@@ -630,11 +635,12 @@ describe('Request cache', function () {
 
       const mock = createMockAdapter({ id: 'custom-persist' })
       const firstInstance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
-      attachRequestCache(firstInstance, {
+      const firstCache = attachRequestCache(firstInstance, {
         defaultTtl: 60000,
         persistence: { storage: custom }
       })
       await firstInstance.get('/events/custom-persist')
+      firstCache.flush()
       expect(stored).to.be.a('string')
 
       const secondInstance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
@@ -644,6 +650,148 @@ describe('Request cache', function () {
       })
       await secondInstance.get('/events/custom-persist')
       expect(mock.callCount).to.equal(1)
+    })
+
+    it('debounces a burst of responses into a single write', async function () {
+      let writes = 0
+      const persistence = new MemoryCachePersistence()
+      const originalWrite = persistence.write.bind(persistence)
+      persistence.write = (data: string) => {
+        writes += 1
+        originalWrite(data)
+      }
+
+      const mock = createMockAdapter({ id: 'burst' })
+      const instance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
+      attachRequestCache(instance, {
+        defaultTtl: 60000,
+        persistence: { storage: persistence, debounce: 30 }
+      })
+
+      await Promise.all([
+        instance.get('/events/1'),
+        instance.get('/events/2'),
+        instance.get('/events/3')
+      ])
+      expect(writes).to.equal(0)
+
+      await delay(50)
+      expect(writes).to.equal(1)
+      expect(JSON.parse(persistence.read()!).entries).to.have.length(3)
+    })
+
+    it('writes synchronously when debounce is 0', async function () {
+      const persistence = new MemoryCachePersistence()
+      const mock = createMockAdapter({ id: 'sync' })
+      const instance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
+      attachRequestCache(instance, {
+        defaultTtl: 60000,
+        persistence: { storage: persistence, debounce: 0 }
+      })
+
+      await instance.get('/events/sync')
+      expect(persistence.read()).to.be.a('string')
+    })
+
+    it('does not write a pending change after clear()', async function () {
+      const persistence = new MemoryCachePersistence()
+      const mock = createMockAdapter({ id: 'cleared' })
+      const instance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
+      const cache = attachRequestCache(instance, {
+        defaultTtl: 60000,
+        persistence: { storage: persistence, debounce: 20 }
+      })
+
+      await instance.get('/events/cleared')
+      cache.clear()
+      await delay(40)
+      expect(persistence.read()).to.equal(null)
+    })
+
+    it('persists only data, status, statusText and headers', async function () {
+      const persistence = new MemoryCachePersistence()
+      const mock = createMockAdapter({ id: 'slim' })
+      const instance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
+      const cache = attachRequestCache(instance, {
+        defaultTtl: 60000,
+        persistence: { storage: persistence }
+      })
+
+      await instance.get('/events/slim')
+      cache.flush()
+
+      const [, entry] = JSON.parse(persistence.read()!).entries[0]
+      expect(Object.keys(entry.value).sort()).to.deep.equal(['data', 'headers', 'status', 'statusText'])
+    })
+
+    it('attaches the current request config to cached responses', async function () {
+      const mock = createMockAdapter({ id: 'config' })
+      const instance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
+      attachRequestCache(instance, { defaultTtl: 60000, persistence: false })
+
+      await instance.get('/events/config', { headers: { 'X-Call': 'first' } })
+      const second = await instance.get('/events/config', { headers: { 'X-Call': 'second' } })
+
+      expect(mock.callCount).to.equal(1)
+      expect(second.config.headers['X-Call']).to.equal('second')
+    })
+
+    it('keeps the persisted blob under maxSize by dropping the oldest entries', function () {
+      const persistence = new MemoryCachePersistence()
+      const store = new CacheStore({
+        defaultTtl: 60000,
+        persistence,
+        persistenceMaxSize: 400,
+        persistenceDebounce: 0
+      })
+
+      for (let index = 0; index < 10; index += 1) {
+        store.set(`key-${index}`, { data: 'x'.repeat(50) })
+      }
+
+      const raw = persistence.read()!
+      const keys = JSON.parse(raw).entries.map(([key]: [string]) => key)
+      expect(raw.length).to.be.at.most(400)
+      expect(keys).to.include('key-9')
+      expect(keys).to.not.include('key-0')
+      expect(store.peek('key-0')).to.exist
+    })
+
+    it('trims in-memory entries when storage is full so later writes succeed', function () {
+      let stored: string | null = null
+      let attempts = 0
+      const quota = 300
+      const limited = {
+        read: () => stored,
+        write: (data: string) => {
+          attempts += 1
+          if (data.length > quota) {
+            throw new Error('QuotaExceededError')
+          }
+          stored = data
+        },
+        remove: () => {
+          stored = null
+        }
+      }
+
+      const store = new CacheStore({
+        defaultTtl: 60000,
+        persistence: limited,
+        persistenceDebounce: 0
+      })
+
+      for (let index = 0; index < 8; index += 1) {
+        store.set(`key-${index}`, { data: 'x'.repeat(40) })
+      }
+
+      expect(stored).to.be.a('string')
+      expect(store.peek('key-7')).to.exist
+      expect(store.peek('key-0')).to.equal(undefined)
+
+      attempts = 0
+      store.delete('key-7')
+      expect(attempts).to.equal(1)
     })
   })
 
@@ -752,6 +900,42 @@ describe('Request cache', function () {
       adapter.reset()
       await adapter.get('/events/14')
       expect(mock.callCount).to.equal(2)
+    })
+
+    it('rejects with a TickeTingError when there is no HTTP response', async function () {
+      const adapter = new APIAdapter('test-api-key', false)
+      ;(adapter as any).__requester.defaults.adapter = () => Promise.reject(new Error('timeout of 69000ms exceeded'))
+
+      let caught: any = null
+      try {
+        await adapter.get('/events/timeout')
+      } catch (error) {
+        caught = error
+      }
+
+      expect(caught).to.be.instanceOf(TickeTingError)
+      expect(caught.code).to.equal(0)
+      expect(caught.message).to.equal('timeout of 69000ms exceeded')
+    })
+
+    it('does not leave an unhandled rejection when an uncached request fails', async function () {
+      const unhandled: unknown[] = []
+      const listener = (reason: unknown) => unhandled.push(reason)
+      process.on('unhandledRejection', listener)
+
+      try {
+        const mock = createMockAdapter({ id: 'fail' })
+        const instance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
+        attachRequestCache(instance, { defaultTtl: 60000, persistence: false })
+
+        mock.failNext(new Error('network down'))
+        await instance.get('/events/fail').catch(() => {})
+        await delay(10)
+      } finally {
+        process.removeListener('unhandledRejection', listener)
+      }
+
+      expect(unhandled).to.have.length(0)
     })
 
     it('supports TickeTing.cache() / nocache() chaining', async function () {

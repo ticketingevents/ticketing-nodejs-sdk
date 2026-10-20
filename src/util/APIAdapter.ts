@@ -158,10 +158,14 @@ export class APIAdapter{
       }).then(response => {
         resolve(response)
       }).catch(error => {
-        if(error.response.status == 401){
-          reject(new UnauthorisedError(error.response.status, error.response.data.error))
+        const status = error.response?.status
+        if(status === undefined){
+          // Timeout, offline or other failure with no HTTP response.
+          reject(new TickeTingError(0, error.message || "Network request failed"))
+        }else if(status == 401){
+          reject(new UnauthorisedError(status, error.response.data?.error))
         }else{
-          reject(new TickeTingError(error.response.status, error.response.data.error))
+          reject(new TickeTingError(status, error.response.data?.error))
         }
       })
     })

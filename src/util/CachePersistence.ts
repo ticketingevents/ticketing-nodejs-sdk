@@ -19,6 +19,16 @@ export interface CachePersistenceAdapter {
 export interface CachePersistenceOptions {
   namespace?: string
   storage?: 'local' | 'session' | CachePersistenceAdapter
+  /**
+   * Maximum size of the persisted blob, in characters. When exceeded, the least recently
+   * used entries are left out of the saved copy. Defaults to 1,000,000 (~2 MB in UTF-16).
+   */
+  maxSize?: number
+  /**
+   * How long to wait after the last cache change before writing to storage, in ms.
+   * A burst of responses becomes a single write. `0` writes synchronously. Defaults to 1000.
+   */
+  debounce?: number
 }
 
 interface PersistedCacheState {
@@ -28,6 +38,8 @@ interface PersistedCacheState {
 
 const DEFAULT_NAMESPACE = '@ticketing/sdk-request-cache'
 const PERSISTENCE_VERSION = 1
+export const DEFAULT_PERSISTENCE_MAX_SIZE = 1000000
+export const DEFAULT_PERSISTENCE_DEBOUNCE = 1000
 
 export class MemoryCachePersistence implements CachePersistenceAdapter {
   private __data: string | null = null
@@ -63,11 +75,8 @@ class WebStoragePersistence implements CachePersistenceAdapter {
   }
 
   write(data: string): void {
-    try {
-      this.__storage.setItem(this.__namespace, data)
-    } catch {
-      this.__pruneAndRetry(data)
-    }
+    // Let quota errors propagate so the cache store can trim its entries and retry.
+    this.__storage.setItem(this.__namespace, data)
   }
 
   remove(): void {
@@ -75,16 +84,6 @@ class WebStoragePersistence implements CachePersistenceAdapter {
       this.__storage.removeItem(this.__namespace)
     } catch {
       // Ignore storage failures in restricted environments.
-    }
-  }
-
-  private __pruneAndRetry(data: string): void {
-    try {
-      const parsed = JSON.parse(data) as PersistedCacheState
-      const entries = parsed.entries.slice(Math.ceil(parsed.entries.length / 2))
-      this.__storage.setItem(this.__namespace, serializeCacheState(entries))
-    } catch {
-      this.__storage.removeItem(this.__namespace)
     }
   }
 }
@@ -139,23 +138,29 @@ export function loadPersistedEntries(
   return entries
 }
 
-export function persistEntries(
-  persistence: CachePersistenceAdapter | null | undefined,
-  entries: Map<string, CacheEntry>
-): void {
-  if (!persistence) {
-    return
+/**
+ * Serialize entries (oldest first) into the persisted format, keeping the most recently
+ * used entries that fit within `maxSize` characters.
+ */
+export function serializeEntries(
+  entries: Map<string, CacheEntry>,
+  maxSize: number = DEFAULT_PERSISTENCE_MAX_SIZE
+): string {
+  const prefix = `{"version":${PERSISTENCE_VERSION},"entries":[`
+  const suffix = ']}'
+  const parts: string[] = []
+  let size = prefix.length + suffix.length
+  const ordered = Array.from(entries.entries())
+
+  for (let index = ordered.length - 1; index >= 0; index -= 1) {
+    const part = JSON.stringify(ordered[index])
+    const nextSize = size + part.length + (parts.length > 0 ? 1 : 0)
+    if (nextSize > maxSize) {
+      break
+    }
+    parts.push(part)
+    size = nextSize
   }
 
-  const serialized = serializeCacheState(Array.from(entries.entries()))
-  persistence.write(serialized)
-}
-
-function serializeCacheState(entries: Array<[string, CacheEntry]>): string {
-  const state: PersistedCacheState = {
-    version: PERSISTENCE_VERSION,
-    entries
-  }
-
-  return JSON.stringify(state)
+  return `${prefix}${parts.reverse().join(',')}${suffix}`
 }

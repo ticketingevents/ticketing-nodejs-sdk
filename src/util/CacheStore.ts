@@ -2,8 +2,10 @@ import {
   CacheEntry,
   CachePersistenceAdapter,
   createDefaultPersistence,
+  DEFAULT_PERSISTENCE_DEBOUNCE,
+  DEFAULT_PERSISTENCE_MAX_SIZE,
   loadPersistedEntries,
-  persistEntries
+  serializeEntries
 } from './CachePersistence'
 
 export type { CacheEntry } from './CachePersistence'
@@ -20,6 +22,10 @@ export interface CacheStoreOptions {
   persistence?: boolean | CachePersistenceAdapter
   persistenceNamespace?: string
   persistenceStorage?: 'local' | 'session'
+  /** Maximum persisted blob size in characters. */
+  persistenceMaxSize?: number
+  /** Delay before writing changes to storage, in ms. `0` writes synchronously. */
+  persistenceDebounce?: number
 }
 
 export class CacheStore {
@@ -28,14 +34,22 @@ export class CacheStore {
   private __defaultTtl: number
   private __staleTtl: number | null
   private __persistence: CachePersistenceAdapter | null
+  private __persistMaxSize: number
+  private __persistDebounce: number
+  private __persistTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor(options: CacheStoreOptions = {}) {
     this.__maxEntries = options.maxEntries ?? 100
     this.__defaultTtl = options.defaultTtl ?? 300000
     this.__staleTtl = options.staleTtl === undefined ? null : options.staleTtl
+    this.__persistMaxSize = options.persistenceMaxSize ?? DEFAULT_PERSISTENCE_MAX_SIZE
+    this.__persistDebounce = options.persistenceDebounce ?? DEFAULT_PERSISTENCE_DEBOUNCE
     this.__persistence = this.__resolvePersistence(options)
     this.__entries = loadPersistedEntries(this.__persistence)
-    this.__prune()
+    if (this.__prune()) {
+      this.__persist()
+    }
+    this.__flushOnPageHide()
   }
 
   get defaultTtl(): number {
@@ -89,6 +103,7 @@ export class CacheStore {
 
     this.__entries.set(key, { value, expiresAt, staleExpiresAt })
     this.__prune()
+    this.__persist()
   }
 
   delete(key: string): boolean {
@@ -100,8 +115,21 @@ export class CacheStore {
   }
 
   clear(): void {
+    this.__cancelPersist()
     this.__entries.clear()
     this.__persistence?.remove()
+  }
+
+  /**
+   * Write any pending changes to storage immediately instead of waiting for the debounce.
+   */
+  flush(): void {
+    if (this.__persistTimer === null) {
+      return
+    }
+
+    this.__cancelPersist()
+    this.__write()
   }
 
   invalidate(predicate: (key: string) => boolean): void {
@@ -187,7 +215,8 @@ export class CacheStore {
     return expiresAt + Math.max(0, staleTtl)
   }
 
-  private __prune(): void {
+  /** Drop hard-expired entries and enforce `maxEntries`. Returns whether anything was removed. */
+  private __prune(): boolean {
     const now = Date.now()
     let changed = false
 
@@ -199,21 +228,95 @@ export class CacheStore {
       }
     }
 
-    while (this.__entries.size > this.__maxEntries) {
-      const oldestKey = this.__entries.keys().next().value
-      if (oldestKey === undefined) {
-        break
-      }
-      this.__entries.delete(oldestKey)
+    if (this.__entries.size > this.__maxEntries) {
+      this.__evictOldest(this.__entries.size - this.__maxEntries)
       changed = true
     }
 
-    if (changed || this.__entries.size > 0) {
-      this.__persist()
-    }
+    return changed
   }
 
   private __persist(): void {
-    persistEntries(this.__persistence, this.__entries)
+    if (!this.__persistence) {
+      return
+    }
+
+    if (this.__persistDebounce <= 0) {
+      this.__write()
+      return
+    }
+
+    this.__cancelPersist()
+    this.__persistTimer = setTimeout(() => {
+      this.__persistTimer = null
+      this.__write()
+    }, this.__persistDebounce)
+
+    // Don't keep a Node.js process alive just to write the cache.
+    const timer = this.__persistTimer as { unref?: () => void }
+    timer.unref?.()
+  }
+
+  private __cancelPersist(): void {
+    if (this.__persistTimer !== null) {
+      clearTimeout(this.__persistTimer)
+      this.__persistTimer = null
+    }
+  }
+
+  private __write(): void {
+    const persistence = this.__persistence
+    if (!persistence) {
+      return
+    }
+
+    for (;;) {
+      try {
+        persistence.write(serializeEntries(this.__entries, this.__persistMaxSize))
+        return
+      } catch {
+        // Storage is full. Trim the in-memory entries as well, so the next write doesn't
+        // hit the same limit, and retry with the most recently used half.
+        if (this.__entries.size === 0) {
+          try {
+            persistence.remove()
+          } catch {
+            // Ignore storage failures in restricted environments.
+          }
+          return
+        }
+
+        this.__evictOldest(Math.ceil(this.__entries.size / 2))
+      }
+    }
+  }
+
+  private __evictOldest(count: number): void {
+    for (let removed = 0; removed < count; removed += 1) {
+      const oldestKey = this.__entries.keys().next().value
+      if (oldestKey === undefined) {
+        return
+      }
+      this.__entries.delete(oldestKey)
+    }
+  }
+
+  /** Browsers may discard a pending debounced write when the page closes; flush first. */
+  private __flushOnPageHide(): void {
+    const target = globalThis as {
+      addEventListener?: (type: string, listener: () => void) => void
+      document?: { visibilityState?: string }
+    }
+
+    if (!this.__persistence || typeof target.addEventListener !== 'function') {
+      return
+    }
+
+    target.addEventListener('pagehide', () => this.flush())
+    target.addEventListener('visibilitychange', () => {
+      if (target.document?.visibilityState === 'hidden') {
+        this.flush()
+      }
+    })
   }
 }

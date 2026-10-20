@@ -541,6 +541,13 @@ When persistence is enabled, cache entries are written to `localStorage` in brow
 environments (or `sessionStorage` if configured). This lets an app restart and still have
 fallback data while offline.
 
+Only each response's `data`, `status`, `statusText` and `headers` are saved. Writes are
+debounced, so a burst of responses is saved once things go quiet (set `debounce: 0` to write
+on every change). In browsers, a pending write is flushed when the page is hidden or closed;
+call `ticketing.cacheControls.flush()` to write it yourself. If the saved cache would go over
+`maxSize`, the least recently used entries are left out of the saved copy. If storage is full
+and a write fails, the oldest in-memory entries are dropped until the write succeeds.
+
 ```javascript
 const ticketing = new TickeTing({
   apiKey: "API_KEY",
@@ -548,7 +555,9 @@ const ticketing = new TickeTing({
     enabled: true,
     persistence: {
       namespace: '@my-app/ticketing-cache',
-      storage: 'local' // or 'session', or a custom adapter
+      storage: 'local', // or 'session', or a custom adapter
+      maxSize: 1_000_000, // max persisted size in characters (default 1,000,000)
+      debounce: 1000      // ms to wait after the last change before writing (default 1000)
     }
   }
 })
@@ -681,7 +690,8 @@ Notes:
 
 - `read()` is called once when the cache store is constructed; later updates go through `write()`.
 - `remove()` is called when you invoke `ticketing.cacheControls.clear()`.
-- Failed `write` / `remove` calls should not throw if you can avoid it — the in-memory cache continues to serve requests even when persistence fails.
+- `write()` may throw when storage is full. The SDK then drops the oldest half of the cached entries and retries, so later writes don't keep failing. Errors from `write()` never reach your API calls.
+- `write()` is debounced (see `persistence.debounce`), so it is called once after a burst of changes, not once per response.
 
 ### Manual cache control
 
@@ -697,6 +707,9 @@ ticketing.cacheControls.invalidate(key => key.includes('/events/'))
 
 // Invalidate cached GETs related to a URL path
 ticketing.cacheControls.invalidateUrl('/events/42')
+
+// Write pending changes to persistent storage now instead of after the debounce
+ticketing.cacheControls.flush()
 ```
 
 ## Session Management
