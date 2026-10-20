@@ -30,9 +30,14 @@ export interface RequestCacheOptions {
 
 export interface RequestCacheController {
   clear(): void
+  /** Write pending cache changes to persistent storage now instead of after the debounce. */
+  flush(): void
   invalidate(predicate: (key: string) => boolean): void
   invalidateUrl(url: string): void
 }
+
+/** The parts of a response that are cached. `config` and `request` are not stored. */
+type CachedResponse = Pick<AxiosResponse, 'data' | 'status' | 'statusText' | 'headers'>
 
 interface CacheAwareAxiosRequestConfig extends InternalAxiosRequestConfig {
   __cacheKey?: string
@@ -111,7 +116,7 @@ export function attachRequestCache(
     staleTtl: options.staleTtl,
     ...resolvePersistenceOptions(options.persistence)
   })
-  const inflight = new Map<string, Promise<AxiosResponse>>()
+  const inflight = new Map<string, Promise<CachedResponse>>()
 
   const requestInterceptorId = instance.interceptors.request.use((config: CacheAwareAxiosRequestConfig) => {
     const method = (config.method || 'get').toLowerCase()
@@ -132,7 +137,8 @@ export function attachRequestCache(
 
     const fresh = store.get(cacheKey)
     if (fresh) {
-      config.adapter = () => Promise.resolve(cloneResponse(fresh.value as AxiosResponse))
+      const cached = fresh.value as CachedResponse
+      config.adapter = (requestConfig) => Promise.resolve(toAxiosResponse(cached, requestConfig))
       return config
     }
 
@@ -141,7 +147,12 @@ export function attachRequestCache(
     const revalidateTimeout = resolveRevalidateTimeout(config, defaultRevalidateTimeout)
 
     if (pending) {
-      config.adapter = () => resolveCachedOrNetwork(pending, stale, revalidateTimeout)
+      config.adapter = (requestConfig) => resolveCachedOrNetwork(
+        pending.then((cached) => toAxiosResponse(cached, requestConfig)),
+        stale,
+        revalidateTimeout,
+        requestConfig
+      )
       return config
     }
 
@@ -150,23 +161,26 @@ export function attachRequestCache(
       return config
     }
 
-    let resolveShared!: (response: AxiosResponse) => void
+    let resolveShared!: (response: CachedResponse) => void
     let rejectShared!: (error: unknown) => void
-    const shared = new Promise<AxiosResponse>((resolve, reject) => {
+    const shared = new Promise<CachedResponse>((resolve, reject) => {
       resolveShared = resolve
       rejectShared = reject
     })
+    // Concurrent readers attach their own handlers; this only stops an unhandled
+    // rejection when the request fails and nobody else was waiting on it.
+    shared.catch(() => {})
     inflight.set(cacheKey, shared)
 
     const networkPromise = (requestConfig: InternalAxiosRequestConfig) => {
       return defaultAdapter(requestConfig).then(
         (response) => {
-          const cachedResponse = cloneResponse(response)
+          // The cached copy has its own cloned data, so the caller cannot mutate it.
+          const cachedResponse = toCachedResponse(response)
           store.set(cacheKey, cachedResponse, resolveTtl(requestConfig))
           inflight.delete(cacheKey)
           resolveShared(cachedResponse)
-          // Return a separate clone so callers cannot mutate the cached entry.
-          return cloneResponse(cachedResponse)
+          return response
         },
         (error) => {
           inflight.delete(cacheKey)
@@ -179,7 +193,7 @@ export function attachRequestCache(
     if (stale) {
       config.adapter = (requestConfig) => {
         const fetchPromise = networkPromise(requestConfig)
-        return resolveCachedOrNetwork(fetchPromise, stale, revalidateTimeout)
+        return resolveCachedOrNetwork(fetchPromise, stale, revalidateTimeout, requestConfig)
       }
       return config
     }
@@ -213,6 +227,9 @@ export function attachRequestCache(
       store.clear()
       inflight.clear()
     },
+    flush(): void {
+      store.flush()
+    },
     invalidate(predicate: (key: string) => boolean): void {
       store.invalidate(predicate)
     },
@@ -234,13 +251,14 @@ export function attachRequestCache(
 function resolveCachedOrNetwork(
   network: Promise<AxiosResponse>,
   stale: ReturnType<CacheStore['peek']>,
-  timeoutMs: number
+  timeoutMs: number,
+  config: InternalAxiosRequestConfig
 ): Promise<AxiosResponse> {
   if (!stale) {
-    return network.then((response) => cloneResponse(response))
+    return network
   }
 
-  const staleResponse = stale.value as AxiosResponse
+  const staleResponse = stale.value as CachedResponse
 
   return new Promise((resolve, reject) => {
     let settled = false
@@ -250,7 +268,7 @@ function resolveCachedOrNetwork(
         return
       }
       settled = true
-      resolve(cloneResponse(staleResponse))
+      resolve(toAxiosResponse(staleResponse, config))
     }, timeoutMs)
 
     network.then(
@@ -258,7 +276,7 @@ function resolveCachedOrNetwork(
         clearTimeout(timer)
         if (!settled) {
           settled = true
-          resolve(cloneResponse(response))
+          resolve(response)
         }
       },
       (error) => {
@@ -266,7 +284,7 @@ function resolveCachedOrNetwork(
         if (!settled) {
           settled = true
           // Offline / network error: prefer stale cache over failing the request.
-          resolve(cloneResponse(staleResponse))
+          resolve(toAxiosResponse(staleResponse, config))
         } else {
           // Already returned stale after timeout; swallow the background error.
           void error
@@ -395,12 +413,26 @@ function stableSerialize(value: unknown): string {
   return `{${keys.map((key) => `${key}:${stableSerialize(record[key])}`).join(',')}}`
 }
 
-function cloneResponse<T>(response: AxiosResponse<T>): AxiosResponse<T> {
+function toCachedResponse(response: CachedResponse): CachedResponse {
   return {
-    ...response,
-    headers: { ...response.headers },
-    config: { ...response.config },
-    data: cloneData(response.data)
+    data: cloneData(response.data),
+    status: response.status,
+    statusText: response.statusText,
+    headers: { ...response.headers }
+  }
+}
+
+/** Rebuild a full response from a cached entry, using the config of the current request. */
+function toAxiosResponse(
+  cached: CachedResponse,
+  config: InternalAxiosRequestConfig
+): AxiosResponse {
+  return {
+    data: cloneData(cached.data),
+    status: cached.status,
+    statusText: cached.statusText,
+    headers: { ...cached.headers },
+    config
   }
 }
 
@@ -422,6 +454,8 @@ function resolvePersistenceOptions(
   persistence?: boolean | CachePersistenceAdapter
   persistenceNamespace?: string
   persistenceStorage?: 'local' | 'session'
+  persistenceMaxSize?: number
+  persistenceDebounce?: number
 } {
   if (persistence === false) {
     return { persistence: false }
@@ -434,13 +468,17 @@ function resolvePersistenceOptions(
   if (typeof persistence.storage !== 'undefined' && typeof persistence.storage !== 'string') {
     return {
       persistence: persistence.storage,
-      persistenceNamespace: persistence.namespace
+      persistenceNamespace: persistence.namespace,
+      persistenceMaxSize: persistence.maxSize,
+      persistenceDebounce: persistence.debounce
     }
   }
 
   return {
     persistence: true,
     persistenceNamespace: persistence.namespace,
-    persistenceStorage: persistence.storage
+    persistenceStorage: persistence.storage,
+    persistenceMaxSize: persistence.maxSize,
+    persistenceDebounce: persistence.debounce
   }
 }
