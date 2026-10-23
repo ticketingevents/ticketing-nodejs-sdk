@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { environment } from '../environment/environment'
 import { constants } from './constants'
 import { TickeTingError, UnauthorisedError } from '../errors'
@@ -8,6 +8,12 @@ import {
   RequestCacheController,
   RequestCacheOptions
 } from './RequestCache'
+import {
+  createRequest,
+  runInterceptors,
+  TickeTingInterceptor,
+  TickeTingRequest
+} from './Interceptor'
 
 export type RequestCacheMode = NonNullable<AxiosRequestConfig['cache']>
 
@@ -19,6 +25,7 @@ export class APIAdapter{
   private __mediaURL;
   private __cache: RequestCacheController | null = null;
   private __cacheMode?: RequestCacheMode;
+  private __interceptors: TickeTingInterceptor[] = [];
 
   constructor(apiKey: string, cache: RequestCacheOptions | boolean = false){
     this.__originalKey = apiKey
@@ -84,6 +91,30 @@ export class APIAdapter{
     return this.__cache
   }
 
+  /**
+   * The underlying axios interceptors, for adding your own request / response handlers.
+   * Request interceptors run before the cache lookup; response interceptors run after it.
+   * @example adapter.interceptors.request.use(config => config)
+   */
+  get interceptors(): AxiosInstance['interceptors'] {
+    return this.__requester.interceptors
+  }
+
+  /**
+   * Add an Angular-style interceptor that wraps every request made through this adapter.
+   * Interceptors run in the order they were added. Returns a function that removes it.
+   * @example adapter.addInterceptor((req, next) => next(req.clone({ setHeaders: { 'X-Trace': id } })))
+   */
+  addInterceptor(interceptor: TickeTingInterceptor): () => void {
+    this.__interceptors.push(interceptor)
+    return () => {
+      const index = this.__interceptors.indexOf(interceptor)
+      if (index >= 0) {
+        this.__interceptors.splice(index, 1)
+      }
+    }
+  }
+
   get(
     url: string,
     params: {[key: string]: string|number} = {},
@@ -134,6 +165,7 @@ export class APIAdapter{
     scoped.__mediaURL = this.__mediaURL
     scoped.__cache = this.__cache
     scoped.__cacheMode = mode
+    scoped.__interceptors = this.__interceptors
     return scoped
   }
 
@@ -147,19 +179,33 @@ export class APIAdapter{
   ): Promise<AxiosResponse>{
     const cacheMode = cache !== undefined ? cache : this.__cacheMode
 
+    const request = createRequest({ method, url, params, headers, data, cache: cacheMode })
+    // Errors from the HTTP layer, as opposed to errors thrown by interceptors.
+    const transportErrors = new WeakSet<object>()
+    const send = (req: TickeTingRequest): Promise<AxiosResponse> => this.__requester.request({
+      method: req.method,
+      url: req.url,
+      headers: { ...req.headers },
+      params: { ...req.params },
+      data: req.data,
+      cache: req.cache
+    }).catch(error => {
+      if (typeof error === 'object' && error !== null) {
+        transportErrors.add(error)
+      }
+      throw error
+    })
+
     return new Promise((resolve, reject) => {
-      this.__requester.request({
-        method: method,
-        url: url,
-        headers: headers,
-        params: params,
-        data: data,
-        cache: cacheMode
-      }).then(response => {
+      runInterceptors(this.__interceptors, request, send).then(response => {
         resolve(response)
       }).catch(error => {
-        const status = error.response?.status
-        if(status === undefined){
+        const status = error?.response?.status
+        const fromTransport = transportErrors.has(error) || axios.isAxiosError(error)
+        if(error instanceof TickeTingError || !fromTransport){
+          // Thrown by an interceptor (e.g. Next.js redirect() / notFound()): pass it through.
+          reject(error)
+        }else if(status === undefined){
           // Timeout, offline or other failure with no HTTP response.
           reject(new TickeTingError(0, error.message || "Network request failed"))
         }else if(status == 401){
