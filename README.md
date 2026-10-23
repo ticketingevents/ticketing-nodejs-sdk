@@ -108,6 +108,7 @@ export class TickeTingService extends TickeTing{
     * [Persistence](#cache-persistence)
     * [Custom persistence adapters](#custom-persistence-adapters)
     * [Manual cache control](#manual-cache-control)
+    * [Interceptors](#interceptors)
 - [Session Management](#sessions)
     * [Start a new session](#start-a-new-session)
     * [Resume an active session](#resume-an-active-session)
@@ -711,6 +712,167 @@ ticketing.cacheControls.invalidateUrl('/events/42')
 // Write pending changes to persistent storage now instead of after the debounce
 ticketing.cacheControls.flush()
 ```
+
+### Interceptors
+
+`addInterceptor()` works like Angular's `HttpInterceptor`. Each interceptor receives the
+request and a `next` handler, and returns the response (or a promise of it). That means one
+function can change the request, change the response, catch errors, retry, or answer without
+sending the request at all.
+
+```javascript
+// Functional interceptor, like Angular's HttpInterceptorFn
+const remove = ticketing.addInterceptor((req, next) => {
+  const started = Date.now()
+  return next(req.clone({ setHeaders: { 'X-Request-Id': crypto.randomUUID() } }))
+    .then(response => {
+      console.log(req.method, req.url, `${Date.now() - started}ms`)
+      return response
+    })
+})
+
+// Class-based interceptor, like Angular's HttpInterceptor
+class RetryInterceptor {
+  intercept(req, next) {
+    return next(req).catch(error => {
+      if (error.response) throw error // only retry network failures
+      return next(req)
+    })
+  }
+}
+ticketing.addInterceptor(new RetryInterceptor())
+
+// Remove an interceptor
+remove()
+```
+
+In TypeScript, import `TickeTingInterceptorFn`, `TickeTingInterceptorClass`, `TickeTingRequest`
+and `TickeTingHandler` from the SDK.
+
+How it compares to Angular:
+
+- **Order:** interceptors run in the order you add them. The first one is outermost, so it sees
+  the request first and the response last.
+- **Immutable requests:** requests are frozen. Change them with `req.clone({ ... })`, which takes
+  `url`, `method`, `params`, `headers`, `data` and `cache`, plus `setHeaders` / `setParams` to
+  add values without replacing the rest.
+- **Promises, not Observables:** `next(req)` returns a promise of the axios response
+  (`data`, `status`, `headers`, ...). There is no RxJS dependency.
+- **Errors:** `next(req)` rejects with the raw axios error, so you can read `error.response`.
+  The SDK turns errors into `TickeTingError` after the whole chain finishes. If you throw a
+  `TickeTingError` (or a subclass such as `UnauthorisedError`) yourself, it is passed through
+  unchanged.
+- **Caching:** interceptors wrap the cache. A cached response still goes through every
+  interceptor, and changing `url` or `params` changes the cache key. Changing headers does not.
+- Interceptors also apply to `ticketing.cache()` / `ticketing.nocache()` calls.
+
+#### React and Next.js
+
+Interceptors work in the browser, in Node.js and on the Next.js Edge runtime. A few setup
+rules keep them working correctly:
+
+**Client side (React, Next.js client components): create one instance and register
+interceptors in an effect.** Creating `TickeTing` inside a component makes a new cache on
+every render. The function returned by `addInterceptor` is the effect's cleanup, so React
+Strict Mode's double mount doesn't register the interceptor twice.
+
+```tsx
+// lib/ticketing.client.ts
+'use client'
+import { TickeTing } from '@ticketing/ticketing-nodejs-sdk'
+
+export const ticketing = new TickeTing({ apiKey: process.env.NEXT_PUBLIC_TICKETING_KEY!, cache: true })
+```
+
+```tsx
+// app/ticketing-provider.tsx
+'use client'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { ticketing } from '@/lib/ticketing.client'
+
+export function TicketingProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+
+  useEffect(() => ticketing.addInterceptor((req, next) =>
+    next(req).catch(error => {
+      if (error.response?.headers['x-reason'] === 'account-suspended') {
+        router.push('/suspended')
+      }
+      throw error
+    })
+  ), [router])
+
+  return children
+}
+```
+
+**Server side (server components, route handlers, server actions): create an instance per
+request.** A module-level instance is shared by every user the server handles, and
+`session.start()` / `session.resume()` change its API key for all of them at once. React's
+`cache()` gives you one instance per request:
+
+```tsx
+// lib/ticketing.server.ts
+import 'server-only'
+import { cache } from 'react'
+import { redirect } from 'next/navigation'
+import { TickeTing } from '@ticketing/ticketing-nodejs-sdk'
+
+export const getTicketing = cache(() => {
+  const ticketing = new TickeTing({ apiKey: process.env.TICKETING_KEY!, cache: false })
+
+  ticketing.addInterceptor((req, next) =>
+    next(req).catch(error => {
+      if (error.response?.status === 401) {
+        redirect('/login')
+      }
+      throw error
+    })
+  )
+
+  return ticketing
+})
+```
+
+Errors you throw from an interceptor reach the caller unchanged, so Next.js `redirect()` and
+`notFound()` work inside interceptors. HTTP errors you rethrow are still converted to
+`TickeTingError`.
+
+Persistence uses `localStorage`, so it only applies in the browser. On the server the cache
+stays in memory.
+
+#### Axios interceptors
+
+For direct access to the underlying axios instance, `interceptors` exposes the SDK's underlying [axios interceptors](https://axios-http.com/docs/interceptors),
+so you can add logging, tracing headers, or error reporting to every request:
+
+```javascript
+const id = ticketing.interceptors.request.use(config => {
+  config.headers['X-Request-Id'] = crypto.randomUUID()
+  return config
+})
+
+ticketing.interceptors.response.use(
+  response => response,
+  error => {
+    reportError(error)
+    return Promise.reject(error)
+  }
+)
+
+// Remove it later
+ticketing.interceptors.request.eject(id)
+```
+
+Notes:
+
+- Your request interceptors run before the cache lookup, and your response interceptors run
+  for both network and cached responses.
+- Changing headers in a request interceptor does not change the cache key. Cache entries are
+  keyed by method, URL, query params and the SDK's API key.
+- Response error interceptors receive the raw axios error. The SDK turns it into a
+  `TickeTingError` afterwards, so return a rejected promise to keep that behaviour.
 
 ## Session Management
 

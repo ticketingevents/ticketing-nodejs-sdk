@@ -8,7 +8,7 @@ import {
   shouldCacheRequest
 } from '../../src/util'
 import { TickeTing } from '../../src'
-import { TickeTingError } from '../../src/errors'
+import { TickeTingError, UnauthorisedError } from '../../src/errors'
 import { expect } from '../setup'
 
 function createMockAdapter<T>(payload: T, delay = 0) {
@@ -936,6 +936,185 @@ describe('Request cache', function () {
       }
 
       expect(unhandled).to.have.length(0)
+    })
+
+    it('exposes axios interceptors that run for network and cached responses', async function () {
+      const ticketing = new TickeTing({ apiKey: 'test-api-key', cache: { persistence: false } })
+      const adapter = (ticketing as any).__apiAdapter
+      const mock = createMockAdapter({ id: 'intercepted' })
+      ;(adapter as any).__requester.defaults.adapter = mock.adapter
+      ;(adapter as any).__requester.defaults.baseURL = 'https://api.example.com'
+
+      let requests = 0
+      let responses = 0
+      const requestId = ticketing.interceptors.request.use((config) => {
+        requests += 1
+        config.headers['X-Trace'] = 'abc'
+        return config
+      })
+      const responseId = ticketing.interceptors.response.use((response) => {
+        responses += 1
+        return response
+      })
+
+      const first = await adapter.get('/events/intercepted')
+      await adapter.get('/events/intercepted')
+
+      expect(mock.callCount).to.equal(1)
+      expect(first.config.headers['X-Trace']).to.equal('abc')
+      expect(requests).to.equal(2)
+      expect(responses).to.equal(2)
+
+      ticketing.interceptors.request.eject(requestId)
+      ticketing.interceptors.response.eject(responseId)
+      expect(ticketing.cache().interceptors).to.equal(ticketing.interceptors)
+    })
+
+    describe('Angular-style interceptors', function () {
+      function createTicketing(payload: any = { id: 'ng' }) {
+        const ticketing = new TickeTing({ apiKey: 'test-api-key', cache: { persistence: false } })
+        const adapter = (ticketing as any).__apiAdapter
+        const mock = createMockAdapter(payload)
+        ;(adapter as any).__requester.defaults.adapter = mock.adapter
+        ;(adapter as any).__requester.defaults.baseURL = 'https://api.example.com'
+        return { ticketing, adapter, mock }
+      }
+
+      it('runs interceptors in order, outermost first, and lets them clone the request', async function () {
+        const { ticketing, adapter } = createTicketing()
+        const order: string[] = []
+
+        ticketing.addInterceptor(async (req, next) => {
+          order.push('a:before')
+          const response = await next(req.clone({ setHeaders: { 'X-A': '1' } }))
+          order.push('a:after')
+          return response
+        })
+        ticketing.addInterceptor({
+          intercept(req, next) {
+            order.push('b:before')
+            expect(req.headers['X-A']).to.equal('1')
+            return next(req.clone({ setHeaders: { 'X-B': '2' }, setParams: { page: 3 } })).then((response) => {
+              order.push('b:after')
+              return response
+            })
+          }
+        })
+
+        const response = await adapter.get('/events/ng', { size: 10 })
+
+        expect(order).to.deep.equal(['a:before', 'b:before', 'b:after', 'a:after'])
+        expect(response.config.headers['X-A']).to.equal('1')
+        expect(response.config.headers['X-B']).to.equal('2')
+        expect(response.config.params).to.deep.equal({ size: 10, page: 3 })
+      })
+
+      it('keeps requests immutable and clone() leaves the original unchanged', function () {
+        const { ticketing, adapter } = createTicketing()
+        let original: any = null
+        let cloned: any = null
+
+        ticketing.addInterceptor((req, next) => {
+          original = req
+          cloned = req.clone({ url: '/events/other', setHeaders: { 'X-C': '3' } })
+          return next(cloned)
+        })
+
+        return adapter.get('/events/ng').then(() => {
+          expect(Object.isFrozen(original)).to.equal(true)
+          expect(Object.isFrozen(original.headers)).to.equal(true)
+          expect(original.url).to.equal('/events/ng')
+          expect(original.headers).to.not.have.property('X-C')
+          expect(cloned.url).to.equal('/events/other')
+        })
+      })
+
+      it('can short-circuit without sending the request', async function () {
+        const { ticketing, adapter, mock } = createTicketing()
+        ticketing.addInterceptor((req) => ({
+          data: { mocked: req.url },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {} as any
+        }))
+
+        const response = await adapter.get('/events/ng')
+        expect(response.data).to.deep.equal({ mocked: '/events/ng' })
+        expect(mock.callCount).to.equal(0)
+      })
+
+      it('can catch errors and retry by calling next again', async function () {
+        const { ticketing, adapter, mock } = createTicketing({ id: 'retried' })
+        mock.failNext(new Error('flaky'))
+
+        ticketing.addInterceptor((req, next) => next(req).catch(() => next(req)))
+
+        const response = await adapter.nocache().get('/events/ng')
+        expect(response.data).to.deep.equal({ id: 'retried' })
+        expect(mock.callCount).to.equal(2)
+      })
+
+      it('passes TickeTingErrors thrown by interceptors through unchanged', async function () {
+        const { ticketing, adapter } = createTicketing()
+        const thrown = new UnauthorisedError(401, 'blocked')
+        ticketing.addInterceptor(() => {
+          throw thrown
+        })
+
+        let caught: unknown = null
+        await adapter.get('/events/ng').catch((error: unknown) => {
+          caught = error
+        })
+        expect(caught).to.equal(thrown)
+      })
+
+      it('passes non-SDK errors thrown by interceptors through unchanged', async function () {
+        const { ticketing, adapter } = createTicketing()
+        // Shaped like the error Next.js redirect() throws.
+        const redirect = Object.assign(new Error('NEXT_REDIRECT'), { digest: 'NEXT_REDIRECT;replace;/login;307;' })
+        ticketing.addInterceptor((req, next) => next(req).then(() => {
+          throw redirect
+        }))
+
+        let caught: unknown = null
+        await adapter.get('/events/ng').catch((error: unknown) => {
+          caught = error
+        })
+        expect(caught).to.equal(redirect)
+      })
+
+      it('still converts HTTP errors that an interceptor rethrows', async function () {
+        const { ticketing, adapter, mock } = createTicketing()
+        mock.failNext(new Error('network down'))
+        ticketing.addInterceptor((req, next) => next(req).catch((error) => {
+          throw error
+        }))
+
+        let caught: any = null
+        await adapter.nocache().get('/events/ng').catch((error: unknown) => {
+          caught = error
+        })
+        expect(caught).to.be.instanceOf(TickeTingError)
+        expect(caught.code).to.equal(0)
+      })
+
+      it('applies to cache()/nocache() scoped calls and can be removed', async function () {
+        const { ticketing, adapter } = createTicketing()
+        let calls = 0
+        const remove = ticketing.addInterceptor((req, next) => {
+          calls += 1
+          return next(req)
+        })
+
+        await adapter.cache().get('/events/ng')
+        await adapter.nocache().get('/events/ng')
+        expect(calls).to.equal(2)
+
+        remove()
+        await adapter.get('/events/ng')
+        expect(calls).to.equal(2)
+      })
     })
 
     it('supports TickeTing.cache() / nocache() chaining', async function () {

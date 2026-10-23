@@ -16,4 +16,12 @@ export {
   RequestCacheOptions,
   shouldCacheRequest
 } from './RequestCache'
+export {
+  TickeTingHandler,
+  TickeTingInterceptor,
+  TickeTingInterceptorClass,
+  TickeTingInterceptorFn,
+  TickeTingRequest,
+  TickeTingRequestUpdate
+} from './Interceptor'
 export { SessionManager } from './SessionManager'

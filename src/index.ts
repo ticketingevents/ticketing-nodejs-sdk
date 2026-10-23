@@ -11,7 +11,13 @@ export {
   normalizeCacheOptions,
   RequestCacheController,
   RequestCacheOptions,
-  shouldCacheRequest
+  shouldCacheRequest,
+  TickeTingHandler,
+  TickeTingInterceptor,
+  TickeTingInterceptorClass,
+  TickeTingInterceptorFn,
+  TickeTingRequest,
+  TickeTingRequestUpdate
 } from './util'
 
 export {
