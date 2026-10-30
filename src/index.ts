@@ -15,9 +15,9 @@ export {
 } from './util'
 
 export {
-  Account, AccountPreferences, Admission, Cart, Category, Collection, Decision, 
+  Account, AccountPreferences, Admission, AdmissionToken, Cart, Category, Collection, Decision, 
   EventRevision, EventListing, Host, Lookup, Parcel, PasswordReset, Privilege, Region, Role,
-  Session, Ticket, Tier, TierListing, Token, Transfer, Venue
+  Session, Ticket, Tier, TierListing, Transfer, Venue
 } from './interface'
 
 export {

@@ -5,7 +5,8 @@ import { Publication } from './Publication'
 import {
   RevisionSubmissionService,
   RevisionPublicationService,
-  EventSalesService
+  EventSalesService,
+  EventTokenService
 } from '../model/EventRevisionModel'
 import { StatisticsModel } from '../model/StatisticsModel'
 
@@ -29,6 +30,7 @@ export interface EventRevision extends Base{
   submissions: RevisionSubmissionService
   publications: RevisionPublicationService
   sales: EventSalesService
+  tokens: EventTokenService
 
   publish(schedule: string): Promise<Publication>
 

@@ -274,7 +274,7 @@ export class CustomerWalletService extends BaseService<TicketData, Ticket>{
   }
 
   protected _instantiateModel(data: any){
-    return new TicketModel(data, this.__customer, this.__apiAdapter)
+    return new TicketModel(data, this.__apiAdapter)
   }
 }
 

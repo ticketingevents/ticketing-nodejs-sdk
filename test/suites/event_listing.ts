@@ -286,7 +286,11 @@ describe("Event Listing", function(){
     it('Should return events sorted by title in ascending order', function () {
       return new Promise((resolve, reject) => {
         ticketing.events.list(5).sort("alphabetical").then(events => {
-          expect(events.map(event => event.title.toLowerCase())).to.be.ascending
+          let lastValue = "  111111111111"
+          for(let event of events){
+              expect(event.title.toLowerCase().localeCompare(lastValue.toLowerCase())).to.be.at.least(0)
+              lastValue = event.title
+          }
 
           resolve(true)
         }).catch(error => {

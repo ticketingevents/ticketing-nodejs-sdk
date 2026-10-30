@@ -15,7 +15,11 @@ import type { SaleData } from '../interface/data/SaleData'
 import { PublicationModel } from './PublicationModel'
 import { SaleModel } from './SaleModel'
 import { StatisticsModel } from './StatisticsModel'
+import { TierListingModel } from './TierListingModel'
 import { InvalidStateError } from '../errors'
+import type { AdmissionToken } from '../interface/AdmissionToken'
+import type { AdmissionTokenData } from '../interface/data/AdmissionTokenData'
+import { AdmissionTokenModel } from './AdmissionTokenModel'
 
 export class EventRevisionModel extends BaseModel implements EventRevision{
   public title: string
@@ -41,6 +45,7 @@ export class EventRevisionModel extends BaseModel implements EventRevision{
   private __submissionService: RevisionSubmissionService
   private __publicationService: RevisionPublicationService
   private __salesService: EventSalesService
+  private __tokenService: EventTokenService
 
   constructor(revision: any, adapter: APIAdapter){
     super(revision.self, adapter)
@@ -77,6 +82,7 @@ export class EventRevisionModel extends BaseModel implements EventRevision{
     this.__submissionService = new RevisionSubmissionService(this._apiAdapter, this)
     this.__publicationService = new RevisionPublicationService(this._apiAdapter, this)
     this.__salesService = new EventSalesService(this._apiAdapter, this)
+    this.__tokenService = new EventTokenService(this._apiAdapter, this)
   }
 
   get banner(){
@@ -105,6 +111,10 @@ export class EventRevisionModel extends BaseModel implements EventRevision{
 
   get sales(): EventSalesService{
     return this.__salesService
+  }
+
+  get tokens(): EventTokenService{
+    return this.__tokenService
   }
 
   public statistics(parameters: {
@@ -231,5 +241,36 @@ export class EventSalesService extends BaseService<SaleData, Sale>{
     )
 
     this.__apiAdapter = apiAdapter
+  }
+}
+
+export class EventTokenService extends BaseService<AdmissionTokenData, AdmissionToken>{
+  private __apiAdapter: APIAdapter
+
+  constructor(apiAdapter: APIAdapter, event: EventRevision){
+    super(apiAdapter, `${event.uri}/tokens`, AdmissionTokenModel)
+
+    this.__apiAdapter = apiAdapter
+  }
+
+  create(data: AdmissionTokenData): Promise<AdmissionToken>{
+    return new Promise<AdmissionToken>((resolve, reject) => {
+      const tiers = []
+
+      if(data.tiers){
+        for(const tier of data.tiers){
+          tiers.push((tier as TierListingModel).id)
+        }
+      }
+
+      super.create({
+        label: data.label,
+        tiers: tiers
+      }).then(response => {
+        resolve(response)
+      }).catch(error => {
+        reject(error)
+      })
+    })
   }
 }

@@ -1,5 +1,6 @@
 import { TierListing } from '../TierListing'
 
-export interface TokenData{
+export interface AdmissionTokenData{
+  label: string
   tiers: Array<TierListing | string>
 }

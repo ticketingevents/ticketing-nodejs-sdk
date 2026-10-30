@@ -2,7 +2,10 @@
 import './orders'
 
 import { TickeTing, BadDataError } from '../../src'
-import { HostModel, CategoryModel, VenueModel, EventListingModel, TicketModel } from  '../../src/model'
+import {
+  HostModel, CategoryModel, VenueModel, EventListingModel,
+  TicketModel, AccountListingModel
+} from  '../../src/model'
 import { expect, ticketing, api, public_ticketing } from '../setup'
 
 // Global account object
@@ -268,8 +271,11 @@ describe("Customer Wallet", function(){
     		  expect(sample.serial).to.match(/[0-9A-Z]{6}\-[0-9A-Z]{12}/)
     		  expect(sample.status).to.be.oneOf(["Issued", "Unclaimed", "Held", "Redeemed"])
     		  expect(sample.tier.uri).to.oneOf([this.tier.uri, this.secondTier.uri])
+          expect(sample.customer).to.be.an.instanceOf(AccountListingModel)
+            .and.to.have.property("uri", this.customer.uri)
     		  expect(sample.issued).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}/)
     		  expect(sample.redeemed).to.eq("0000-00-00T00:00:00")
+          expect(sample.details).to.be.an("object")
 
     		  resolve(true)
     		}).catch(error => {

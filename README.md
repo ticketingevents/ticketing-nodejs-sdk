@@ -196,18 +196,17 @@ export class TickeTingService extends TickeTing{
     * [Fetch host statistics](#fetch-host-statistics)
     * [List event sales](#list-event-sales)
     * [Fetch event statistics](#fetch-event-statistics)
-- [Admissions](#admissions)
-    * [Admissions tokens](#admissions-tokens)
-        * [List admissions tokens](#list-admissions-tokens)
-        * [Issue admissions token](#issue-admissions-token)
-        * [Update admissions token tiers](#update-admissions-token-tiers)
-        * [Invalidate an admissions token](#invalidate-an-admissions-token)
-    * [Admitting patrons](#admitting-patrons)
-        * [Start admission session](#start-admission-session)
-        * [List valid tickets](#list-valid-tickets)
-        * [Grant admission to event](#grant-admission-to-event)
-        * [List event admissions](#list-admissions-to-event)
-        * [End admission session](#end-admission-session)
+- [Event Admissions](#event-admissions)
+    * [List admission tokens](#list-admission-tokens)
+    * [Issue an admission token](#issue-an-admission-token)
+    * [Fetch an admission token](#issue-an-admission-token)
+    * [Update an admission token](#update-an-admission-token)
+    * [Invalidate an admission token](#invalidate-an-admission-token)
+    * [Start admission session](#start-admission-session)
+    * [End admission session](#end-admission-session)
+    * [List valid tickets](#list-valid-tickets)
+    * [Grant admission to event](#grant-admission-to-event)
+    * [List event admissions](#list-admissions-to-event)
 - [Categories](#categories)
     * [List event categories](#list-event-categories)
     * [Add new category](#add-new-category)
@@ -3120,36 +3119,24 @@ users and more. These features are documented below.
   })
 ```
 
-## Admissions
+## Event Admissions
 
----
-### Admissions Tokens
+### List admission tokens
 
-Event admissions tokens allow staff to admit patrons to one or more of an event's tiers. Tokens
-are anonymous and can be shared for use with multiple scanning devices. This subtier covers the
-operations used to manage admissions tokens.
-
----
-
-### List admissions tokens
-
-[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/list_event_tokens)
+[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/list_event_admission_tokens)
 
 ```javascript
+  //Retrieve a specific event using its ID
   let event = await ticketing.events.find(16993717817996)
 
-  event.tokens // The tokens property returns a standard collection with supported methods
-    // Supported filters with examples
-    .filter({
-      global: true //Only return global admissions tokens
-    })
+  event.tokens.list() 
     .then(tokens => {
       //Do something with the collection of tokens
     })
     .catch(error => {
       //Handle errors
       if(error instanceof PermissionError){
-        console.log("This account is not an administrator of this event host.")
+        console.log("You are restricted from perfoming this operation on the specified event or its resources.")
       }else if(error instanceof PageAccessError){
         //Handle non-existant page error
       }else{
@@ -3158,15 +3145,18 @@ operations used to manage admissions tokens.
     })
 ```
 
-### Issue admissions token
+### Issue an admission token
 
-[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/manage_admission_tokens)
+[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/issue_admission_tokens)
 
 ```javascript
+  //Retrieve a specific event using its ID
   let event = await ticketing.events.find(16993717817996)
 
-  event.issue_token(event.tiers)  //We are required to provide the subset of an event's tiers to link the token to
-    .then(token => {
+  event.tokens.create({
+    label: "East Gate Entry",
+    tiers: (await event.tiers.list()) //All event tiers
+  }).then(token => {
       //Do something with the created token resource
     })
     .catch(error => {
@@ -3174,89 +3164,99 @@ operations used to manage admissions tokens.
       if(error instanceof BadDataError){
         console.log("One or more of the specified tiers does not belong to this event.")
       }else if(error instanceof PermissionError){
-        console.log("You are not authorised to manage events on behalf of this host.")
+        console.log("You are restricted from perfoming this operation on the specified event or its resources.")
       }else{
         console.log(`${typeof error} (${error.code}): ${error.message}`)
       }
     })
 ```
 
-### Update admissions token tiers
+### Fetch an admission token
 
-[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/update_admission_token)
+[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/retrieve_admission_token)
 
 ```javascript
+  //Retrieve a specific event using its ID
   let event = await ticketing.events.find(16993717817996)
 
-  event.tokens
-    .then(tokens => {
-      tokens[0].allow(event.tiers[0]) //Allow admission to a tier using this token
-      tokens[0].deny(event.tiers[1]) //Deny admission to a tier using this token
-
-      //Save changes
-      tokens[0].save().then(saved => {
-        if(saved){
-          //Do something on success
-        }else{
-          //Do something on failure
-        }
-      })
+  event.tokens.find(18537291857173)
+    .then(token => {
+      //Do something with the token resource
     })
     .catch(error => {
       //Handle errors
-      if(error instanceof BadDataError){
-        console.log("You can only allow or deny tiers of the token's event")
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no token with the given ID")
       }else if(error instanceof PermissionError){
-        console.log("You are not authorised to manage events on behalf of this host.")
-      }else if(error instanceof ResourceImmutableError){
-        console.log("An event's global token cannot be modified.")
+        console.log("You are restricted from perfoming this operation on the specified event or its resources.")
       }else{
         console.log(`${typeof error} (${error.code}): ${error.message}`)
       }
     })
 ```
 
-### Invalidate an admissions token
+### Update an admission token
+
+[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/modify_admission_token)
+
+```javascript
+  //Retrieve a specific event using its ID
+  let event = await ticketing.events.find(16993717817996)
+
+  //Load an existing token by its ID
+  let token = await event.tokens.find(18537291857173)
+
+  token.label = "West Gate Entry"
+  
+  //Save changes
+  token.save().then(saved => {
+    if(saved){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof PermissionError){
+      console.log("You are restricted from perfoming this operation on the specified event or its resources.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Invalidate an admission token
 
 [API Reference](https://docs.ticketingevents.com/openapi/event-admissions/invalidate_admission_token)
 
 ```javascript
-  let event = await ticketing.events.find(16993717817996)
+    //Retrieve a specific event using its ID
+    let event = await ticketing.events.find(16993717817996)
 
-  event.tokens
-    .then(tokens => {
-      tokens[1].delete().then(invalidated => {
-        if(invalidated){
-          //Do something on success
-        }else{
-          //Do something on failure
-        }
-      })
+    //Load an existing token by its ID
+    let token = await event.tokens.find(18537291857173)
+
+    token.delete().then(invalidated => {
+      if(invalidated){
+        //Do something on success
+      }else{
+        //Do something on failure
+      }
     })
     .catch(error => {
       //Handle errors
       if(error instanceof PermissionError){
-        console.log("You are not authorised to manage events on behalf of this host.")
-      }else if(error instanceof ResourceIndelibleError){
-        console.log("An event's global token cannot be invalidated.")
+        console.log("You are restricted from perfoming this operation on the specified event or its resources.")
       }else{
         console.log(`${typeof error} (${error.code}): ${error.message}`)
       }
     })
 ```
 
----
-### Admitting Patrons
-
-Valid ticket holders are allowed entry to an event through admission sessions. Admission sessions
-allow gate staff to verify tickets and permit entry to the event. A session can be started using
-an admissions token which allows the staff member to grant access to designated event tiers.
-
----
-
 ### Start admission session
 
-[API Reference](https://docs.ticketingevents.com/openapi/token-authentication/retrieve_token_auth)
+[API Reference](https://docs.ticketingevents.com/openapi/token-authentication/lookup_admission_token)
 
 Before retrieving a list of valid tickets or redeeming them, an admissions session must be commenced.
 This is done by providing an admissions token which is linked to a specific event and tiers.
@@ -3281,6 +3281,31 @@ This is done by providing an admissions token which is linked to a specific even
     //Handle errors
     if(error instanceof UnauthorisedError){
       console.log("The provided code does not belong to any event token")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### End admission session
+
+[API Reference](https://docs.ticketingevents.com/openapi/token-authentication/lookup_admission_token)
+
+After ending an admission session all further event entry operations will fail. You will
+need to start a new admissions session to perform these operations.
+
+```javascript
+  let session = await ticketing.session.admission("A0F9GG8D", "Name", "Device")
+  session.end().then(ended => {
+    if(ended){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof InvalidStateError){
+      console.log("The admission session has ended, you must start a new one.")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
@@ -3374,31 +3399,6 @@ This is done by providing an admissions token which is linked to a specific even
         console.log(`${typeof error} (${error.code}): ${error.message}`)
       }
     })
-```
-
-### End admission session
-
-[API Reference](https://docs.ticketingevents.com/openapi/token-authentication/retrieve_token_auth)
-
-After ending an admission session all further operations will fail. You will first need to start a new
-admissions session to perform these operations.
-
-```javascript
-  let session = await ticketing.session.admission("A0F9GG8D", "Name", "Device")
-  session.end().then(ended => {
-    if(ended){
-      //Do something on success
-    }else{
-      //Do something on failure
-    }
-  }).catch(error => {
-    //Handle errors
-    if(error instanceof InvalidStateError){
-      console.log("The admission session has ended, you must start a new one.")
-    }else{
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
-    }
-  })
 ```
 
 ## Categories
