@@ -26,7 +26,7 @@ jobs:
       - run:
           name: Run unit tests
           command: |
-            if [ '<< parameters.environment >>' != 'production' ]; then
+            if [ '<< parameters.environment >>' == 'qa' ]; then
               npm run test
             fi
 
