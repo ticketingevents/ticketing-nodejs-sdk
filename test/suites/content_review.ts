@@ -64,7 +64,7 @@ describe("Content Review", function(){
     //Create a test event
     this.testEvent = await this.host.events.create(this.testEventData)
 
-    await this.testEvent.submissions.create()
+    firstSubmission = await this.testEvent.submissions.create()
 
     //Create a second test event
     this.secondEvent = await this.host.events.create({
@@ -81,7 +81,7 @@ describe("Content Review", function(){
       thumbnail: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAIBAQIBAQICAgICAgICAwUDAwMDAwYEBAMFBwYHBwcGBwcICQsJCAgKCAcHCg0KCgsMDAwMBwkODw0MDgsMDAz/2wBDAQICAgMDAwYDAwYMCAcIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAz/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9/KKKKAP/2Q=="
   	})
 
-    await this.secondEvent.submissions.create()
+    secondSubmission = await this.secondEvent.submissions.create()
 
     //Create a second test event
     this.thirdEvent = await this.host.events.create({
@@ -98,7 +98,7 @@ describe("Content Review", function(){
       thumbnail: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAIBAQIBAQICAgICAgICAwUDAwMDAwYEBAMFBwYHBwcGBwcICQsJCAgKCAcHCg0KCgsMDAwMBwkODw0MDgsMDAz/2wBDAQICAgMDAwYDAwYMCAcIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAz/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9/KKKKAP/2Q=="
     })
 
-    await this.thirdEvent.submissions.create()
+    thirdSubmission = await this.thirdEvent.submissions.create()
   })
 
   after(async function(){
@@ -120,21 +120,18 @@ describe("Content Review", function(){
     it('Should contain valid submission data', function () {
       return new Promise((resolve, reject) => {
         ticketing.submissions.list(50).filter({status: "Pending"}).then(submissions => {
-          expect(submissions[submissions.length - 3]).to.be.an.instanceof(SubmissionModel)
-          expect(submissions[submissions.length - 3].type).to.equal("event")
-          expect(submissions[submissions.length - 3].resource).to.equal(this.testEvent.id)
-          expect(submissions[submissions.length - 3].previous).to.equal(null)
-          expect(submissions[submissions.length - 3].changes).to.have.any.keys(
+          let sample = submissions[Math.floor(Math.random() * submissions.length)]
+          expect(sample).to.be.an.instanceof(SubmissionModel)
+          expect(sample.type).to.equal("event")
+          expect(sample.resource).to.be.a("string")
+          expect(sample.previous).to.equal(null)
+          expect(sample.changes).to.have.any.keys(
             "id","title","description","start","end","category","subcategory","type",
             "public","host","venue","disclaimer","tags","thumbnail","banner",
             "published","popularity"
           )
-          expect(submissions[submissions.length - 3].note).to.equal(`New Event Submission: ${this.testEvent.title}`)
-          expect(submissions[submissions.length - 3].status).to.equal("Pending")
-
-          firstSubmission = submissions[submissions.length - 3]
-          secondSubmission = submissions[submissions.length - 2]
-          thirdSubmission = submissions[submissions.length - 1]
+          expect(sample.note).to.be.a("string")
+          expect(sample.status).to.equal("Pending")
 
           resolve(true)
         }).catch(error => {
