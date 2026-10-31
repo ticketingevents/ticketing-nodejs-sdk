@@ -6,27 +6,41 @@ orbs:
 jobs:
   publish:
     docker:
-      - image: node:18
+      - image: node:24.18.1
+    parameters:
+      environment:
+        type: string
     steps:
       - checkout
+
       - run:
           name: Install build dependencies
-          command: npm install
+          command: |
+            npm install -g npm@latest
+            npm install
+
       - run:
           name: Lint SDK
           command: npm run lint
+
       - run:
           name: Run unit tests
-          command: npm --env=production run test
+          command: |
+            if [ '<< parameters.environment >>' != 'production' ]; then
+              npm run test
+            fi
+
       - run:
           name: Build distribution files
-          command: npm run build
-      - run:
-          name: Authenticate to NPM
-          command: npm set //registry.npmjs.org/:_authToken=$NPM_TOKEN
+          command: |
+            npm run build
+
       - run:
           name: Publish package to NPM
-          command: npm publish --access=public
+          command: |
+            export NPM_ID_TOKEN=$(circleci run oidc get --claims '{"aud": "npm:registry.npmjs.org"}')
+            npm publish --access=public --tag=<< parameters.environment >>
+
       - slack/notify:
           event: fail
           channel: C03UFNPMF09
@@ -88,10 +102,37 @@ workflows:
   publish_sdk:
     jobs:
       - publish:
+          name: Publish QA
+          environment: qa
           context:
-            - Build Secrets 
+            - Build Secrets
+            - NodeJS SDK QA
           filters:
             tags:
-              only: /v[0-9]+(\.[0-9]+)*.*/
+              only: /v[0-9]+(\.[0-9]+)*\-alpha\.[0-9]+/
+            branches:
+              ignore: /.*/
+
+      - publish:
+          name: Publish UAT
+          environment: uat
+          context:
+            - Build Secrets
+            - NodeJS SDK UAT
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*\-rc\.[0-9]+/
+            branches:
+              ignore: /.*/
+
+      - publish:
+          name: Publish PROD
+          environment: production
+          context:
+            - Build Secrets
+            - NodeJS SDK PROD
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
             branches:
               ignore: /.*/

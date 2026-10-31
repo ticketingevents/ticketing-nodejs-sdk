@@ -1,5 +1,10 @@
 import { Base } from './Base'
-import { AccountPreferences } from './AccountPreferences'
+import type { AccountPreferences } from './AccountPreferences'
+import {
+  AccountPrivilegeService, PrivilegedHostService, CartService,
+  CustomerOrderService, CustomerItineraryService, CustomerWalletService,
+  ParcelService, CustomerTransferService
+} from '../model/AccountModel'
 
 export interface Account extends Base{
   number: string
@@ -19,5 +24,15 @@ export interface Account extends Base{
   city: string
   state: string
 
-  preferences: Promise<AccountPreferences>
+  preferences?: Promise<AccountPreferences>
+  privileges?: AccountPrivilegeService
+  hosts?: PrivilegedHostService
+  carts?: CartService
+  orders?: CustomerOrderService
+  itinerary?: CustomerItineraryService
+  wallet?: CustomerWalletService
+  parcels?: ParcelService
+  transfers?: CustomerTransferService
+  
+  deactivate?(message?: string): Promise<boolean>
 }

@@ -1,4 +1,4 @@
-import { APIAdapter, SessionManager } from './util'
+import { APIAdapter, RequestCacheOptions, SessionManager } from './util'
 import {
   AccountService,
   CategoryService,
@@ -6,37 +6,70 @@ import {
   HostService,
   PresetService,
   RegionService,
+  SubmissionService,
   VenueService
 } from './service'
 
 export class TickeTing{
   // Define private members
   private __apiAdapter: APIAdapter;
+  public session: SessionManager
 
-  // Define public services
-  public accounts: AccountService;
-  public categories: CategoryService;
-  public events: EventService;
-  public hosts: HostService;
-  public presets: PresetService;
-  public regions: RegionService;;
-  public session: SessionManager;
-  public venues: VenueService;
-
-  constructor(config: {apiKey: string, sandbox: boolean}){
-    this.__apiAdapter = new APIAdapter(
-      config.apiKey,
-      config.sandbox?config.sandbox:false
-    )
-
+  constructor(config: {apiKey: string, cache?: RequestCacheOptions | boolean}){
+    this.__apiAdapter = new APIAdapter(config.apiKey, config.cache ?? false)
     this.session = new SessionManager(this.__apiAdapter)
-    this.accounts = new AccountService(this.__apiAdapter)
-    this.categories = new CategoryService(this.__apiAdapter)
-    this.events = new EventService(this.__apiAdapter)
-    this.hosts = new HostService(this.__apiAdapter)
-    this.presets = new PresetService(this.__apiAdapter)
-    this.regions = new RegionService(this.__apiAdapter)
-    this.venues = new VenueService(this.__apiAdapter)
+  }
+
+  /**
+   * Force caching for the next chained service calls, overriding the global setting.
+   * @example ticketing.cache().events.find(1)
+   */
+  cache(options: true | { ttl?: number; key?: string; revalidateTimeout?: number } = true): TickeTing {
+    return this.__withAdapter(this.__apiAdapter.cache(options))
+  }
+
+  /**
+   * Bypass caching for the next chained service calls, overriding the global setting.
+   * @example ticketing.nocache().events.find(1)
+   */
+  nocache(): TickeTing {
+    return this.__withAdapter(this.__apiAdapter.nocache())
+  }
+
+  get cacheControls(){
+    return this.__apiAdapter.cacheControls
+  }
+
+  get accounts(): AccountService{
+    return new AccountService(this.__apiAdapter)
+  }
+
+  get categories(): CategoryService{
+    return new CategoryService(this.__apiAdapter)
+  }
+
+  get events(): EventService{
+    return new EventService(this.__apiAdapter)
+  }
+
+  get hosts(): HostService{
+    return new HostService(this.__apiAdapter)
+  }
+
+  get presets(): PresetService{
+    return new PresetService(this.__apiAdapter)
+  }
+
+  get regions(): RegionService{
+    return new RegionService(this.__apiAdapter)
+  }
+
+  get submissions(): SubmissionService{
+    return new SubmissionService(this.__apiAdapter)
+  }
+
+  get venues(): VenueService{
+    return new VenueService(this.__apiAdapter)
   }
 
   get apiKey(): string{
@@ -49,5 +82,12 @@ export class TickeTing{
 
   get mediaURL(): string{
     return this.__apiAdapter.media
+  }
+
+  private __withAdapter(adapter: APIAdapter): TickeTing {
+    const scoped = Object.create(TickeTing.prototype) as TickeTing
+    scoped.__apiAdapter = adapter
+    scoped.session = this.session
+    return scoped
   }
 }

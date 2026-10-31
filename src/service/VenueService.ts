@@ -1,15 +1,21 @@
 import { BaseService } from './BaseService'
 
-import { APIAdapter } from '../util'
+import { APIAdapter } from '../util/APIAdapter'
 import { BadDataError } from '../errors'
-import { VenueData, Venue } from '../interface'
-import { RegionModel, VenueModel } from '../model'
+import type { VenueData } from '../interface/data/VenueData'
+import type { Venue } from '../interface/Venue'
+import { RegionModel } from '../model/RegionModel'
+import { VenueModel } from '../model/VenueModel'
 
 export class VenueService extends BaseService<VenueData, Venue>{
   private __apiAdapter: APIAdapter
 
   constructor(apiAdapter: APIAdapter){
-    super(apiAdapter, "/venues", VenueModel, ["region", "name"])
+    super(apiAdapter, "/venues", VenueModel,
+      ["region", "name"],
+      [],
+      {region: "id"}
+    )
 
     this.__apiAdapter = apiAdapter
   }
@@ -28,10 +34,5 @@ export class VenueService extends BaseService<VenueData, Venue>{
         reject(error)
       })
     })
-  }
-
-  protected _instantiateModel(data: any){
-    data.region = {self: data.region}
-    return new VenueModel(data, this.__apiAdapter)
   }
 }

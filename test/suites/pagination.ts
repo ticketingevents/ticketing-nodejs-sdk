@@ -8,7 +8,7 @@ import { expect, ticketing } from '../setup'
 describe("Pagination", function(){
 
   //Set hook timeout
-  this.timeout(10000)
+  this.timeout(60000)
 
   before(async function(){
     //Initialise test data for suite
@@ -29,6 +29,9 @@ describe("Pagination", function(){
 
     // Initialise collection handle for testing
     this.collection = ticketing.regions.list(1)
+
+    //Count all regions
+    this.total = (await ticketing.regions.list(9999)).length
   })
 
   after(async function(){
@@ -126,6 +129,13 @@ describe("Pagination", function(){
     it("Should return false if no previous page of resources exists", function(){
       return expect(this.collection.first().hasPrevious())
         .to.eventually.be.false
+    })
+  })
+
+  describe('#total()', function () {
+    it("Should return the total number of resources", function(){
+      return expect(this.collection.total)
+        .to.eventually.equal(this.total)
     })
   })
 })

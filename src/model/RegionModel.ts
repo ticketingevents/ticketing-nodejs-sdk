@@ -1,7 +1,7 @@
-import { APIAdapter } from '../util'
+import { APIAdapter } from '../util/APIAdapter'
 import { BaseModel } from './BaseModel'
-import { Region } from '../interface/Region'
-import { RegionData } from '../interface/data/RegionData'
+import type { Region } from '../interface/Region'
+import type { RegionData } from '../interface/data/RegionData'
 
 export class RegionModel extends BaseModel implements Region{
   public name: string

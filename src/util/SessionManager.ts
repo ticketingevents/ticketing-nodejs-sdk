@@ -2,7 +2,6 @@ import { APIAdapter } from './APIAdapter'
 import { UnsupportedOperationError, UnauthorisedError, ResourceNotFoundError, InvalidStateError } from '../errors'
 import { AdmissionSession, SessionData, Session } from '../interface'
 import { AdmissionSessionModel, SessionModel } from '../model'
-import { EventService } from '../service'
 
 export class SessionManager{
   private __apiAdapter: APIAdapter;
@@ -49,7 +48,7 @@ export class SessionManager{
           resolve(true)
         }).catch(error => {
           this.__apiAdapter.reset()
-          if(error.code == 401){
+          if(error.code == 403){
             error = new InvalidStateError(error.code, "The session has ended or does not exist.")
           }
 
@@ -71,10 +70,8 @@ export class SessionManager{
 
             resolve(true)
           }).catch(error => {
-            if(error.code == 401){
-              error = new ResourceNotFoundError(error.code, "There is no session associated with the provided key.")
-            }else if(error.code == 403){
-              error = new InvalidStateError(error.code, "The session has already been ended.")
+            if(error.code == 403){
+              error = new InvalidStateError(error.code, "The session has ended or does not exist.")
             }
 
             reject(error)
@@ -108,29 +105,26 @@ export class SessionManager{
       if(!code){
         reject(new UnauthorisedError(404, "Please provide a valid token to start an admission session."))
       }else{
-        this.__apiAdapter.get(`/tokens/${code}`).then(response => {
+        this.__apiAdapter.get(`/tokens`, {code: code}).then(response => {
+          const token = response.data.entries[0]
+
           //Setup admissions session adapter
-          const admissionsAdapter = new APIAdapter(response.data.key, this.__apiAdapter.sandbox)
+          const admissionsAdapter = new APIAdapter(token.api_key)
 
           //Load admission token event
-          const eventService = new EventService(this.__apiAdapter)
-          eventService.find(/([A-Za-z0-9\-]+)$/.exec(response.data.event)[1]).then(event => {
-            const session = new AdmissionSessionModel({
-              started: (new Date()).toISOString(),
-              name: name,
-              device: device,
-              code: code,
-              event: event,
-              sections: response.data.sections
-            }, admissionsAdapter)
+          const session = new AdmissionSessionModel({
+            started: (new Date()).toISOString(),
+            name: name,
+            device: device,
+            code: code,
+            event: token.event,
+            tiers: token.tiers
+          }, admissionsAdapter)
 
-            resolve(session)
-          }).catch(error => {
-            reject(error)
-          })
+          resolve(session)
         }).catch(error => {
           if(error.code == 404){
-            error = new UnauthorisedError(error.code, error.message)
+            error = new UnauthorisedError(error.code, "The provided code does not belong to any event token")
           }
 
           reject(error)

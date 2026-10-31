@@ -23,7 +23,7 @@
 The TickeTing Javscript SDK is available as a public package via npm.
 
 ```bash
-npm install @ticketingevents/ticketing-sdk
+npm install @ticketing/ticketing-nodejs-sdk
 ```
 
 # Quick Start
@@ -53,22 +53,20 @@ ticketing.events.published.list()
     console.log(error.message)
   })
 ```
-# Sandbox Mode
+# UAT Environment
 
-If you need to test your application before releasing to production, the TickeTing SDK
-supports a sandbox mode. When in sandbox mode, the SDK will interface with the QA API, and
-any changes you make won't affect the live TickeTing Platform. Note that you will
+If you need to test your application before releasing to production, there is a published
+version of the TickeTing SDK built against its UAT environment. This version of the SDK
+does not interface with the Production API, and any changes you make won't affect the live
+TickeTing Platform. Note that you will
 <a target='_blank' href='mailto:dev@ticketingevents.com' subject='RE: API Key Request'>
   need to request
 </a>
-a seperate <code>SANDBOX_API_KEY</code> to work in sandbox mode. To enter sandbox mode, instantiate the
-TickeTing class with the <code>sandbox</code> argument set to <code>true</code>.
+a seperate <code>UAT_API_KEY</code> to work with this version of the SDK. The UAT version
+of the SDK can be installed as follows:
 
-```javascript
-const ticketing = new TickeTing({
-  apiKey: "SANDBOX_API_KEY",
-  sandbox: true
-});
+```bash
+npm install @ticketing/ticketing-nodejs-sdk@uat
 ```
 
 # Integrating with Angular
@@ -102,65 +100,138 @@ export class TickeTingService extends TickeTing{
   * [Pagination](#pagination)
   * [Chaining operations](#chaining-operations)
 - [Error handling](#error-handling)
+- [Request Caching](#request-caching)
+    * [Enable caching](#enable-caching)
+    * [How caching behaves](#how-caching-behaves)
+    * [Cache options](#cache-options)
+    * [Force cache or bypass per call](#force-cache-or-bypass-per-call)
+    * [Persistence](#cache-persistence)
+    * [Custom persistence adapters](#custom-persistence-adapters)
+    * [Manual cache control](#manual-cache-control)
 - [Session Management](#sessions)
-  * [Start a new session](#start-a-new-session)
-  * [Resume an active session](#resume-an-active-session)
-  * [End a session](#end-a-session)
-  * [Retrieve session information](#retrieve-session-information)
+    * [Start a new session](#start-a-new-session)
+    * [Resume an active session](#resume-an-active-session)
+    * [End a session](#end-a-session)
+    * [Retrieve session information](#retrieve-session-information)
 - [Accounts](#accounts)
-  * [List all accounts](#list-all-accounts)
-  * [Register an account](#register-an-account)
-  * [Fetch an account](#fetch-an-account)
-  * [Update an account](#update-an-account)
-  * [Delete an account](#delete-an-account)
-  * [Fetch account preferences](#fetch-account-preferences)
-  * [Update account preferences](#update-account-preferences)
+    * [List all accounts](#list-all-accounts)
+    * [Register an account](#register-an-account)
+    * [Fetch an account](#fetch-an-account)
+    * [Update an account](#update-an-account)
+    * [Delete an account](#delete-an-account)
+    * [Verify an account](#verify-an-account)
+    * [Deactivate an account](#deactivate-an-account)
+    * [Fetch account preferences](#fetch-account-preferences)
+    * [Update account preferences](#update-account-preferences)
+    * [Reset account password](#reset-account-password)
+    * [Lookup an account](#lookup-an-account)
+- [Account Privileges](#account-privileges)
+    * [List account privileges](#list-account-privileges)
+    * [Retrieve privileged hosts](#retrieve-managed-hosts)
 - [Hosts](#hosts)
-  * [List event hosts](#list-event-hosts)
-  * [Create an event host](#create-an-event-host)
-  * [Fetch an event host](#fetch-an-event-host)
-  * [Update an event host](#update-an-event-host)
-  * [Delete an event host](#delete-an-event-host)
-- [Events](#events)
-  * [List published events](#list-published-events)
-  * [List all events](#list-all-events)
-  * [Register an event](#register-an-event)
-  * [Fetch an event](#fetch-an-event)
-  * [Update an event](#update-an-event)
-  * [Delete an event](#delete-an-event)
-  * [Submit an event for review](#submit-an-event-for-review)
-- [Admissions](#admissions)
-  * [Admissions tokens](#admissions-tokens)
-    * [List admissions tokens](#list-admissions-tokens)
-    * [Issue admissions token](#issue-admissions-token)
-    * [Update admissions token sections](#update-admissions-token-sections)
-    * [Invalidate an admissions token](#invalidate-an-admissions-token)
-  * [Admitting patrons](#admitting-patrons)
+    * [List event hosts](#list-event-hosts)
+    * [Create an event host](#create-an-event-host)
+    * [Fetch an event host](#fetch-an-event-host)
+    * [Update an event host](#update-an-event-host)
+    * [Delete an event host](#delete-an-event-host)
+    * [List privileges](#list-privileges)
+    * [Grant a privilege](#grant-a-privilege)
+    * [Fetch a privilege](#fetch-a-privilege)
+    * [Update a privilege](#update-a-privilege)
+    * [Revoke a privilege](#revoke-a-privilege)
+- [Event Management](#event-management)
+    * [List events](#list-events)
+    * [Register an event](#register-an-event)
+    * [Fetch an event](#fetch-an-event)
+    * [Update an event](#update-an-event)
+    * [Delete an event](#delete-an-event)
+    * [List event submissions](#list-event-submissions)
+    * [Submit event for review](#submit-event-for-review)
+    * [List event publications](#list-event-publications)
+    * [Publish event changes](#publish-event-changes)
+- [Form Management](#form-management)
+    * [List forms](#list-forms)
+    * [Create a form](#create-a-form)
+    * [Fetch a form](#fetch-a-form)
+    * [Update a form](#update-a-form)
+    * [Delete a form](#delete-a-form)
+- [Tier Management](#tier-management)
+    * [List tiers](#list-tiers)
+    * [Create a tier](#create-a-tier)
+    * [Fetch a tier](#fetch-a-tier)
+    * [Update a tier](#update-a-tier)
+    * [Delete a tier](#delete-a-tier)
+- [Event Listings](#event-listings)
+    * [Search event listings](#search-event-listings)
+    * [Fetch an event listing](#fetch-an-event-listing)
+    * [List event tiers](#list-event-tiers)
+- [Purchasing Tickets](#purchasing-tickets)
+    * [Create a shopping cart](#create-a-shopping-cart)
+    * [Add items to cart](#add-items-to-cart)
+    * [Remove items from cart](#remove-items-from-cart)
+    * [Set item quantity in cart](#set-item-quantity-in-cart)
+    * [Set item details in cart](#set-item-details-in-cart)
+    * [Checkout cart](#checkout-cart)
+- [Order Settlement](#order-settlement)
+    * [List orders](#list-orders)
+    * [Fetch an order](#retrieve-an-order)
+    * [Cancel an order](#cancel-an-order)
+    * [Settle an order](#settle-an-order)
+- [Customer Wallet](#customer-wallet)
+    * [Retrieve event itinerary](#retrieve-event-itinerary)
+    * [Retrieve customer tickets](#retrieve-ticket-wallet)
+- [Transferring Tickets](#transferring-tickets)
+    * [Create a ticket parcel](#create-a-ticket-parcel)
+    * [Add tickets to a parcel](#add-tickets-to-a-parcel)
+    * [Remove tickets from a parcel](#remove-tickets-from-a-parcel)
+    * [Set number of tickets in a parcel](#set-number-of-tickets-in-a-parcel)
+    * [Initiate a transfer](#initiate-a-transfer)
+    * [List customer transfers](#list-customer-transfers)
+    * [Fetch a transfer](#fetch-a-transfer)
+    * [Cancel a transfer](#cancel-a-transfer)
+    * [Accept a transfer](#accept-a-transfer)
+    * [Reject a transfer](#reject-a-transfer)
+- [Reporting](#reporting)
+    * [List host sales](#list-host-sales)
+    * [Fetch host statistics](#fetch-host-statistics)
+    * [List event sales](#list-event-sales)
+    * [Fetch event statistics](#fetch-event-statistics)
+- [Event Admissions](#event-admissions)
+    * [List admission tokens](#list-admission-tokens)
+    * [Issue an admission token](#issue-an-admission-token)
+    * [Fetch an admission token](#issue-an-admission-token)
+    * [Update an admission token](#update-an-admission-token)
+    * [Invalidate an admission token](#invalidate-an-admission-token)
     * [Start admission session](#start-admission-session)
+    * [End admission session](#end-admission-session)
     * [List valid tickets](#list-valid-tickets)
     * [Grant admission to event](#grant-admission-to-event)
     * [List event admissions](#list-admissions-to-event)
-    * [End admission session](#end-admission-session)
 - [Categories](#categories)
-  * [List event categories](#list-event-categories)
-  * [Add new category](#add-new-category)
-  * [Fetch a category](#fetch-a-category)
-  * [Update a category](#update-a-category)
-  * [Delete a category](#delete-a-category)
+    * [List event categories](#list-event-categories)
+    * [Add new category](#add-new-category)
+    * [Fetch a category](#fetch-a-category)
+    * [Update a category](#update-a-category)
+    * [Delete a category](#delete-a-category)
 - [Regions](#regions)
-  * [List all regions](#list-all-regions)
-  * [Add new region](#add-new-region)
-  * [Fetch a region](#fetch-a-region)
-  * [Update a region](#update-a-region)
-  * [Delete a region](#delete-a-region)
+    * [List all regions](#list-all-regions)
+    * [Add new region](#add-new-region)
+    * [Fetch a region](#fetch-a-region)
+    * [Update a region](#update-a-region)
+    * [Delete a region](#delete-a-region)
 - [Venues](#venues)
-  * [List event venues](#list-event-venues)
-  * [Create an event venue](#create-an-event-venue)
-  * [Fetch a venue](#fetch-a-venue)
-  * [Update a venue](#update-a-venue)
-  * [Delete an event venue](#delete-an-event-venue)
+    * [List event venues](#list-event-venues)
+    * [Create an event venue](#create-an-event-venue)
+    * [Fetch a venue](#fetch-a-venue)
+    * [Update a venue](#update-a-venue)
+    * [Delete an event venue](#delete-an-event-venue)
 - [Presets](#presets)
-  * [Retrieve a list of countries](#retrieve-a-list-of-countries)
+    * [Retrieve a list of countries](#retrieve-a-list-of-countries)
+- [Content Review](#reviewing-content)
+    * [List submissions](#list-submissions)
+    * [Fetch a submission](#fetch-a-submission)
+    * [Decide on a submission](#decide-on-a-submission)
+    * [Fetch submission decision](#fetch-a-submission-decision)
 
 ## Collections
 
@@ -178,7 +249,7 @@ regionCollection.then(regions => {
 
 Collections are Promises that allow you to filter, sort and page through the potentially thousands of 
 resources the API can return in response to a request, while reducing bandwidth and
-response times. In this section you will learn how to manipulate collections to
+response times. In this tier you will learn how to manipulate collections to
 get at the resources you are interested in.
 
 ### Filters
@@ -318,6 +389,9 @@ avoid page access errors.
   //Return the current page number
   console.log(await collection.current)
 
+  //Return the number of total elements in the collection
+  console.log(await collection.total)
+
   //Return the number of available pages in the collection
   console.log(await collection.pages)
 
@@ -387,6 +461,243 @@ Each TickeTing Error instance has a unique type, and provides an error message, 
     })
 ```
 
+## Request Caching
+
+The SDK can cache GET responses so your app stays fast on repeat reads and can fall back to
+previously fetched data when the network is slow or unavailable. Caching is **off by default**.
+
+### Enable caching
+
+Pass `cache: true` (or a configuration object) when constructing `TickeTing`:
+
+```javascript
+import { TickeTing } from '@ticketing/ticketing-nodejs-sdk'
+
+const ticketing = new TickeTing({
+  apiKey: "API_KEY",
+  cache: true
+})
+
+// Or with options:
+const ticketing = new TickeTing({
+  apiKey: "API_KEY",
+  cache: {
+    enabled: true,
+    defaultTtl: 60_000,       // serve as fresh for 1 minute
+    revalidateTimeout: 3_000, // wait up to 3s for newer data before returning stale
+    staleTtl: null,           // keep stale entries for offline fallback (default)
+    persistence: true         // persist to localStorage when available (default when caching is on)
+  }
+})
+```
+
+### How caching behaves
+
+Cached GET responses follow a **prefer-fresh** strategy:
+
+1. **Fresh** — If a cached response is still within its TTL, it is returned immediately (no network call).
+2. **Stale** — After the TTL expires, the SDK still keeps the entry and tries the network again.
+   - If a fresh response arrives within `revalidateTimeout`, that new data is returned.
+   - If the network is slow, the stale cache is returned right away and the refresh continues in the background so the next call can use updated data.
+3. **Offline / network error** — If the request fails and a stale entry exists, the cached data is returned instead of failing the call.
+
+Only `GET` (and `HEAD`) responses are cached. Successful mutations (`POST`, `PUT`, `PATCH`, `DELETE`)
+invalidate related cached GETs by default so lists and detail views do not stay out of date.
+
+### Cache options
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `enabled` | `true` when a cache object/`true` is passed | Turns caching on or off |
+| `defaultTtl` | `300000` (5 minutes) | Soft TTL in milliseconds. After this, data is considered stale and revalidated |
+| `revalidateTimeout` | `3000` | How long to wait for a fresh network response before returning stale data |
+| `staleTtl` | `null` (unlimited) | How long after soft expiry an entry may still be used as fallback. `null` keeps entries until LRU eviction (best for offline). Set `0` to discard entries as soon as the soft TTL ends |
+| `maxEntries` | `100` | Maximum number of cached responses retained in memory |
+| `invalidateOnMutation` | `true` | Clear related GET cache entries after mutations |
+| `persistence` | `true` when caching is enabled | Persist the cache (see [Persistence](#cache-persistence)) |
+
+### Force cache or bypass per call
+
+Use chainable helpers to override the global setting for a scoped call:
+
+```javascript
+// Force caching for this call even when global caching is off
+ticketing.cache().events.find(1)
+
+// Bypass the cache for this call even when global caching is on
+ticketing.nocache().events.list()
+
+// Per-call options
+ticketing.cache({ ttl: 10_000, revalidateTimeout: 1_500 }).events.find(1)
+```
+
+The same `cache()` / `nocache()` chaining is available on services (for example
+`ticketing.events.cache().find(1)`) and nested services (e.g. `host.tiers.nocache().list()`).
+
+### Cache persistence
+
+When persistence is enabled, cache entries are written to `localStorage` in browser-like
+environments (or `sessionStorage` if configured). This lets an app restart and still have
+fallback data while offline.
+
+```javascript
+const ticketing = new TickeTing({
+  apiKey: "API_KEY",
+  cache: {
+    enabled: true,
+    persistence: {
+      namespace: '@my-app/ticketing-cache',
+      storage: 'local' // or 'session', or a custom adapter
+    }
+  }
+})
+
+// Disable persistence (in-memory only)
+const ticketing = new TickeTing({
+  apiKey: "API_KEY",
+  cache: {
+    enabled: true,
+    persistence: false
+  }
+})
+```
+
+### Custom persistence adapters
+
+If `localStorage` / `sessionStorage` are not available (or you want to store the cache
+elsewhere — for example React Native, Capacitor, Electron, or a secure keystore), pass your
+own adapter as `persistence.storage`.
+
+An adapter must implement this synchronous interface:
+
+```typescript
+interface CachePersistenceAdapter {
+  read(): string | null   // return the full serialized cache blob, or null if empty
+  write(data: string): void  // replace the stored blob
+  remove(): void          // delete the stored blob (used by clear())
+}
+```
+
+The SDK owns the serialization format. Your adapter should treat `data` as an opaque string
+and round-trip it unchanged. Do not parse or reshape it unless you are building tooling on
+top of the cache.
+
+**In-memory adapter** (useful in tests, or as a base you hydrate from disk):
+
+```javascript
+import { TickeTing, MemoryCachePersistence } from '@ticketing/ticketing-nodejs-sdk'
+
+const persistence = new MemoryCachePersistence()
+
+const ticketing = new TickeTing({
+  apiKey: "API_KEY",
+  cache: {
+    enabled: true,
+    persistence: { storage: persistence }
+  }
+})
+```
+
+**Custom adapter example** (sync key/value store):
+
+```javascript
+import { TickeTing } from '@ticketing/ticketing-nodejs-sdk'
+
+const CACHE_KEY = '@my-app/ticketing-cache'
+
+const filePersistence = {
+  read() {
+    try {
+      return mySyncStore.getItem(CACHE_KEY)
+    } catch {
+      return null
+    }
+  },
+  write(data) {
+    try {
+      mySyncStore.setItem(CACHE_KEY, data)
+    } catch {
+      // Ignore quota / write failures; the in-memory cache still works
+    }
+  },
+  remove() {
+    try {
+      mySyncStore.removeItem(CACHE_KEY)
+    } catch {
+      // Ignore remove failures
+    }
+  }
+}
+
+const ticketing = new TickeTing({
+  apiKey: "API_KEY",
+  cache: {
+    enabled: true,
+    persistence: { storage: filePersistence }
+  }
+})
+```
+
+**Async backends** (AsyncStorage, IndexedDB, etc.): the adapter API is synchronous, so
+hydrate into memory before creating `TickeTing`, then write through on each change:
+
+```javascript
+import { TickeTing, MemoryCachePersistence } from '@ticketing/ticketing-nodejs-sdk'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
+const CACHE_KEY = '@my-app/ticketing-cache'
+
+async function createTicketing(apiKey) {
+  const persistence = new MemoryCachePersistence()
+  const existing = await AsyncStorage.getItem(CACHE_KEY)
+  if (existing) {
+    persistence.write(existing)
+  }
+
+  const originalWrite = persistence.write.bind(persistence)
+  persistence.write = (data) => {
+    originalWrite(data)
+    AsyncStorage.setItem(CACHE_KEY, data).catch(() => {})
+  }
+
+  const originalRemove = persistence.remove.bind(persistence)
+  persistence.remove = () => {
+    originalRemove()
+    AsyncStorage.removeItem(CACHE_KEY).catch(() => {})
+  }
+
+  return new TickeTing({
+    apiKey,
+    cache: {
+      enabled: true,
+      persistence: { storage: persistence }
+    }
+  })
+}
+```
+
+Notes:
+
+- `read()` is called once when the cache store is constructed; later updates go through `write()`.
+- `remove()` is called when you invoke `ticketing.cacheControls.clear()`.
+- Failed `write` / `remove` calls should not throw if you can avoid it — the in-memory cache continues to serve requests even when persistence fails.
+
+### Manual cache control
+
+Use `cacheControls` to clear or invalidate entries when your app knows data has changed
+outside of a normal mutation through the SDK:
+
+```javascript
+// Remove every cached response
+ticketing.cacheControls.clear()
+
+// Invalidate entries whose key matches a predicate
+ticketing.cacheControls.invalidate(key => key.includes('/events/'))
+
+// Invalidate cached GETs related to a URL path
+ticketing.cacheControls.invalidateUrl('/events/42')
+```
+
 ## Session Management
 
 The API Key passed to the TickeTing SDK constructor grants primarily read-only access to
@@ -394,7 +705,7 @@ API resources (with the exception of an administrative key). Resource management
 restricted to specific users and you will need to authenticate against the API to unlock
 these features.
 
-The SDK offers user authentication in the form of sessions. This section details how to
+The SDK offers user authentication in the form of sessions. This tier details how to
 work with user sessions.
 
 ### Start a new session
@@ -527,7 +838,7 @@ preferences.
 
 ### List all accounts
 
-[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/list_accounts)
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/list_accounts)
 
 ```javascript
   ticketing.accounts.list()
@@ -548,7 +859,7 @@ preferences.
 
 ### Register an account
 
-[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/create_account)
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/create_account)
 
 ```javascript
   let accountData = {
@@ -585,7 +896,7 @@ preferences.
 
 ### Fetch an account
 
-[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/retrieve_account)
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/retrieve_account)
 
 ```javascript
   //Retrieve a specific account using its account number
@@ -607,7 +918,7 @@ preferences.
 
 ### Update an account
 
-[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/update_account)
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/update_account)
 
 ```javascript
   //Retrieve a specific account using its account number
@@ -638,7 +949,7 @@ preferences.
 
 ### Delete an account
 
-[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/delete_account)
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/delete_account)
 
 ```javascript
   //Retrieve a specific account using its account number
@@ -664,9 +975,68 @@ preferences.
   })
 ```
 
+### Verify an account
+
+[API Reference](https://docs.ticketingevents.com/openapi/account-verification)
+
+```javascript
+  ticketing.accounts.verify("billy.butcher@fbsa.gov")
+  .then(verification => {
+    //Verify the account using the OTP code sent to the email address
+    verification.confirm({
+      "code": "123456"
+    }).then(success => {
+      //Do something with success status
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log(error.message) //Missing or invalid OTP
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log(error.message) //Missing or invalid email address
+    }else if(error instanceof ResourceNotFoundError){
+      console.log("The email address provided is not registered to a TickeTing user.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Deactivate an account
+
+[API Reference](https://docs.ticketingevents.com/openapi/account-activation/request_deletion)
+
+```javascript
+  //Retrieve a specific account using its account number
+  account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  //Save changes
+  account.deactivate("The user asked to delete their account.").then(deactivated => {
+    if(deactivated){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof PermissionError){
+      console.log("You are not authorised to access or modify this account.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
 ### Fetch account preferences
 
-[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/retrieve_account_preferences)
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/retrieve_account_preferences)
 
 ```javascript
   //Retrieve a specific account using its account number
@@ -691,7 +1061,7 @@ preferences.
 
 ### Update account preferences
 
-[API Reference](https://ticketing.redoc.ly/tag/Account-Management#operation/update_account_preferences)
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/update_account_preferences)
 
 ```javascript
   //Retrieve a specific account using its account number
@@ -723,24 +1093,88 @@ preferences.
   })
 ```
 
+### Reset account password
 
-## Hosts
-
-Operations for managing hosts who can list events, sell tickets, book advertising, or request 
-add-on services through TickeTing
-
-### List event hosts
-
-[API Reference](https://ticketing.redocly.app/docs/api_reference/api_reference/managing-host-accounts/list_hosts)
+[API Reference](https://docs.ticketingevents.com/openapi/password-reset)
 
 ```javascript
-  ticketing.hosts.list()
+  ticketing.accounts.reset("billy.butcher@fbsa.gov")
+  .then(reset => {
+    //Reset the password using the OTP code sent to the email address
+    reset.confirm({
+      "code": "123456",
+      "password": "mYn3Wp4$$word!"
+    }).then(success => {
+      //Do something with success status
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log(error.message) //Missing or invalid OTP or password
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log(error.message) //Missing or invalid email address
+    }else if(error instanceof ResourceNotFoundError){
+      console.log("The email address provided is not registered with TickeTing.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Lookup an account
+
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/lookup_account)
+
+```javascript
+  ticketing.accounts.lookup({
+    identification: "mothers.milk", //Required
+    role: "customer" //Optional
+  })
+  .then(lookup => {
+    //Do something with the lookup result resource
+    if(lookup.found){
+      let identification = lookup.identification //Identification used in the lookup
+      let role = lookup.role //Role used in the lookup if one was specified
+      let name = lookup.name //Name registered to the matched account, if one was found
+    }
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log(error.message)
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+## Account Privileges
+
+Retrieval of account privileges for determining system access levels
+
+### List account privileges
+
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/list_account_privileges)
+
+```javascript
+  //Retrieve a specific account using its account number
+  account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  account.privileges.list()
     // Supported filters with examples
     .filter({
-      account: "MO-6A39EE8D" //Account that returned event hosts should list as an administrator
+      role: "Editor",
+      type: "host"
     })
-    .then(hosts => {
-      //Do something with the collection of hosts
+    .then(privileges => {
+      //Do something with the collection of privileges
     })
     .catch(error => {
       //Handle errors
@@ -754,23 +1188,79 @@ add-on services through TickeTing
     })
 ```
 
+### List privileged hosts
+
+[API Reference](https://docs.ticketingevents.com/openapi/account-management/list_privileged_hosts)
+
+```javascript
+  //Retrieve a specific account using its account number
+  account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  account.hosts.list()
+    .then(hosts => {
+      //Do something with the collection of hosts
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+## Hosts
+
+Operations for managing hosts who can list events, sell tickets, book advertising, or request 
+add-on services through TickeTing
+
+### List event hosts
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/list_hosts)
+
+```javascript
+  ticketing.hosts.list()
+    // Supported filters with examples
+    .filter({
+      name: "Vought Entertainment",
+      country: "Antigua and Barbuda"
+    })
+    // Supported sort fields
+    .sort(
+      "alphabetical", //Only "alphabetical" supported
+      true //Set true for ascending sort (default), or false for descending order
+    )
+    .then(hosts => {
+      //Do something with the collection of hosts
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
 ### Create an event host
 
-[API Reference](https://ticketing.redocly.app/docs/api_reference/api_reference/managing-host-accounts/create_host)
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/create_host)
 
 ```javascript
   let hostData = {
-    "name": "The Boys Entertainment",
+    "name": "Vought Entertainment",
     "contact": "Billy Butcher",
     "email": "billy.butcher@fbsa.gov",
-    "description": "Premier events for supes of all ages",
+    "bio": "Premier events for supes of all ages",
     "phone": "+1 (268) 555 8075",
     "website": "https://theboys.net",
     "country": "Antigua and Barbuda",
     "firstAddressLine": "Wireless Road",
     "secondAddressLine": "Clare Hall",
     "city": "St. John's",
-    "state": "Saint John",
+    "district": "Saint John",
     "businessNo": "A5585291"
   }
 
@@ -792,7 +1282,7 @@ add-on services through TickeTing
 
 ### Fetch an event host
 
-[API Reference](https://ticketing.redocly.app/docs/api_reference/api_reference/managing-host-accounts/retrieve_host)
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/retrieve_host)
 
 ```javascript
   //Retrieve a specific host using its ID
@@ -812,7 +1302,7 @@ add-on services through TickeTing
 
 ### Update an event host
 
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/update_eventhttps://ticketing.redocly.app/docs/api_reference/api_reference/managing-host-accounts/update_account)
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/update_host)
 
 ```javascript
   //Retrieve a specific host using its ID
@@ -845,7 +1335,7 @@ add-on services through TickeTing
 
 ### Delete an event host
 
-[API Reference](https://ticketing.redocly.app/docs/api_reference/api_reference/managing-host-accounts/delete_host)
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/delete_host)
 
 ```javascript
   //Retrieve a specific host using its ID
@@ -868,68 +1358,176 @@ add-on services through TickeTing
   })
 ```
 
+### List privileges
 
-## Events
-
-Operations for working with events in the TickeTing system.
-
-### List published events
-
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/list_published_events)
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/list_host_privileges)
 
 ```javascript
-  ticketing.events.published.list()
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  host.privileges.list()
     // Supported filters with examples
     .filter({
-      region: 19290238432215,
-      title: "Dawn of the Seven Premier"
+      role: "Editor"
     })
-    // Supported sort fields
-    .sort(
-      "alphabetical", //One of "alphabetical" "published" "popularity" "start"
-      true //Set true for ascending sort (default), or false for descending order
-    )
-    .then(events => {
-      //Do something with the collection of events
+    .then(privileges => {
+      //Do something with the collection of privileges
     })
     .catch(error => {
       //Handle errors
       if(error instanceof UnsupportedCriteriaError){
         //Handle unsupported criteria error
-      }else if(error instanceof UnsupportedSortError){
-        //Handle unsupported sort field error
       }else if(error instanceof PageAccessError){
         //Handle non-existant page error
       }else{
         console.log(`${typeof error} (${error.code}): ${error.message}`)
       }
     })
-
-    // List upcoming events (earliest event first)
-    ticketing.events.published.list().sort("start").then(upcoming=>{})
-
-    // List popular events (most popular first)
-    ticketing.events.published.list().sort("popularity", false).then(popular=>{})
-
-    // List new events (newest first)
-    ticketing.events.published.list().sort("published", false).then(newest=>{})
 ```
 
-### List all events (Admin Only)
+### Grant a privilege
 
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/list_events)
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/grant_a_host_privilege)
 
 ```javascript
-  ticketing.events.list()
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  let privilegeData = {
+    "user": "billy.butcher@fbsa.gov", //Required
+    "role": "Editor" //Required
+  }
+
+  host.privileges.create(privilegeData)
+    .then(privilege => {
+      //Do something with the created privilege resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log("You must specify a valid role for this privilege.")
+      }else if(error instanceof PermissionError){
+        console.log("You are restricted from perfoming this operation on the specified host.")
+      }else if(error instanceof ResourceExistsError){
+        console.log("The requested privilege has already been granted to the specified user.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch a privilege
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/retrieve_host_privilege)
+
+```javascript
+  //Retrieve a specific host by its ID
+  let host = await ticketing.hosts.find(16951985851389)
+
+  //Retrieve a specific privilege using its ID
+  host.privilege.find(18537291857173)
+    .then(privilege => {
+      //Do something with the privilege resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no privilege with the given ID")
+      }else if(error instanceof PermissionError){
+        console.log("You are restricted from perfoming this operation on the specified host.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Update a privilege
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/update_host_privilege)
+
+```javascript
+  //Retrieve a specific privilege by its ID
+  let host = await ticketing.hosts.find(16951985851389)
+  let privilege = await host.privilege.find(18537291857173)
+
+  //Make changes to the resource
+  privilege.role = "Administrator"
+
+  //Save changes
+  privilege.save().then(saved => {
+    if(saved){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof ResourceNotFoundError){
+      console.log("There is no privilege with the given ID")
+    }else if(error instanceof BadDataError){
+      console.log("You must specify a valid role for this privilege.")
+    }else if(error instanceof PermissionError){
+      console.log("You are restricted from perfoming this operation on the specified host.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Revoke a privilege
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/revoke_a_host_privilege)
+
+```javascript
+  //Retrieve a specific privilege by its ID
+  let host = await ticketing.hosts.find(16951985851389)
+  let privilege = await host.privilege.find(18537291857173)
+
+  //Delete the privilege
+  privilege.delete().then(deleted => {
+    if(deleted){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof ResourceNotFoundError){
+      console.log("There is no privilege with the given ID")
+    }else if(error instanceof PermissionError){
+      console.log("You are restricted from perfoming this operation on the specified host.")
+    }else if(error instanceof ResourceIndelibleError){
+      console.log("A host's owner privilege cannot be deleted.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+## Event Management
+
+Operations for managing events in the TickeTing system.
+
+### List events
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-host-accounts/list_host_events)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific region using its ID
+  let region = await ticketing.regions.find(19290238432215)
+
+  host.events.list()
     // Supported filters with examples
     .filter({
-      region: 19290238432215,
-      host: 16951985851389,
+      region: region,
       title: "Dawn of the Seven Premier",
       status: "Scheduled",
       active: true,
-      public: false,
-      section: 16993964783416
+      public: false
     })
     // Supported sort fields
     .sort(
@@ -955,29 +1553,30 @@ Operations for working with events in the TickeTing system.
 
 ### Register an event
 
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/register_event)
+[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/register_event)
 
 ```javascript
+  let host = ticketing.hosts.find(16951985851389)
+  let category = await ticketing.categories.find(16878141745207)
   let venue = await ticketing.venues.find(16878146473429)
 
   let eventData = {
-    "host": "16951985851389", //Required
     "title": "Dawn of the Seven Premier", //Required
     "description": "World Premier of the long ....", //Required
     "type": "Standard", //Required
     "public": true, //Required
-    "category": "/categories/16878141745207", //Required
-    "subcategory": "Premier", //Required
+    "category": category, //Required
+    "subcategory": category.subcategories[0], //Required
     "venue": venue, //Required
-    "start": "2024-06-07T20:00",
-    "end": "2024-06-07T23:00",
+    "start": "2024-06-07T20:00", //Required
+    "end": "2024-06-07T23:00", //Required
     "disclaimer": "Attend at your own risk",
     "tags": ["homelander", "queen maeve", "the deep", "A-Train"],
     "banner": "data:image/png;base64,iVBORw0KGgoAAAA...",
     "thumbnail": "data:image/png;base64,iVBORw0KGgoA..."
   }
 
-  ticketing.events.create(eventData)
+  host.events.create(eventData)
     .then(event => {
       //Do something with the created event resource
     })
@@ -985,12 +1584,8 @@ Operations for working with events in the TickeTing system.
       //Handle errors
       if(error instanceof BadDataError){
         console.log(error.message)
-      }else if(error instanceof ResourceNotFoundError){
-        console.log("The specified event host does not exist.")
       }else if(error instanceof PermissionError){
         console.log("You are not authorised to manage events on behalf of this host.")
-      }else if(error instanceof ResourceExistsError){
-        console.log("An event with the given name already exists.")
       }else{
         console.log(`${typeof error} (${error.code}): ${error.message}`)
       }
@@ -999,11 +1594,13 @@ Operations for working with events in the TickeTing system.
 
 ### Fetch an event
 
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/retrieve_event)
+[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/retrieve_event)
 
 ```javascript
+  let host = await ticketing.hosts.find(16951985851389)
+
   //Retrieve a specific event using its ID
-  ticketing.events.find(16993717817996)
+  host.events.find(16993717817996)
     .then(event => {
       //Do something with the event resource
     })
@@ -1021,11 +1618,12 @@ Operations for working with events in the TickeTing system.
 
 ### Update an event
 
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/update_event)
+[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/update_event)
 
 ```javascript
   //Retrieve a specific event using its ID
-  event = await ticketing.events.find(16993717817996)
+  let host = await ticketing.hosts.find(16951985851389)
+  let event = await host.events.find(16993717817996)
 
   //Make changes to the resource
   event.public = false
@@ -1044,8 +1642,6 @@ Operations for working with events in the TickeTing system.
       console.log(error.message)
     }else if(error instanceof PermissionError){
         console.log("You are not authorised to manage events on behalf of this host.")
-    }else if(error instanceof ResourceExistsError){
-      console.log("An event with the given name already exists.")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
@@ -1054,11 +1650,12 @@ Operations for working with events in the TickeTing system.
 
 ### Delete an event
 
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/delete_event)
+[API Reference](https://docs.ticketingevents.com/openapi/working-with-events/delete_event)
 
 ```javascript
   //Retrieve a specific event using its ID
-  event = await ticketing.events.find(16993717817996)
+  let host = await ticketing.hosts.find(16951985851389)
+  let event = await host.events.find(16993717817996)
 
   //Delete the event
   event.delete().then(deleted => {
@@ -1072,69 +1669,30 @@ Operations for working with events in the TickeTing system.
     if(error instanceof PermissionError){
       console.log("You are not authorised to manage events on behalf of this host.")
     }else if(error instanceof ResourceIndelibleError){
-      console.log("The event has active sections which must be deleted first.")
+      console.log("The event is associated with one or more tiers which must be deleted first.")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
   })
 ```
 
-### Submit an event for review
+### List event submissions
 
-[API Reference](https://ticketing.redoc.ly/tag/Working-with-Events#operation/submit_event)
+[API Reference](https://docs.ticketingevents.com/openapi/managing-events/list_event_submissions)
 
 ```javascript
   //Retrieve a specific event using its ID
-  event = await ticketing.events.find(16993717817996)
+  let host = await ticketing.hosts.find(16951985851389)
+  let event = await host.events.find(16993717817996)
 
-  //Delete the event
-  event.submit().then(submitted => {
-    if(submitted){
-      //Do something on success
-    }else{
-      //Do something on failure
-    }
-  }).catch(error => {
-    //Handle errors
-    if(error instanceof PermissionError){
-      console.log("You are not authorised to manage events on behalf of this host.")
-    }else if(error instanceof InvalidStateError){
-      console.log("The event has already been submitted or cancelled.")
-    }else{
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
-    }
-  })
-```
-## Admissions
-
----
-### Admissions Tokens
-
-Event admissions tokens allow staff to admit patrons to one or more of an event's sections. Tokens
-are anonymous and can be shared for use with multiple scanning devices. This subsection covers the
-operations used to manage admissions tokens.
-
----
-
-### List admissions tokens
-
-[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/list_event_tokens)
-
-```javascript
-  let event = await ticketing.events.find(16993717817996)
-
-  event.tokens // The tokens property returns a standard collection with supported methods
-    // Supported filters with examples
-    .filter({
-      global: true //Only return global admissions tokens
-    })
-    .then(tokens => {
-      //Do something with the collection of tokens
+  event.submissions.list()
+    .then(submissions => {
+      //Do something with the collection of submissions
     })
     .catch(error => {
       //Handle errors
-      if(error instanceof PermissionError){
-        console.log("This account is not an administrator of this event host.")
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
       }else if(error instanceof PageAccessError){
         //Handle non-existant page error
       }else{
@@ -1143,108 +1701,1565 @@ operations used to manage admissions tokens.
     })
 ```
 
-### Issue admissions token
+### Submit event for review
 
-[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/manage_admission_tokens)
+[API Reference](https://docs.ticketingevents.com/openapi/managing-events/submit_event)
 
 ```javascript
+  //Retrieve a specific event using its ID
+  let host = await ticketing.hosts.find(16951985851389)
+  let event = await host.events.find(16993717817996)
+
+  event.submissions.create()
+    .then(submission => {
+      //Do something with the created submission resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof PermissionError){
+        console.log("You are restricted from perfoming this operation on the specified event or its resources.")
+      }else if(error instanceof InvalidStateError){
+        console.log("You must upload banner and thumbnail images for an event prior to submission.")
+      }else if(error instanceof ResourceExistsError){
+        console.log("Pending changes have already been submitted for review, and are awaiting approval.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### List event publications
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-events/list_event_publications)
+
+```javascript
+  //Retrieve a specific event using its ID
+  let host = await ticketing.hosts.find(16951985851389)
+  let event = await host.events.find(16993717817996)
+
+  event.publications.list()
+    .then(publications => {
+      //Do something with the collection of publications
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Publish event changes
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-events/publish_event)
+
+```javascript
+  //Retrieve a specific event using its ID
+  let host = await ticketing.hosts.find(16951985851389)
+  let event = await host.events.find(16993717817996)
+
+  event.publish("2030-01-01T00:00" //Optional publication date. Published immediately if not specified)
+    .then(publication => {
+      //Do something with the created publication resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof PermissionError){
+        console.log("You are restricted from perfoming this operation on the specified event or its resources.")
+      }else if(error instanceof InvalidStateError){
+        console.log("Pending changes must be submitted and approved before publication.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+## Form Management
+
+Operations for managing forms in the TickeTing system.
+
+### List forms
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-forms/list_host_forms)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  host.forms.list()
+    .then(forms => {
+      //Do something with the collection of forms
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Create a form
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-forms/create_form)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  let formData = {
+    "name": "Meal Preferences", //Required
+    "description": "Provide information on any dietary requirements or allergens.", //Required
+    "fields": [{ //Required
+      "name": "Allergies",
+      "type": "short_text",
+      "required": true
+    }]
+  }
+
+  host.forms.create(formData)
+    .then(form => {
+      //Do something with the created form resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log("One or more fields in your request payload is invalid.")
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to manage resources on behalf of this host.")
+      }else if(error instanceof ResourceExistsError){
+        console.log("The host already owns a form with the given name.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch a form
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-forms/retrieve_form)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific form using its ID
+  host.forms.find(17907745285617)
+    .then(form => {
+      //Do something with the form resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no form with the given ID")
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to manage resources on behalf of this host.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Update a form
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-forms/update_forms)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific form using its ID
+  let form = await host.forms.find(17907745285617)
+
+  //Make changes to the resource
+  form.name = "Dietary Requirements"
+
+  let formFields = form.fields
+  formFields[0].name = "Allergens"
+  formFields.push({
+    name: "Milk Preference",
+    type: "short_text",
+    required: false
+  })
+
+  //Save changes
+  form.save().then(saved => {
+    if(saved){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log(error.message)
+    }else if(error instanceof PermissionError){
+      console.log("You are not authorised to manage resources on behalf of this host.")
+    }else if(error instanceof ResourceExistsError){
+      console.log("The host already owns a form with the given name.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Delete a form
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-forms/delete_form)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific form using its ID
+  let form = await host.forms.find(17907745285617)
+
+  //Delete the form
+  form.delete().then(deleted => {
+    if(deleted){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof PermissionError){
+      console.log("You are not authorised to manage resources on behalf of this host.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+## Tier Management
+
+Operations for managing tiers in the TickeTing system.
+
+### List tiers
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-tiers/list_host_tiers)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific event using its ID
+  let event = await host.events.find(16993717817996)
+
+  host.tiers.list()
+    // Supported filters with examples
+    .filter({
+      event: event,
+    })
+    .then(tiers => {
+      //Do something with the collection of tiers
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Create a tier
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-tiers/create_tier)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific event using its ID
+  let event = await host.events.find(16993717817996)
+
+  //Retrieve a specific tier using its ID
+  let upgrade_tier = await host.tiers.find(19240249258262)
+
+  //Retrieve a specific form using its ID
+  let form = await host.forms.find(17907745285617)
+
+  let tierData = {
+    "name": "Backstage Pass", //Required
+    "description": "Gain exclusive access to meet the Supes and hang out after the show.", //Required
+    "price": 299.9, //Required
+    "capacity": 20, //Required
+    "available_from": "2025-05-02T21:00:00", //Required
+    "available_to": "2025-07-01T00:00:00", //Required
+    "events": [{ //Required
+      "event": event,
+      "share": 100
+    }],
+    "artwork": "data:image/jpeg;base64,/9j/4AAQSkZJRgABA...",
+    "unit_size": 1,
+    "purchase_limit": 2,
+    "purchase_note": "Your all set. Remember to give the codeword HOMELANDER when coming backstage.",
+    "complimentary": false,
+    "transferrable": false,
+    "upgrades": [upgrade_tier],
+    "form": form
+  }
+
+  host.tiers.create(tierData)
+    .then(tier => {
+      //Do something with the created tier resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log(error.message)
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to manage tiers on behalf of this host.")
+      }else if(error instanceof ResourceExistsError){
+        console.log("One or more of the specified events already has a tier with the given name.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch a tier
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-tiers/retrieve_tier)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific tier using its ID
+  host.tiers.find(19240249258262)
+    .then(tier => {
+      //Do something with the tier resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no tier with the given ID")
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to manage tiers on behalf of this host.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Update a tier
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-tiers/update_tier)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific tier using its ID
+  let tier = await host.tiers.find(19240249258262)
+
+  //Retrieve a specific event using its ID
+  let event = await host.events.find(16993717948145)
+
+  //Make changes to the resource
+  tier.name = "Season Pass"
+  
+  let tierEvents = await tier.events
+  tierEvents[0].share = 50
+  tierEvents.push({
+    event: event,
+    share: 50
+  })
+
+  //Save changes
+  tier.save().then(saved => {
+    if(saved){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log(error.message)
+    }else if(error instanceof PermissionError){
+      console.log("You are not authorised to manage tiers on behalf of this host.")
+    }else if(error instanceof ResourceExistsError){
+      console.log("One or more of the specified events already has a tier with the given name.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Delete a tier
+
+[API Reference](https://docs.ticketingevents.com/openapi/managing-tiers/delete_tier)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific tier using its ID
+  let tier = await host.tiers.find(19240249258262)
+
+  //Delete the event
+  tier.delete().then(deleted => {
+    if(deleted){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof PermissionError){
+      console.log("You are not authorised to manage events on behalf of this host.")
+    }else if(error instanceof ResourceIndelibleError){
+      console.log("Tickets have already been issued under this tier and changes or deletion are no longer possible.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+## Event Listings
+
+Operations for searching and retrieving TickeTing event listings.
+
+### Search event listings
+
+[API Reference](https://docs.ticketingevents.com/openapi/event-listings/list_published_events)
+
+```javascript
+  //Retrieve a specific region using its ID
+  let region = await ticketing.regions.find(19290238432215)
+
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific category using its ID
+  let category = await ticketing.categories.find(16878141745207)
+
+  //Retrieve a specific subcategory using its ID
+  let subcategory = await ticketing.categories.find(19271181725646)
+
+  ticketing.events.list()
+    // Supported filters with examples
+    .filter({
+      region: region,
+      host: host,
+      title: "Dawn of the Seven Premier",
+      active: true,
+      category: category,
+      subcategory: subcategory,
+      after: "2025-01-01T00:00",
+      before: "2025-12-31T23:59",
+      featured: true,
+    })
+    // Supported sort fields
+    .sort(
+      "alphabetical", //One of "alphabetical" "published" "popularity" "start"
+      true //Set true for ascending sort (default), or false for descending order
+    )
+    .then(events => {
+      //Do something with the collection of events
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof UnsupportedSortError){
+        //Handle unsupported sort field error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+
+    // List upcoming events (earliest event first)
+    ticketing.events.list().sort("start").then(upcoming=>{})
+
+    // List popular events (most popular first)
+    ticketing.events.list().sort("popularity", false).then(popular=>{})
+
+    // List new events (newest first)
+    ticketing.events.list().sort("published", false).then(newest=>{})
+```
+
+### Fetch an event listing
+
+[API Reference](https://docs.ticketingevents.com/openapi/event-listings/retrieve_published_event)
+
+```javascript
+  //Retrieve a specific event listing using its ID
+  ticketing.events.find(16993717817996)
+    .then(event => {
+      //Do something with the event resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no event with the given ID")
+      }else if(error instanceof PermissionError){
+        console.log("You are not authorised to access this unlisted event.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### List event tiers
+
+[API Reference](https://docs.ticketingevents.com/openapi/event-listings/list_event_tiers)
+
+```javascript
+  //Retrieve a specific event using its ID
   let event = await ticketing.events.find(16993717817996)
 
-  event.issue_token(event.sections)  //We are required to provide the subset of an event's sections to link the token to
-    .then(token => {
+  event.tiers.list()
+    // Supported filters with examples
+    .filter({
+      active: true, //Whether or not the tier is currently available for sale
+    })
+    .then(tiers => {
+      //Do something with the collection of event tiers
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+## Purchasing tickets
+
+SDK functionality related to shopping cart management and checkout.
+
+### Create a shopping cart
+
+```javascript
+  //An account is required to manage shopping carts
+  let account = (await ticketing.session.info()).account
+  
+  account.carts.create().then(cart => {
+    //Retrieve cart information
+    let created = cart.created //Date and time that the cart was created
+    let subtotal = cart.subtotal //The total cost of all items in the cart before fees
+    let fees = cart.fees //The total fees applicable on the items in the cart
+    let total = cart.total //The total cost of all items in the cart inclusive of fees
+    let items = cart.items //Array of items in cart including the tier, quantity and subtotal of each.
+  }).catch(error => {
+    console.log(`${typeof error} (${error.code}): ${error.message}`)
+  })
+```
+
+### Add items to cart
+
+```javascript
+  //An account is required to manage shopping carts
+  let account = (await ticketing.session.info()).account
+  
+  //Create a new shopping cart
+  let cart = await account.carts.create()
+
+  //Retrieve a specific event using its ID
+  let event = await ticketing.events.find(16993717817996)
+
+  //Add items to the shopping cart
+  cart.add(
+    event.tiers[0], //Add tickets for this tier to the cart
+    2 //Default to 1 if omitted
+  ).then(success => {
+    if(success){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("The number of items to be added to the cart must be a positive integer.")
+    }else if(error instanceof UnsupportedOperationError){
+      console.log("Adding the specified quantity of this item would exceed the tier capacity.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Remove items from cart
+
+```javascript
+  //An account is required to manage shopping carts
+  let account = (await ticketing.session.info()).account
+  
+  //Create a new shopping cart
+  let cart = await ticketing.carts.create()
+
+  //Retrieve a specific event using its ID
+  let event = await ticketing.events.find(16993717817996)
+
+  //Remove items from the shopping cart
+  cart.remove(
+    event.tiers[0], //Remove tickets for this tier from the cart
+    3 //Default to 1 if omitted
+  ).then(success => {
+    if(success){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("The number of items to be removed from the cart must be a positive integer.")
+    }else if(error instanceof UnsupportedOperationError){
+      console.log("The cart contains fewer items than the quantity to be removed.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Set item quantity in cart
+
+```javascript
+  //An account is required to manage shopping carts
+  let account = (await ticketing.session.info()).account
+
+  //Create a new shopping cart
+  let cart =  account.carts.create()
+
+  //Retrieve a specific event using its ID
+  let event = await ticketing.events.find(16993717817996)
+
+  //Set the number of items in the shopping cart to a particular quantity
+  cart.set(
+    event.tiers[2], //Set the number of tickets for this tier in the cart
+    5
+  ).then(success => {
+    if(success){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("The item quantity must be a positive integer.")
+    }else if(error instanceof UnsupportedOperationError){
+      console.log("Setting the item quantity to the specified value would exceed the tier capacity.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Set item details in cart
+
+```javascript
+  //An account is required to manage shopping carts
+  let account = (await ticketing.session.info()).account
+
+  //Create a new shopping cart
+  let cart =  account.carts.create()
+
+  //Add items to cart
+  let event = await ticketing.events.find(16993717817996)
+  await cart.add(event.tiers[0], 5)
+
+  //Provide additional customer details for a particular item in the cart
+  cart.add_details(
+    event.tiers[0], //Set the details of tickets for this tier in the cart
+    [
+      {"Field 1": "A", "Field 2": "B"},
+      {"Field 1": "C", "Field 2": "D"},
+      {"Field 1": "E", "Field 2": "F"},
+      {"Field 1": "G", "Field 2": "H"},
+      {"Field 1": "I", "Field 2": "J"},
+    ]
+  ).then(success => {
+    if(success){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("The number of provided details must match the item quantity for this tier.")
+    }else if(error instanceof InvalidStateError){
+      console.log("The specified tier does not require additional details.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Checkout cart
+
+[API Reference](https://docs.ticketingevents.com/openapi/placing-an-order/place_order)
+
+```javascript
+  //An account is required to manage shopping carts
+  let account = (await ticketing.session.info()).account
+
+  //Create a new shopping cart
+  let cart = await account.carts.create()
+
+  //Add items to cart
+  let event = await ticketing.events.find(16993717817996)
+  await cart.add(event.tiers[0], 2)
+  
+  cart.checkout().then(order => {
+    //See order settlement for details on settling or cancelling the order
+  }).catch(error => {
+    if(error instanceof PermissionError){
+      console.log("The authenticated user is not permtited to manage orders for this account.")
+    }else if(error instanceof BadDataError){
+      console.log("One or more of the requested tiers does not have sufficient capacity to fulfil the order.")
+    }else{
+      //Handle errors
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+## Order Settlement
+
+SDK functionality allowing for manipulating and settling ticket orders.
+
+### List customer orders
+
+[API Reference](https://docs.ticketingevents.com/openapi/ordering-tickets/list_customer_orders)
+
+```javascript
+  //Retrieve a specific account using its account number
+  let account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  account.orders.list()
+    // Supported filters with examples
+    .filter({
+      number: "E8D946240203",
+      status: "Cancelled" //One of "Placed", "Cancelled", "Timed Out", "Fulfilled", "Voided", "Returned"
+    })
+    // Supported sort fields
+    .sort(
+      "date", //One of "date"
+      false //Set true for ascending sort (default), or false for descending order
+    )
+    .then(orders => {
+      //Do something with the collection of orders
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof UnsupportedSortError){
+        //Handle unsupported sort field error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch an order
+
+[API Reference](https://docs.ticketingevents.com/openapi/ordering-tickets/retrieve_order)
+
+```javascript
+  //Retrieve a specific account using its account number
+  let account = await ticketing.accounts.find(17189259825853)
+
+  //Retrieve a specific order using its number
+  account.orders.find(17189259825853)
+    .then(order => {
+      //Do something with the order resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no order identified by the given number")
+      }else if(error instanceof PermissionError){
+        console.log("The authenticating user is not authorised to manage orders on behalf of the ordering customer.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Cancel an order
+
+[API Reference](https://docs.ticketingevents.com/openapi/ordering-tickets/cancel_order)
+
+```javascript
+  //Retrieve a specific account using its account number
+  let account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  //Retrieve a specific order using its number
+  let order = await account.orders.find(17189259825853)
+
+  //Cancel the order
+  order.cancel().then(cancelled => {
+    if(cancelled){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+     if(error instanceof PermissionError){
+      console.log("The authenticating user is not authorised to manage orders on behalf of the ordering customer.")
+    }else if(error instanceof ResourceIndelibleError){
+      console.log("The order has already timed out, been settled or was cancelled previously.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Settle an order
+
+[API Reference](https://docs.ticketingevents.com/openapi/ordering-tickets/settle_order)
+
+```javascript
+  //Retrieve a specific account using its account number
+  let account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  //Retrieve a specific order using its number
+  let order = await account.orders.find(17189259825853)
+
+  let paymentDetails = {
+    "number": "5555555555555555",
+    "cvv": 123,
+    "expiryDate": "12/30",
+    "name": "Marvin M. Milk",
+    "email": "marvin.milk@usmc.gov",
+    "phone": "+1 (268) 555 0123",
+    "address1": "Hermitage Rd.",
+    "address2": "Jennings New Extension",
+    "city": "Jennings",
+    "district": "Saint Mary'\''s",
+    "country": "Antigua and Barbuda"
+  }
+
+  //Settle the order
+  order.settle(paymentDetails).then(settled => {
+    if(settled){
+      //Do something on payment success
+    }else{
+      //Do something on payment failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("Required payment details were missing or invalid")
+    }else if(error instanceof PermissionError){
+      console.log("The authenticating user is not authorised to settle orders on behalf of the ordering customer.")
+    }else if(error instanceof InvalidStateError){
+      console.log("The order has already timed out, been cancelled or was settled previously.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+## Customer Wallet
+
+Operations for accessing and viewing tickets in a customer's wallet
+
+### Retrieve event itinerary
+
+[API Reference](https://docs.ticketingevents.com/openapi/customer-wallet/retrieve_event_itinerary)
+
+```javascript
+  //Retrieve a specific account using its account number
+  let account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  account.itinerary.list(20) //Page length to use with the collection
+    // Supported filters with examples
+    .filter({
+      active: true //Return only future events
+    })
+    // Supported sort fields
+    .sort(
+      "start", //One of "alphabetical" "published" "popularity" "start"
+      true //Set true for ascending sort (default), or false for descending order
+    )
+    .then(events => {
+      //Do something with the collection of events
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof UnsupportedSortError){
+        //Handle unsupported sort field error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Retrieve customer tickets
+
+[API Reference](https://docs.ticketingevents.com/openapi/customer-wallet/retrieve_customer_tickets)
+
+```javascript
+  //Retrieve a specific account using its account number
+  let account = await ticketing.accounts.find("MO-6A39EE8D")
+
+  //Load event by ID
+  let event = await ticketing.events.find(16993717817996)
+
+  //Load tier by ID
+  let tier = await host.tiers.find(19240249258262)
+
+  account.wallet.list(25) //Page length to use with collection
+    // Supported filters with examples
+    .filter({
+      event: event, //Return tickets for the given event
+      tier: tier, //Return tickets for the given tier
+      serial: "DAWIER", //Return tickets with a serial number matching the pattern
+      status: "held" //Return tickets with a matching status
+    })
+    .then(tickets => {
+      //Do something with the collection of tickets
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+## Transferring tickets
+
+SDK functionality for transferring tickets in the customer's wallet to another user.
+
+### Create a ticket parcel
+
+```javascript
+  //An account is required to create parcels
+  let sender = (await ticketing.session.info()).account
+
+  sender.parcels.create().then(parcel => {
+    //Retrieve parcel information.
+    let created = parcel.created //Date and time that the parcel was created
+    let tickets = parcel.tickets //Array of tickets in the parcel including the tier and quantity of each.
+  }).catch(error => {
+    console.log(`${typeof error} (${error.code}): ${error.message}`)
+  })
+```
+
+### Add tickets to a parcel
+
+```javascript
+  //An account is required to create parcels
+  let sender = (await ticketing.session.info()).account
+
+  //Create a new ticket parcel
+  let parcel = await sender.parcels.create()
+
+  //Retrieve a specific event using its ID
+  let event = await ticketing.events.find(16993717817996)
+
+  //Pack the parcel with tickets to be transferred
+  parcel.add(
+    event.tiers[0], //Add tickets for this tier to the parcel
+    2 //Quantity to add. Defaults to 1 if omitted
+  ).then(success => {
+    if(success){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("The number of tickets to be added to the parcel must be a positive integer.")
+    }else if(error instanceof UnsupportedOperationError){
+      console.log("The custoemr does not own sufficient tickets in this tier to be transferred.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Remove tickets from a parcel
+
+```javascript
+  //An account is required to create parcels
+  let sender = (await ticketing.session.info()).account
+
+  //Create a new ticket parcel
+  let parcel = await sender.parcels.create()
+
+  //Retrieve a specific event using its ID
+  let event = await ticketing.events.find(16993717817996)
+
+  //Remove tickets from the parcel
+  parcel.remove(
+    event.tiers[0], //Remove tickets for this tier from the parcel
+    3 //Quantity to remove. Defaults to 1 if omitted
+  ).then(success => {
+    if(success){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("The number of tickets to be removed from the parcel must be a positive integer.")
+    }else if(error instanceof UnsupportedOperationError){
+      console.log("The parcel contains fewer tickets than the quantity to be removed.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Set number of tickets in a parcel
+
+```javascript
+  //An account is required to create parcels
+  let sender = (await ticketing.session.info()).account
+  
+  //Create a new ticket parcel
+  let parcel = await sender.parcels.create()
+
+  //Set the number of tickets in the parcel to a particular quantity
+  parcel.set(
+    event.tiers[2], //Set the number of tickets for this tier in the parcel
+    5 //Quantity to set. Defaults to 1 if omitted
+  ).then(success => {
+    if(success){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof BadDataError){
+      console.log("The ticket quantity must be a positive integer.")
+    }else if(error instanceof UnsupportedOperationError){
+      console.log("The customer does not own sufficient tickets to set the quantity to the specified value.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Initiate a transfer
+
+[API Reference](https://docs.ticketingevents.com/openapi/ticket-transfers/initiate_ticket_transfer)
+
+```javascript
+  //An account is required to create parcels
+  let sender = (await ticketing.session.info()).account
+  
+  //Create a new ticket parcel
+  let parcel = await sender.parcels.create()
+
+  //Retrieve a specific event using its ID
+  let event = await ticketing.events.find(16993717817996)
+  await parcel.add(event.tiers[0], 2)
+
+  //Send the parcel
+  let recipient = await ticketing.accounts.lookup({identification: "billy.butcher@fbsa.gov"})
+  
+  parcel.send(recipient).then(transfer => {
+    //Claim or cancel the transfer (see below)
+  }).catch(error => {
+    if(error instanceof PermissionError){
+      console.log("The authenticated user is not permitted to initiate transfers on behalf of the sender.")
+    }else if(error instanceof BadDataError){
+      console.log("The sender does not own sufficient tickets of the indicated types to complete this transfer.")
+    }else if(error instanceof InvalidStateError){
+      console.log("The sender cannot transfer tickets to themselves.")
+    }else{
+      //Handle errors
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### List customer transfers
+
+[API Reference](https://docs.ticketingevents.com/openapi/ticket-transfers/retrieve_customer_transfer)
+
+```javascript
+  //Retrieve a specific customer using its ID
+  let customer = (await ticketing.session.info()).account
+
+  //List outgoing transfers
+  customer.transfers.outgoing()
+    // Supported filters with examples
+    .filter({
+      status: "pending", //pending, accepted, rejected, cancelled
+    })
+    .then(transfers => {
+      //Do something with the collection of transfers
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+
+  //List incoming transfers
+  customer.transfers.incoming()
+    // Supported filters with examples
+    .filter({
+      status: "pending", //pending, accepted, rejected, cancelled
+    })
+    .then(transfers => {
+      //Do something with the collection of transfers
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch a transfer
+
+[API Reference](https://docs.ticketingevents.com/openapi/ticket-transfers/retrieve_customer_transfer)
+
+```javascript
+  //An account is required to manage parcels
+  let customer = (await ticketing.session.info()).account
+
+  //Retrieve a specific transfer using its ID
+  customer.transfers.find("17096551195817")
+    .then(transfer => {
+      //Do something with the transfer resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no transfer identified by the given ID")
+      }else if(error instanceof PermissionError){
+        console.log("The authenticating user is not authorised to retrieve transfers on behalf of the sender.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Cancel a transfer
+
+[API Reference](https://docs.ticketingevents.com/openapi/ticket-transfers/complete_transfer)
+
+```javascript
+  //Only a transfer's sender can cancel it
+  let sender = (await ticketing.session.info()).account
+
+  //Retrieve pending transfers initiated by the sender
+  let transfers = await sender.transfers.outgoing().filter({status: "pending"})
+
+  //Cancel a transfer
+  transfers[0].cancel().then(cancelled => {
+    if(cancelled){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    if(error instanceof PermissionError){
+      console.log("A transfer can only be cancelled by its sender.")
+    }else if(error instanceof InvalidStateError){
+      console.log("Only pending transfers can be cancelled.")
+    }else{
+      //Handle errors
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Accept a transfer
+
+[API Reference](https://docs.ticketingevents.com/openapi/ticket-transfers/complete_transfer)
+
+```javascript
+  //Only a transfer's recipient can accept it
+  let recipient = (await ticketing.session.info()).account
+
+  //Retrieve pending transfers sent to the recipient
+  let transfers = await recipient.transfers.incoming().filter({status: "pending"})
+
+  //Accept a transfer
+  transfers[0].accept().then(accepted => {
+    if(accepted){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    if(error instanceof PermissionError){
+      console.log("A transfer can only be accepted by its recipient.")
+    }else if(error instanceof InvalidStateError){
+      console.log("Only pending transfers can be accepted.")
+    }else{
+      //Handle errors
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Reject a transfer
+
+[API Reference](https://docs.ticketingevents.com/openapi/ticket-transfers/complete_transfer)
+
+```javascript
+  //Only a transfer's recipient can reject it
+  let recipient = (await ticketing.session.info()).account
+
+  //Retrieve pending transfers sent to the recipient
+  let transfers = await recipient.transfers.incoming().filter({status: "pending"})
+
+  //Reject a transfer
+  transfers[0].reject().then(rejected => {
+    if(rejected){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    if(error instanceof PermissionError){
+      console.log("A transfer can only be rejected by its recipient.")
+    }else if(error instanceof InvalidStateError){
+      console.log("Only pending transfers can be rejected.")
+    }else{
+      //Handle errors
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+## Reporting
+
+The TickeTing SDK provides a set of functionality that lets you report on hosts, events,
+users and more. These features are documented below.
+
+### List host sales
+
+[API Reference](https://docs.ticketingevents.com/openapi/sales-reporting/list_host_sales)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific event using its ID
+  let event = await host.events.find(16993717817996)
+
+  //Retrieve a specific tier using its ID
+  let tier = await host.tiers.find(19240249258262)
+
+  host.sales.list()
+    // Supported filters with examples
+    .filter({
+      after: new Date("2026-07-01T00:00:00"), //Return sales after date
+      before: new Date("2026-08-01T00:00:00"), //Return sales before date
+      event: event, //Specific event sales
+      tier: tier, //Specific tier sales
+      number: 17189259825853, //Return sales linked to a specific order number
+      customer: "AZ-4918SF92", //Return sales linked to a specific customer
+      status: "confirmed", //Can be one of pending, cancelled, confirmed, refunded
+    })
+    // Supported sort fields
+    .sort(
+      "recorded", //One of "recorded", "total"
+      false //Set true for ascending sort (default), or false for descending order
+    )
+    .then(sales => {
+      //Do something with the collection of sales
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch host statistics
+
+[API Reference](https://docs.ticketingevents.com/openapi/sales-reporting/retrieve_host_statistics)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Access the host's statistics resource
+  host.statistics({
+      after: "2026-07-01T00:00:00", //Only aggregate statistics after this date
+      before: "2026-08-01T00:00:00", //Only aggregate statistics before this date
+      interval: "month" //The intervals over which to breakdown the aggregated statistics. Can be one of hour, day, week, month or year
+  }).then(statistics => {
+    console.log(statistics) //See documentation for list of available statisitics
+  })
+  .catch(error => {
+    //Handle errors
+    console.log(`${typeof error} (${error.code}): ${error.message}`)
+  })
+```
+
+### List event sales
+
+[API Reference](https://docs.ticketingevents.com/openapi/sales-reporting/list_event_sales)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific event using its ID
+  let event = await host.events.find(16993717817996)
+
+  //Retrieve a specific tier using its ID
+  let tier = await host.tiers.find(19240249258262)
+
+  event.sales.list()
+    // Supported filters with examples
+    .filter({
+      after: new Date("2026-07-01T00:00:00"), //Return sales after date
+      before: new Date("2026-08-01T00:00:00"), //Return sales before date
+      tier: tier, //Specific tier sales
+      number: 17189259825853, //Return sales linked to a specific order number
+      customer: "AZ-4918SF92", //Return sales linked to a specific customer
+      status: "confirmed", //Can be one of pending, cancelled, confirmed, refunded
+    })
+    // Supported sort fields
+    .sort(
+      "recorded", //One of "recorded", "total"
+      false //Set true for ascending sort (default), or false for descending order
+    )
+    .then(sales => {
+      //Do something with the collection of sales
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch event statistics
+
+[API Reference](https://docs.ticketingevents.com/openapi/sales-reporting/retrieve_event_statistics)
+
+```javascript
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
+
+  //Retrieve a specific event using its ID
+  let event = await host.events.find(16993717817996)
+
+  //Access the event's statistics resource
+  event.statistics({
+      after: "2026-08-24T00:00:00", //Only aggregate statistics after this date
+      before: "2026-08-25T00:00:00", //Only aggregate statistics before this date
+      interval: "hour" //The intervals over which to breakdown the aggregated statistics. Can be one of hour, day, week, month or year
+  }).then(statistics => {
+    console.log(statistics) //See documentation for list of available statisitics
+  })
+  .catch(error => {
+    //Handle errors
+    console.log(`${typeof error} (${error.code}): ${error.message}`)
+  })
+```
+
+## Event Admissions
+
+### List admission tokens
+
+[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/list_event_admission_tokens)
+
+```javascript
+  //Retrieve a specific event using its ID
+  let event = await ticketing.events.find(16993717817996)
+
+  event.tokens.list() 
+    .then(tokens => {
+      //Do something with the collection of tokens
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof PermissionError){
+        console.log("You are restricted from perfoming this operation on the specified event or its resources.")
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Issue an admission token
+
+[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/issue_admission_tokens)
+
+```javascript
+  //Retrieve a specific event using its ID
+  let event = await ticketing.events.find(16993717817996)
+
+  event.tokens.create({
+    label: "East Gate Entry",
+    tiers: (await event.tiers.list()) //All event tiers
+  }).then(token => {
       //Do something with the created token resource
     })
     .catch(error => {
       //Handle errors
       if(error instanceof BadDataError){
-        console.log("One or more of the specified sections does not belong to this event.")
+        console.log("One or more of the specified tiers does not belong to this event.")
       }else if(error instanceof PermissionError){
-        console.log("You are not authorised to manage events on behalf of this host.")
+        console.log("You are restricted from perfoming this operation on the specified event or its resources.")
       }else{
         console.log(`${typeof error} (${error.code}): ${error.message}`)
       }
     })
 ```
 
-### Update admissions token sections
+### Fetch an admission token
 
-[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/update_admission_token)
+[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/retrieve_admission_token)
 
 ```javascript
+  //Retrieve a specific event using its ID
   let event = await ticketing.events.find(16993717817996)
 
-  event.tokens
-    .then(tokens => {
-      tokens[0].allow(event.sections[0]) //Allow admission to a section using this token
-      tokens[0].deny(event.sections[1]) //Deny admission to a section using this token
-
-      //Save changes
-      tokens[0].save().then(saved => {
-        if(saved){
-          //Do something on success
-        }else{
-          //Do something on failure
-        }
-      })
+  event.tokens.find(18537291857173)
+    .then(token => {
+      //Do something with the token resource
     })
     .catch(error => {
       //Handle errors
-      if(error instanceof BadDataError){
-        console.log("You can only allow or deny sections of the token's event")
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no token with the given ID")
       }else if(error instanceof PermissionError){
-        console.log("You are not authorised to manage events on behalf of this host.")
-      }else if(error instanceof ResourceImmutableError){
-        console.log("An event's global token cannot be modified.")
+        console.log("You are restricted from perfoming this operation on the specified event or its resources.")
       }else{
         console.log(`${typeof error} (${error.code}): ${error.message}`)
       }
     })
 ```
 
-### Invalidate an admissions token
+### Update an admission token
+
+[API Reference](https://docs.ticketingevents.com/openapi/event-admissions/modify_admission_token)
+
+```javascript
+  //Retrieve a specific event using its ID
+  let event = await ticketing.events.find(16993717817996)
+
+  //Load an existing token by its ID
+  let token = await event.tokens.find(18537291857173)
+
+  token.label = "West Gate Entry"
+  
+  //Save changes
+  token.save().then(saved => {
+    if(saved){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  })
+  .catch(error => {
+    //Handle errors
+    if(error instanceof PermissionError){
+      console.log("You are restricted from perfoming this operation on the specified event or its resources.")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### Invalidate an admission token
 
 [API Reference](https://docs.ticketingevents.com/openapi/event-admissions/invalidate_admission_token)
 
 ```javascript
-  let event = await ticketing.events.find(16993717817996)
+    //Retrieve a specific event using its ID
+    let event = await ticketing.events.find(16993717817996)
 
-  event.tokens
-    .then(tokens => {
-      tokens[1].delete().then(invalidated => {
-        if(invalidated){
-          //Do something on success
-        }else{
-          //Do something on failure
-        }
-      })
+    //Load an existing token by its ID
+    let token = await event.tokens.find(18537291857173)
+
+    token.delete().then(invalidated => {
+      if(invalidated){
+        //Do something on success
+      }else{
+        //Do something on failure
+      }
     })
     .catch(error => {
       //Handle errors
       if(error instanceof PermissionError){
-        console.log("You are not authorised to manage events on behalf of this host.")
-      }else if(error instanceof ResourceIndelibleError){
-        console.log("An event's global token cannot be invalidated.")
+        console.log("You are restricted from perfoming this operation on the specified event or its resources.")
       }else{
         console.log(`${typeof error} (${error.code}): ${error.message}`)
       }
     })
 ```
 
----
-### Admitting Patrons
-
-Valid ticket holders are allowed entry to an event through admission sessions. Admission sessions
-allow gate staff to verify tickets and permit entry to the event. A session can be started using
-an admissions token which allows the staff member to grant access to designated event sections.
-
----
-
 ### Start admission session
 
-[API Reference](https://docs.ticketingevents.com/openapi/token-authentication/retrieve_token_auth)
+[API Reference](https://docs.ticketingevents.com/openapi/token-authentication/lookup_admission_token)
 
 Before retrieving a list of valid tickets or redeeming them, an admissions session must be commenced.
-This is done by providing an admissions token which is linked to a specific event and sections.
+This is done by providing an admissions token which is linked to a specific event and tiers.
 
 ```javascript
   //Start a session using an admission token
@@ -1260,12 +3275,37 @@ This is done by providing an admissions token which is linked to a specific even
     let device = session.device //Device that initiated this sesson
     let code = session.code //Admissions token code used to start this session
     let event = session.event //The event this session can admit patrons to
-    let sections = session.sections //The event sections this session can admit patrons to
+    let tiers = session.tiers //The event tiers this session can admit patrons to
   })
   .catch(error => {
     //Handle errors
     if(error instanceof UnauthorisedError){
       console.log("The provided code does not belong to any event token")
+    }else{
+      console.log(`${typeof error} (${error.code}): ${error.message}`)
+    }
+  })
+```
+
+### End admission session
+
+[API Reference](https://docs.ticketingevents.com/openapi/token-authentication/lookup_admission_token)
+
+After ending an admission session all further event entry operations will fail. You will
+need to start a new admissions session to perform these operations.
+
+```javascript
+  let session = await ticketing.session.admission("A0F9GG8D", "Name", "Device")
+  session.end().then(ended => {
+    if(ended){
+      //Do something on success
+    }else{
+      //Do something on failure
+    }
+  }).catch(error => {
+    //Handle errors
+    if(error instanceof InvalidStateError){
+      console.log("The admission session has ended, you must start a new one.")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
@@ -1278,10 +3318,10 @@ This is done by providing an admissions token which is linked to a specific even
 
 ```javascript
   let session = await ticketing.session.admission("A0F9GG8D", "Name", "Device")
-  session.tickets(25 // page size) // The tickets method returns a standard collection
+  session.tickets.list(25)
     // Supported filters with examples
     .filter({
-      modified_since: "2024-02-21T14:59:18+00:00" //Only return tickets with a status change after the specified date
+      modified_since: 1793396664 //Only return tickets with a status change after the specified timestamp
     })
     .then(tickets => {
       //Do something with the collection of tickets
@@ -1304,13 +3344,11 @@ This is done by providing an admissions token which is linked to a specific even
 
 ```javascript
   let session = await ticketing.session.admission("A0F9GG8D", "Name", "Device")
-  session.admit(
-    [ //List of ticket serials to attempt to redeem for entry to the event
+  session.admissions.admit([
       "DAWIER-BACK75580348",
       "DAWIER-VIPV37536946",
       "DAWIER-BACK75580348"
-    ]
-  )
+  ])
   .then(admissions => {
     //Do something with the list of successful admissions
   })
@@ -1319,7 +3357,7 @@ This is done by providing an admissions token which is linked to a specific even
     if(error instanceof InvalidStateError){
       console.log("The admission session has ended, you must start a new one.")
     }else if(error instanceof BadDataError){
-      console.log("None of the provided ticket serials grants admission to the designated event sections")
+      console.log("None of the provided ticket serials grants admission to the designated event tiers")
     }else{
       console.log(`${typeof error} (${error.code}): ${error.message}`)
     }
@@ -1332,14 +3370,19 @@ This is done by providing an admissions token which is linked to a specific even
 
 ```javascript
   let session = await ticketing.session.admission("A0F9GG8D", "Name", "Device")
-  session.admissions(25 //page size) // The admissions() method returns a standard collection
+
+  let host = await ticketing.hosts.find(17327135633743)
+  let customer = await ticketing.accounts.find("AZ-4918SF92")
+  let tier = await host.tiers.find(19240249258262)
+
+  session.admissions.list(25)
     // Supported filters with examples
     .filter({
       redeemer: "Billy Butcher", //Only return admissions granted by this redeemer
       device: "Google Pixel Pro 6", //Only return admissions granted from this device
       ticket: "DAWIER-BACK75580348", //Only return the admission granted on this ticket
-      patron: "AZ-4918SF92", //Only return admissions granted to the specified patron
-      section: "16993964783416" //Only return admissions granted to this event section
+      customer: customer, //Only return admissions granted to the specified customer
+      tier: tier //Only return admissions granted to this event tier
     })
     .then(admissions => {
       //Do something with the admissions collection
@@ -1354,31 +3397,6 @@ This is done by providing an admissions token which is linked to a specific even
         console.log(`${typeof error} (${error.code}): ${error.message}`)
       }
     })
-```
-
-### End admission session
-
-[API Reference](https://docs.ticketingevents.com/openapi/token-authentication/retrieve_token_auth)
-
-After ending an admission session all further operations will fail. You will first need to start a new
-admissions session to perform these operations.
-
-```javascript
-  let session = await ticketing.session.admission("A0F9GG8D", "Name", "Device")
-  session.end().then(ended => {
-    if(ended){
-      //Do something on success
-    }else{
-      //Do something on failure
-    }
-  }).catch(error => {
-    //Handle errors
-    if(error instanceof InvalidStateError){
-      console.log("The admission session has ended, you must start a new one.")
-    }else{
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
-    }
-  })
 ```
 
 ## Categories
@@ -1644,10 +3662,12 @@ Operations for managing the venues at which event can be staged
 [API Reference](https://ticketing.redoc.ly/tag/Venue-Management#operation/list_venues)
 
 ```javascript
+  let region = await ticketing.regions.find(19290238432215)
+
   ticketing.venues.list()
     // Supported filters with examples
     .filter({
-      region: 19290238432215,
+      region: region,
       name: "Vought Tower"
     })
     .then(venues => {
@@ -1772,8 +3792,6 @@ Operations for managing the venues at which event can be staged
   })
 ```
 
-
-
 ## Presets
 
 Retrieve lists of pre-defined values for use in creating events, hosts, venues and
@@ -1792,5 +3810,117 @@ preset collections cannot be filtered, sorted or paginated.
     .catch(error => {
       //Handle errors
       console.log(`${typeof error} (${error.code}): ${error.message}`)
+    })
+```
+
+## Content Review
+
+### List submissions
+
+[API Reference](https://docs.ticketingevents.com/openapi/reviewing-content/list_submissions)
+
+```javascript
+  ticketing.submissions.list()
+    // Supported filters with examples
+    .filter({
+      type: "event",
+      status: "Pending", //Pending, Approved, Rejected
+    })
+    .then(submissions => {
+      //Do something with the collection of submissions
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof UnsupportedCriteriaError){
+        //Handle unsupported criteria error
+      }else if(error instanceof PageAccessError){
+        //Handle non-existant page error
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch a submission
+
+[API Reference](https://docs.ticketingevents.com/openapi/reviewing-content/retrieve_submission)
+
+```javascript
+  //Retrieve a specific submission using its ID
+  ticketing.submissions.find(17325458293736)
+    .then(submission => {
+      //Do something with the submission resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundError){
+        console.log("There is no submission with the given ID")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Decide on a submission
+
+[API Reference](https://docs.ticketingevents.com/openapi/reviewing-content/take_submission_decision)
+
+```javascript
+  //Retrieve a specific submission using its ID
+  let submission = await ticketing.submissions.find(17325458293736)
+
+  //Approve submission
+  submission.approve("Approval note")
+    .then(decision => {
+      //Do something with the decision resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log("You have entered an invalid approval note.")
+      }else if(error instanceof ResourceExistsError){
+        console.log("A decision has already been taken on this submission.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+
+  //Reject submission
+  submission.reject("Rejection note")
+    .then(decision => {
+      //Do something with the decision resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof BadDataError){
+        console.log("You have entered an invalid rejection note.")
+      }else if(error instanceof ResourceExistsError){
+        console.log("A decision has already been taken on this submission.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
+    })
+```
+
+### Fetch submission decision
+
+[API Reference](https://docs.ticketingevents.com/openapi/reviewing-content/retrieve_submission_decision)
+
+```javascript
+  //Retrieve a specific submission using its ID
+  let submission = await ticketing.submissions.find(17325458293736)
+
+  //Retrieve the submission decision
+  submission.decision
+    .then(submission => {
+      //Do something with the decision resource
+    })
+    .catch(error => {
+      //Handle errors
+      if(error instanceof ResourceNotFoundErroru){
+        console.log("A decision has not yet been taken on this submission.")
+      }else{
+        console.log(`${typeof error} (${error.code}): ${error.message}`)
+      }
     })
 ```

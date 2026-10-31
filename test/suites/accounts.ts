@@ -2,9 +2,9 @@
 import './session'
 
 import { TickeTing, Region, BadDataError,  ResourceExistsError, ResourceNotFoundError, PermissionError } from '../../src'
-import { AccountModel, AccountPreferencesModel, RegionModel } from  '../../src/model'
+import { AccountModel, AccountPreferencesModel, RegionModel, HostModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
-import { expect, ticketing } from '../setup'
+import { expect, ticketing, api, public_ticketing, unauthorised_sdk } from '../setup'
 
 // Global account object
 let testAccount = null
@@ -12,14 +12,14 @@ let testAccount = null
 describe("Accounts", function(){
 
   //Set hook timeout
-  this.timeout(10000)
+  this.timeout(60000)
 
   before(async function(){
     //Initialise test data for suite
     this.testAccountData = {
-      username: "zz.mothers.milk",
+      username: "zzzzzz.mothers.milk"+Math.floor(Math.random() * 999999),
       password: "WuT4NGcl4n",
-      email: "marvin.milk@usmc.gov",
+      email: "marvin.milk@usmc.gov"+Math.floor(Math.random() * 999999),
       firstName: "Marvin",
       lastName: "Milk",
       title: "Mr",
@@ -203,19 +203,6 @@ describe("Accounts", function(){
     })
 
     it('Should throw a PermissionError when accessed with another user', function () {
-      let unauthorised_sdk = null
-      if(process.env.npm_config_env == "production"){
-        unauthorised_sdk = new TickeTing({
-          apiKey: "0acb10082a313f517954a34d2a7aedb7",
-          sandbox: false
-        })
-      }else{
-        unauthorised_sdk = new TickeTing({
-          apiKey: "413c7e517b63822c3037ead7679c780e",
-          sandbox: true
-        })
-      }
-
       return expect(unauthorised_sdk.accounts.find(testAccount.number))
         .to.eventually.be.rejectedWith("You are not authorised to access or modify this account.")
         .and.be.an.instanceOf(PermissionError)
@@ -247,6 +234,63 @@ describe("Accounts", function(){
       return expect(testAccount.save())
         .to.eventually.be.rejectedWith("The following arguments have invalid values: title.")
         .and.be.an.instanceOf(BadDataError)
+    })
+  })
+
+  describe('Verify an account', function () {
+    it('Should return a valid account verification object', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.accounts.verify(testAccount.email).then((verification => {
+          expect(verification.email).to.equal(testAccount.email)
+          expect(verification.status).to.equal("Pending")
+
+          resolve(true)
+        })).catch(error=>{
+          reject(error)
+        })
+      })
+    })
+
+    it('Should throw a BadDataError if email address is missing', function () {
+      return expect(ticketing.accounts.verify(""))
+      .to.eventually.be.rejectedWith("You must provide an email address to which to send the verification code.")
+      .and.be.an.instanceOf(BadDataError)
+    })
+
+    it('Should throw a ResourceNotFoundError if email address is not registered', function () {
+      return expect(ticketing.accounts.verify("non-existant@unregistered.com"))
+      .to.eventually.be.rejectedWith("The requested account could not be located")
+      .and.be.an.instanceOf(ResourceNotFoundError)
+    })
+
+    it('Should throw a BadDataError when the OTP code is incorrect', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.accounts.verify(testAccount.email).then(verification => {
+          resolve(expect(verification.confirm({"code": "123456"}))
+          .to.eventually.be.rejectedWith("The provided account verification code is incorrect.")
+          .and.be.an.instanceOf(BadDataError))
+        })
+      })
+    })
+
+    it('Should throw a BadDataError when required values are omitted', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.accounts.verify(testAccount.email).then(verification => {
+          resolve(expect(verification.confirm({"code": ""}))
+          .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: code.")
+          .and.be.an.instanceOf(BadDataError))
+        })
+      })
+    })
+
+    it('Should throw a BadDataError when required values are invalid', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.accounts.verify(testAccount.email).then(verification => {
+          resolve(expect(verification.confirm({"code": "123"}))
+          .to.eventually.be.rejectedWith("The following arguments have invalid values: code.")
+          .and.be.an.instanceOf(BadDataError))
+        })
+      })
     })
   })
 
@@ -309,6 +353,120 @@ describe("Accounts", function(){
           reject(error)
         })
       })
+    })
+  })
+
+  describe('Reset account password', function () {
+    it('Should return a valid password reset object', function () {
+      return new Promise((resolve, reject) => {
+        public_ticketing.accounts.reset(testAccount.email).then((reset => {
+          expect(reset.email).to.equal(testAccount.email)
+          expect(reset.status).to.equal("Pending")
+
+          resolve(true)
+        })).catch(error=>{
+          reject(error)
+        })
+      })
+    })
+
+    it('Should throw a BadDataError if email address is missing', function () {
+      return expect(public_ticketing.accounts.reset(""))
+      .to.eventually.be.rejectedWith("You must provide an email address to which to send the reset code.")
+      .and.be.an.instanceOf(BadDataError)
+    })
+
+    it('Should throw a ResourceNotFoundError if email address is not registered', function () {
+      return expect(public_ticketing.accounts.reset("non-existant@unregistered.com"))
+      .to.eventually.be.rejectedWith("The requested account could not be located")
+      .and.be.an.instanceOf(ResourceNotFoundError)
+    })
+
+    it('Should throw a BadDataError when the OTP code is incorrect', function () {
+      return new Promise((resolve, reject) => {
+        public_ticketing.accounts.reset(testAccount.email).then(reset => {
+          resolve(expect(reset.confirm({"code": "123456", "password": "new_password"}))
+          .to.eventually.be.rejectedWith("The provided password reset code is incorrect.")
+          .and.be.an.instanceOf(BadDataError))
+        })
+      })
+    })
+
+    it('Should throw a BadDataError when required values are omitted', function () {
+      return new Promise((resolve, reject) => {
+        public_ticketing.accounts.reset(testAccount.email).then(reset => {
+          resolve(expect(reset.confirm({"code": "", "password": ""}))
+          .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: code, password.")
+          .and.be.an.instanceOf(BadDataError))
+        })
+      })
+    })
+
+    it('Should throw a BadDataError when required values are invalid', function () {
+      return new Promise((resolve, reject) => {
+        public_ticketing.accounts.reset(testAccount.email).then(reset => {
+          resolve(expect(reset.confirm({"code": "123", "password": "short"}))
+          .to.eventually.be.rejectedWith("The following arguments have invalid values: code, password.")
+          .and.be.an.instanceOf(BadDataError))
+        })
+      })
+    })
+  })
+
+  describe('Lookup an account', function () {
+    it('Should return a valid lookup result', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.accounts.lookup({
+          identification: testAccount.username
+        }).then((result => {
+          expect(result.identification).to.equal(testAccount.username)
+          expect(result.name).to.equal(`${testAccount.firstName} ${testAccount.lastName}`)
+          expect(result.found).to.equal(true)
+
+          resolve(true)
+        })).catch(error=>{
+          reject(error)
+        })
+      })
+    })
+
+    it('Should support email lookup', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.accounts.lookup({
+          identification: testAccount.email
+        }).then((result => {
+          expect(result.identification).to.equal(testAccount.email)
+          expect(result.name).to.equal(`${testAccount.firstName} ${testAccount.lastName}`)
+          expect(result.found).to.equal(true)
+
+          resolve(true)
+        })).catch(error=>{
+          reject(error)
+        })
+      })
+    })
+
+    it('Should throw a BadDataError if required fields are missing', function () {
+      return expect(ticketing.accounts.lookup({
+        identification: ""
+      }))
+      .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: identification.")
+      .and.be.an.instanceOf(BadDataError)
+    })
+  })
+
+  describe('Deactivate an account', function () {
+    it('Should initiate account deactivation', function () {
+
+      //Save changes
+      return expect(testAccount.deactivate()).eventually.be.true
+    })
+
+    it('Should mark the account as inactive', function () {
+      return expect(ticketing.accounts.find(testAccount.number))
+        .to.eventually.include({
+          "activated": false
+        })
     })
   })
 

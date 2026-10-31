@@ -1,6 +1,7 @@
-import { APIAdapter, Collection } from '../util'
+import { APIAdapter } from '../util/APIAdapter'
+import { Collection } from '../util/Collection'
 import { 
-  BadDataError, ResourceExistsError, ResourceNotFoundError, 
+  BadDataError, PermissionError, ResourceExistsError, ResourceNotFoundError, 
   PageAccessError, UnsupportedCriteriaError, UnsupportedSortError
 } from '../errors'
 
@@ -12,7 +13,8 @@ export class BaseService<RequestType, ResponseType>{
   private __listCollection: Collection<ResponseType>
   private __listFilters: Array<string>
   private __listSortFields: Array<string>
-  private __listCriteria: {[key: string]: string|number}
+  private __filterMappings: {[key: string]: string}
+  private __listCriteria: {[key: string]: string | number}
   private __listResult: {entries: Array<ResponseType>, page: number, records: number, total: number}
 
   constructor(
@@ -20,7 +22,8 @@ export class BaseService<RequestType, ResponseType>{
     baseUrl: string,
     modelClass: any,
     supportedFilters: Array<string> = [],
-    supportedSortFields: Array<string> = []
+    supportedSortFields: Array<string> = [],
+    filterMappings: {[key: string]: string} = {}
   ){
     this.__adapter = apiAdapter
     this.__baseUrl = baseUrl
@@ -32,8 +35,25 @@ export class BaseService<RequestType, ResponseType>{
 
     this.__listFilters = ['page','records','sort','order'].concat(supportedFilters)
     this.__listSortFields = supportedSortFields
+    this.__filterMappings = filterMappings
     this.__listCriteria = {}
     this.__listResult = {entries: [], page: 0, records: 0, total: 0}
+  }
+
+  /**
+   * Force caching for subsequent requests on this service instance.
+   * Overrides the global cache setting. Prefer chaining: `events.cache().find(1)`.
+   */
+  public cache(options: true | { ttl?: number; key?: string; revalidateTimeout?: number } = true): this {
+    return this.__withAdapter(this.__adapter.cache(options))
+  }
+
+  /**
+   * Bypass caching for subsequent requests on this service instance.
+   * Overrides the global cache setting. Prefer chaining: `events.nocache().find(1)`.
+   */
+  public nocache(): this {
+    return this.__withAdapter(this.__adapter.nocache())
   }
 
   public create(data: RequestType): Promise<ResponseType>{
@@ -84,14 +104,22 @@ export class BaseService<RequestType, ResponseType>{
       return this.__listResult.page
     })
 
+    this.__listCollection.onTotal(() => {
+      return this.__listResult.total
+    })
+
     this.__listCollection.onPages(() => {
       return Math.ceil(this.__listResult.total / this.__listResult.records)
     })
 
-    this.__listCollection.onFilter((criteria: {[key: string]: string}) => {
+    this.__listCollection.onFilter((criteria: {[key: string]: any}) => {
       for(const criterion in criteria){
         if(!(criterion in this.__listCriteria)){
-          this.__listCriteria[criterion] = criteria[criterion]
+          if(criterion in this.__filterMappings){
+            this.__listCriteria[criterion] = criteria[criterion][this.__filterMappings[criterion]]
+          }else{
+            this.__listCriteria[criterion] = criteria[criterion] 
+          }
         }
       }
     })
@@ -121,7 +149,9 @@ export class BaseService<RequestType, ResponseType>{
       ).then(response => {
         resolve(this._instantiateModel(response.data))
       }).catch(error => {
-        if(error.code == 404){
+        if(error.code == 403){
+          error = new PermissionError(error.code, error.message)
+        }else if(error.code == 404){
           error = new ResourceNotFoundError(error.code, error.message)
         }
 
@@ -132,6 +162,20 @@ export class BaseService<RequestType, ResponseType>{
 
   protected _instantiateModel(data: any){
     return new this.__modelClass(data, this.__adapter)
+  }
+
+  private __withAdapter(adapter: APIAdapter): this {
+    const scoped = Object.assign(
+      Object.create(Object.getPrototypeOf(this)),
+      this
+    ) as this
+
+    scoped.__adapter = adapter
+    if ('__apiAdapter' in scoped) {
+      ;(scoped as { __apiAdapter: APIAdapter }).__apiAdapter = adapter
+    }
+
+    return scoped
   }
 
   private __listQuery(resolve, reject){

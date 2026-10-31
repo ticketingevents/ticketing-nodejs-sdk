@@ -1,0 +1,6 @@
+import { Base } from './Base'
+
+export interface Role extends Base{
+  name: string
+  permissions: Array<string>
+}

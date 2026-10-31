@@ -1,5 +1,5 @@
 //Control execution order
-import './admissions'
+import './accounts'
 
 import { expect, ticketing } from '../setup'
 

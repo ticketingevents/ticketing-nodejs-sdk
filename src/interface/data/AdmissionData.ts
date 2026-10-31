@@ -1,12 +1,12 @@
-import { Account } from '../Account'
-import { Section } from '../Section'
+import { AccountListing } from '../AccountListing'
+import { TierListing } from '../TierListing'
 
 export interface AdmissionData{
   redeemer: string
   device: string
   serials?: string[]
-  ticket?: string
-  patron?: Account | string
-  section?: Section | string
+  serial?: string
+  customer?: AccountListing | string
+  tier?: TierListing | string
   admitted?: string
 }

@@ -2,21 +2,58 @@
 import './venues'
 
 import { TickeTing, Host, BadDataError, PermissionError, ResourceExistsError, ResourceNotFoundError } from '../../src'
-import { HostModel } from  '../../src/model'
+import { HostModel, EventRevisionModel, CategoryModel, RoleModel, VenueModel, PrivilegeModel } from  '../../src/model'
 import { Collection } from  '../../src/util'
-import { expect, ticketing } from '../setup'
+import { expect, ticketing, unauthorised_sdk } from '../setup'
 
-//Global host object
+//Global objects
 let testHost = null
+let testPrivilege = null
 
-describe("Hosts", function(){
+describe("Host Management", function(){
+
+  //Set hook timeout
+  this.timeout(60000)
 
   before(async function(){
-    //An event to test duplication
+    //A host to test duplication
     this.secondHost = await ticketing.hosts.create({
-      name: "Second Host "+Math.floor(Math.random() * 999999),
+      name: "Host "+Math.floor(Math.random() * 999999),
       contact: "Second Contact",
-      email: "test@second.com"
+      email: "test@second.com",
+      country: "Vietnam"
+    })
+
+    //Add an event to test hosted events collection
+    this.category = await ticketing.categories.create({
+      name: "Event Category "+Math.floor(Math.random() * 999999),
+      subcategories: ["Event Subcategory "+Math.floor(Math.random() * 999999)]
+    })
+
+    this.region = await ticketing.regions.create({
+      "name": "Region "+Math.floor(Math.random() * 999999),
+      "country": "Antigua and Barbuda"
+    })
+
+    this.venue = await ticketing.venues.create({
+      name: "Venue "+Math.floor(Math.random() * 999999),
+      region: this.region,
+      longitude: -70.99214,
+      latitude: 43.75518,
+      address: "Miami Beach, Miami, Florida"
+    })
+
+    //An event to test duplication
+    this.testHostedEvent = await this.secondHost.events.create({
+      title: "Hosted Event "+Math.floor(Math.random() * 999999),
+      description: "Event Description",
+      type: "Standard",
+      public: true,
+      category: this.category,
+      subcategory: this.category.subcategories[0],
+      venue: this.venue,
+      start: "3034-06-07T20:00",
+      end: "3034-06-07T23:00"
     })
 
     //Initialise test data for suite
@@ -24,19 +61,28 @@ describe("Hosts", function(){
       name: "Test Host "+Math.floor(Math.random() * 999999),
       contact: "Test Contact",
       email: "test@test.com",
-      description: "A host for hosting test events",
+      bio: "A host for hosting test events",
       phone: "+1 (268) 555 5555",
       website: "https://test.com",
       country: "Antigua and Barbuda",
       firstAddressLine: "Test Address",
       secondAddressLine: "Test Street",
       city: "Test City",
-      state: "Test State",
+      district: "Test State",
       businessNo: "0000000000"
+    }
+
+    this.testPrivilegeData = {
+      user: "billy.butcher@fbsa.gov",
+      role: "Editor"
     }
   })
 
   after(async function(){
+    await this.testHostedEvent.delete()
+    await this.venue.delete()
+    await this.region.delete()
+    await this.category.delete()
     await this.secondHost.delete()
   })
 
@@ -59,35 +105,72 @@ describe("Hosts", function(){
 
     it('Should throw a BadDataError if required fields are missing', function () {
       return expect(ticketing.hosts.create({name: "", contact: "", email: ""}))
-        .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: name, contact, email.")
+        .to.eventually.be.rejectedWith("Your request payload is invalid. Please ensure you have included all required fields and values are well-formed.")
         .and.be.an.instanceOf(BadDataError)
     })
 
     it('Should throw a ResourceExistsError when using an existing name', function () {
       return expect(ticketing.hosts.create(this.testHostData))
-        .to.eventually.be.rejectedWith("The following arguments conflict with those of another host: name.")
+        .to.eventually.be.rejectedWith("Creating the requested Host would violate uniqueness constraints.")
         .and.be.an.instanceOf(ResourceExistsError)
     })
   })
 
   describe('List event hosts', function () {
     it('Should return a collection of Host resources', function () {
-      return expect(ticketing.hosts.list()).eventually.to.all.be.instanceof(HostModel)
+      return new Promise((resolve, reject) => {
+        ticketing.hosts.list(5).then(hosts => {
+          expect(hosts.length).to.be.at.least(1)
+          expect(hosts).to.all.be.instanceof(HostModel)
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
     })
 
-    it('Should contain the newly created host as its last resource', function () {
+    it('Should return a collection of hosts matching the name filter', function () {
       return new Promise((resolve, reject) => {
-        let collection = ticketing.hosts.list(1)
-        collection.pages.then(pages => {
-          collection.goto(pages).then(hosts => {
-            expect(hosts[0])
-              .to.be.an.instanceof(HostModel)
-              .and.to.deep.include(this.testHostData)
+        ticketing.hosts.list(5).filter({name: this.testHostData.name}).then(hosts => {
+          expect(hosts.length).to.be.at.least(1)
+          
+          for(let host of hosts){
+            expect(host.name).to.equal(this.testHostData.name)
+          }
 
-            resolve(true)
-          }).catch(error => {
-            reject(error)
-          })
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return a collection of hosts matching the country filter', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.hosts.list(5).filter({country: this.secondHost.country}).then(hosts => {
+          expect(hosts.length).to.be.at.least(1)
+          
+          for(let host of hosts){
+            expect(host.country).to.equal(this.secondHost.country)
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return hosts sorted by name in ascending order', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.hosts.list(5).sort("alphabetical").then(hosts => {
+          expect(hosts).to.have.lengthOf.at.least(1)
+          expect(hosts.map(host => host.name.toLowerCase())).to.be.ascending
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
         })
       })
     })
@@ -101,8 +184,8 @@ describe("Hosts", function(){
     })
 
     it('Should throw a ResourceNotFoundError when using a non-existant ID', function () {
-      return expect(ticketing.hosts.find(12345))
-        .to.eventually.be.rejectedWith("The specified host could not be found.")
+      return expect(ticketing.hosts.find(12345678901234))
+        .to.eventually.be.rejectedWith("There is presently no host with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
   })
@@ -130,24 +213,11 @@ describe("Hosts", function(){
       testHost.name = ""
 
       return expect(testHost.save())
-        .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: name.")
+        .to.eventually.be.rejectedWith("Your request payload is invalid. Please ensure you have included all required fields and values are well-formed.")
         .and.be.an.instanceOf(BadDataError)
     })
 
     it('Should throw a PermissionError when not a host administrator', function () {
-      let unauthorised_sdk = null
-      if(process.env.npm_config_env == "production"){
-        unauthorised_sdk = new TickeTing({
-          apiKey: "0acb10082a313f517954a34d2a7aedb7",
-          sandbox: false
-        })
-      }else{
-        unauthorised_sdk = new TickeTing({
-          apiKey: "413c7e517b63822c3037ead7679c780e",
-          sandbox: true
-        })
-      }
-
       return new Promise((resolve, reject) => {
         unauthorised_sdk.hosts.find(testHost.id).then(unauthorised_host => {
           expect(unauthorised_host.save())
@@ -155,6 +225,8 @@ describe("Hosts", function(){
             .and.be.an.instanceOf(PermissionError)
 
           resolve(true)
+        }).catch(error => {
+          reject(error)
         })
       })
     })
@@ -164,26 +236,161 @@ describe("Hosts", function(){
       testHost.name = this.secondHost.name
 
       return expect(testHost.save())
-        .to.eventually.be.rejectedWith("The following arguments conflict with those of another host: name.")
+        .to.eventually.be.rejectedWith("Creating the requested Host would violate uniqueness constraints.")
         .and.be.an.instanceOf(ResourceExistsError)
+    })
+  })
+
+  describe('Grant a privilege', function () {
+    it('Should return a valid Privilege object', function () {
+      return new Promise((resolve, reject) => {
+        testHost.privileges.create(this.testPrivilegeData).then((privilege => {
+          testPrivilege = privilege
+
+          expect(privilege).to.be.an.instanceof(PrivilegeModel)
+          expect(privilege.user).to.equal(this.testPrivilegeData.user)
+          expect(privilege.role).to.be.an.instanceOf(RoleModel).
+            and.to.have.property("name", this.testPrivilegeData.role)
+          expect(privilege.type).to.equal("host")
+          expect(privilege.resource).to.equal(testHost.id)
+          expect(privilege.pending).to.equal(true)
+
+          resolve(true)
+        })).catch(error=>{
+          reject(error)
+        })
+      })
+    })
+
+    it('Should throw a BadDataError if required fields are missing', function () {
+      return expect(testHost.privileges.create({
+        user: "",
+        role: ""
+      }))
+      .to.eventually.be.rejectedWith("Your request payload is invalid. Please ensure you have included all required fields and values are well-formed.")
+      .and.be.an.instanceOf(BadDataError)
+    })
+
+    it('Should throw a ResourceExistsError if the requested privilege has already been granted.', function () {
+      return expect(testHost.privileges.create(this.testPrivilegeData))
+      .to.eventually.be.rejectedWith("Creating the requested Privilege would violate uniqueness constraints.")
+      .and.be.an.instanceOf(ResourceExistsError)
+    })
+  })
+
+  describe('List privileges', function () {
+    it('Should return a collection of Privilege resources', function () {
+      return expect(testHost.privileges.list()).eventually.to.all.be.instanceof(PrivilegeModel)
+    })
+
+    it('Should contain the newly granted privilege as its first resource', function () {
+      return new Promise((resolve, reject) => {
+        testHost.privileges.list(1).then(privileges => {
+          expect(privileges[0]).to.be.an.instanceof(PrivilegeModel)
+          expect(privileges[0].user).to.be.a.string
+          expect(privileges[0].role).to.be.an.instanceOf(RoleModel).
+            and.to.have.property("name", "Owner")
+          expect(privileges[0].type).to.equal("host")
+          expect(privileges[0].resource).to.equal(testHost.id)
+          expect(privileges[0].pending).to.equal(false)
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return a collection of privileges matching the role filter', function () {
+      return new Promise((resolve, reject) => {
+        testHost.privileges.list(5).filter({role: "Editor"}).then(privileges => {
+          expect(privileges).to.have.a.lengthOf.at.least(1)
+          for(const privilege of privileges){
+            expect(privilege.role).to.be.an.instanceOf(RoleModel).
+              and.to.have.property("name", this.testPrivilegeData.role)
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+  })
+
+  describe('Fetch a privilege', function () {
+    it('Should return the identified Privilege resource', function () {
+      return new Promise((resolve, reject) => {
+        testHost.privileges.find(testPrivilege.id).then(privilege => {
+          expect(privilege).to.be.an.instanceof(PrivilegeModel)
+          expect(privilege.user).to.equal(this.testPrivilegeData.user)
+          expect(privilege.role).to.be.an.instanceOf(RoleModel).
+            and.to.have.property("name", this.testPrivilegeData.role)
+          expect(privilege.type).to.equal("host")
+          expect(privilege.resource).to.equal(testHost.id)
+          expect(privilege.pending).to.equal(true)
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should throw a ResourceNotFoundError when using a non-existant ID', function () {
+      return expect(testHost.privileges.find(12345678901234))
+        .to.eventually.be.rejectedWith("There is presently no privilege with the given URI.")
+        .and.be.an.instanceOf(ResourceNotFoundError)
+    })
+  })
+
+  describe('Update a privilege', function () {
+    it('Should save the changes made to the privilege', function () {
+      //Make changes to the privilege
+      testPrivilege.role = "Administrator"
+
+      //Save changes
+      return expect(testPrivilege.save()).eventually.be.true
+    })
+
+    it('Should persist privilege changes', function () {
+      return new Promise((resolve, reject) => {
+        testHost.privileges.find(testPrivilege.id).then(privilege => {
+          expect(privilege.user).to.equal(this.testPrivilegeData.user)
+          expect(privilege.role).to.be.an.instanceOf(RoleModel).
+            and.to.have.property("name", "Administrator")
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should throw a BadDataError if required fields are invalid', function () {
+      //Make invalid changes to the privilege
+      testPrivilege.role = "Owner"
+
+      return expect(testPrivilege.save())
+        .to.eventually.be.rejectedWith("Your request payload is invalid. Please ensure you have included all required fields and values are well-formed.")
+        .and.be.an.instanceOf(BadDataError)
+    })
+  })
+
+  describe('Revoke a privilege', function () {
+    it('Should revoke the privilege', function () {
+      return expect(testPrivilege.delete()).to.eventually.be.true
+    })
+
+    it('Privilege should no longer be retrievable', function () {
+      return expect(testHost.privileges.find(testPrivilege.id))
+        .to.eventually.be.rejectedWith("There is presently no privilege with the given URI.")
+        .and.be.an.instanceOf(ResourceNotFoundError)
     })
   })
 
   describe('Delete an event host', function () {
     it('Should throw a PermissionError when not a host administrator', function () {
-      let unauthorised_sdk = null
-      if(process.env.npm_config_env == "production"){
-        unauthorised_sdk = new TickeTing({
-          apiKey: "0acb10082a313f517954a34d2a7aedb7",
-          sandbox: false
-        })
-      }else{
-        unauthorised_sdk = new TickeTing({
-          apiKey: "413c7e517b63822c3037ead7679c780e",
-          sandbox: true
-        })
-      }
-
       return new Promise((resolve, reject) => {
         unauthorised_sdk.hosts.find(testHost.id).then(unauthorised_host => {
           expect(unauthorised_host.delete())
@@ -191,6 +398,8 @@ describe("Hosts", function(){
             .and.be.an.instanceOf(PermissionError)
 
           resolve(true)
+        }).catch(error => {
+          reject(error)
         })
       })
     })
@@ -201,7 +410,7 @@ describe("Hosts", function(){
 
     it('Host should no longer be retrievable', function () {
       return expect(ticketing.hosts.find(testHost.id))
-        .to.eventually.be.rejectedWith("The specified host could not be found.")
+        .to.eventually.be.rejectedWith("There is presently no host with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
   })

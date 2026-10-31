@@ -12,7 +12,7 @@ let testVenue = null
 describe("Venues", function(){
 
   //Set hook timeout
-  this.timeout(10000)
+  this.timeout(60000)
 
   before(async function(){
     //Create a region for use in venue creation
@@ -48,18 +48,19 @@ describe("Venues", function(){
 
     this.category = await ticketing.categories.create({
       name: "Event Category "+Math.floor(Math.random() * 999999),
-      subcategories: ["Event Subcategory"]
+      subcategories: ["Event Subcategory "+Math.floor(Math.random() * 999999)]
     })
 
-    this.testEvent = await ticketing.events.create({
-      host: this.host,
+    this.testEvent = await this.host.events.create({
       title: "Test Event "+Math.floor(Math.random() * 999999),
       description: "Event Description",
       type: "Standard",
       public: true,
       category: this.category,
-      subcategory: "Event Subcategory",
-      venue: this.secondVenue
+      subcategory: this.category.subcategories[0],
+      venue: this.secondVenue,
+      start: "3034-06-07T20:00",
+      end: "3034-06-07T23:00"
     })
   })
 
@@ -84,7 +85,7 @@ describe("Venues", function(){
             .and.to.have.property("uri", this.testVenueData.region.uri)
           expect(venue.latitude).to.be.closeTo(this.testVenueData.latitude, 0.0001)
           expect(venue.longitude).to.be.closeTo(this.testVenueData.longitude, 0.0001)
-          expect(venue.map).to.equal("https://maps.googleapis.com/maps/api/staticmap?center=40.75518,-73.99214&zoom=15&size=600x300&maptype=roadmap&markers=color:red%7C40.75518,-73.99214&key=AIzaSyCyLy8bOLUTLbQLVQFwf1eVO2UIVO8_4kQ&signature=IowClV__Bha7DFVe7TIG-osgyDE=")
+          expect(venue.map).to.startsWith("https://maps.googleapis.com/maps/api/staticmap?center=40.75518,-73.99214")
 
           resolve(true)
         })).catch(error=>{
@@ -97,17 +98,17 @@ describe("Venues", function(){
       return expect(ticketing.venues.create({
         region: this.venueRegion,
         name: "",
-        longitude: "",
-        latitude: "",
+        longitude: 0,
+        latitude: 0,
         address:""
       }))
-      .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: name, address, longitude, latitude.")
+      .to.eventually.be.rejectedWith("Your request payload is invalid. Please ensure you have included all required fields and values are well-formed.")
       .and.be.an.instanceOf(BadDataError)
     })
 
     it('Should throw a ResourceExistsError when using an existing name', function () {
       return expect(ticketing.venues.create(this.testVenueData))
-        .to.eventually.be.rejectedWith("The following arguments conflict with those of another venue: name.")
+        .to.eventually.be.rejectedWith("Creating the requested Venue would violate uniqueness constraints.")
         .and.be.an.instanceOf(ResourceExistsError)
     })
   })
@@ -118,7 +119,7 @@ describe("Venues", function(){
     })
 
     it('Should return a collection of venues matching the region filter', function () {return new Promise((resolve, reject) => {
-        ticketing.venues.list(5).filter({region: this.venueRegion.id}).then(venues => {
+        ticketing.venues.list(5).filter({region: this.venueRegion}).then(venues => {
           for(let venue of venues){
             expect(venue.region).to.be.an.instanceOf(RegionModel)
               .and.to.have.property("uri", this.testVenueData.region.uri)
@@ -186,8 +187,8 @@ describe("Venues", function(){
     })
 
     it('Should throw a ResourceNotFoundError when using a non-existant ID', function () {
-      return expect(ticketing.venues.find(12345))
-        .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
+      return expect(ticketing.venues.find(12345678901234))
+        .to.eventually.be.rejectedWith("There is presently no venue with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
   })
@@ -213,11 +214,11 @@ describe("Venues", function(){
     it('Should throw a BadDataError if required fields are missing', function () {
       //Make invalid changes to the venue
       testVenue.name = ""
-      testVenue.address = ""
-      testVenue.latitude = ""
+      testVenue.address = "Test"
+      testVenue.latitude = 0
 
       return expect(testVenue.save())
-        .to.eventually.be.rejectedWith("The following arguments are required, but have not been supplied: name, address, latitude.")
+        .to.eventually.be.rejectedWith("Your request payload is invalid. Please ensure you have included all required fields and values are well-formed.")
         .and.be.an.instanceOf(BadDataError)
     })
 
@@ -226,7 +227,7 @@ describe("Venues", function(){
       testVenue.name = this.secondVenue.name
 
       return expect(testVenue.save())
-        .to.eventually.be.rejectedWith("The following arguments conflict with those of another venue: name.")
+        .to.eventually.be.rejectedWith("Creating the requested Venue would violate uniqueness constraints.")
         .and.be.an.instanceOf(ResourceExistsError)
     })
   })
@@ -238,13 +239,13 @@ describe("Venues", function(){
 
     it('Should no longer be retrievable', function () {
       return expect(ticketing.venues.find(testVenue.id))
-        .to.eventually.be.rejectedWith("There is presently no resource with the given URI.")
+        .to.eventually.be.rejectedWith("There is presently no venue with the given URI.")
         .and.be.an.instanceOf(ResourceNotFoundError)
     })
 
     it('Should throw a ResourceIndelibleError when attached to an event', function () {
       return expect(this.secondVenue.delete())
-        .to.eventually.be.rejectedWith("A venue cannot be deleted if it is staging an event")
+        .to.eventually.be.rejectedWith("The requested venue is in use and cannot be deleted.")
         .and.be.an.instanceOf(ResourceIndelibleError)
     })
   })

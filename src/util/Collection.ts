@@ -1,9 +1,10 @@
-import { Collection as CollectionInterface } from '../interface'
+import { Collection as CollectionInterface } from '../interface/Collection'
 
 export class Collection<T> extends Promise<Array<T>> implements CollectionInterface<T>{
   private __executor: (resolve, reject) => void
+  private __onTotal: () => number = () => {return 0}
   private __onPages: () => number = () => {return 0}
-  private __onFilter: (criteria: {[key: string]: string | number}) => void = () => {}
+  private __onFilter: (criteria: {[key: string]: any}) => void = () => {}
   private __onSort: (field: string, ascending: string) => void = () => {}
   private __onCurrent: () => number = () => {return 0}
   private __onPageChange: (page: number) => void = () => {}
@@ -38,15 +39,27 @@ export class Collection<T> extends Promise<Array<T>> implements CollectionInterf
     })
   }
 
-  get pages(): Promise<number>{
+  get total(): Promise<number>{
     return new Promise((resolve) => {
       this.then(() => {
-        resolve(this.__onPages())
+        resolve(this.__onTotal())
+      }).catch(() => {
+        resolve(0)
       })
     })
   }
 
-  filter(criteria: {[key: string]: string|number}): Collection<T>{
+  get pages(): Promise<number>{
+    return new Promise((resolve) => {
+      this.then(() => {
+        resolve(this.__onPages())
+      }).catch(() => {
+        resolve(0)
+      })
+    })
+  }
+
+  filter(criteria: {[key: string]: any}): Collection<T>{
     return this.__copy((resolve, reject)=>{
       this.__onFilter(criteria)
       this.__executor(resolve, reject)
@@ -65,6 +78,8 @@ export class Collection<T> extends Promise<Array<T>> implements CollectionInterf
       this.current.then(current => {
         this.__goto(current+1)
         this.__executor(resolve, reject)
+      }).catch(error => {
+        reject(error)
       })
     }, this.__cursor+1)
   }
@@ -74,6 +89,8 @@ export class Collection<T> extends Promise<Array<T>> implements CollectionInterf
       this.current.then(current => {
         this.__goto(current-1)
         this.__executor(resolve, reject)
+      }).catch(error => {
+        reject(error)
       })
     }, this.__cursor-1)
   }
@@ -104,11 +121,15 @@ export class Collection<T> extends Promise<Array<T>> implements CollectionInterf
     this.__onCurrent = callback
   }
 
+  onTotal(callback: () => number){
+    this.__onTotal = callback
+  }
+
   onPages(callback: () => number){
     this.__onPages = callback
   }
 
-  onFilter(callback: (criteria: {[key: string]: string}) => void){
+  onFilter(callback: (criteria: {[key: string]: any}) => void){
     this.__onFilter = callback
   }
 
@@ -131,6 +152,7 @@ export class Collection<T> extends Promise<Array<T>> implements CollectionInterf
 
     const collection = new Collection<T>(executor, false, cursor)
     collection.onCurrent(this.__onCurrent)
+    collection.onTotal(this.__onTotal)
     collection.onPages(this.__onPages)
     collection.onFilter(this.__onFilter)
     collection.onSort(this.__onSort)
