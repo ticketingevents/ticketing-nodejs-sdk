@@ -34,8 +34,10 @@ export class TierListingModel extends BaseModel implements TierListing{
 		this.form = null
 
 		this.upgrades = []
-		for(const upgrade of tier.upgrades){
-			this.upgrades.push(new TierListingModel(upgrade, adapter))
+		if(tier.upgrades){
+			for(const upgrade of tier.upgrades){
+				this.upgrades.push(new TierListingModel(upgrade, adapter))
+			}
 		}
 
     if(tier.form && tier.form.self){

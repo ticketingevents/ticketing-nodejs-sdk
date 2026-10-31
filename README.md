@@ -3318,10 +3318,10 @@ need to start a new admissions session to perform these operations.
 
 ```javascript
   let session = await ticketing.session.admission("A0F9GG8D", "Name", "Device")
-  session.tickets(25 // page size) // The tickets method returns a standard collection
+  session.tickets.list(25)
     // Supported filters with examples
     .filter({
-      modified_since: "2024-02-21T14:59:18+00:00" //Only return tickets with a status change after the specified date
+      modified_since: 1793396664 //Only return tickets with a status change after the specified timestamp
     })
     .then(tickets => {
       //Do something with the collection of tickets
@@ -3344,13 +3344,11 @@ need to start a new admissions session to perform these operations.
 
 ```javascript
   let session = await ticketing.session.admission("A0F9GG8D", "Name", "Device")
-  session.admit(
-    [ //List of ticket serials to attempt to redeem for entry to the event
+  session.admissions.admit([
       "DAWIER-BACK75580348",
       "DAWIER-VIPV37536946",
       "DAWIER-BACK75580348"
-    ]
-  )
+  ])
   .then(admissions => {
     //Do something with the list of successful admissions
   })
@@ -3373,17 +3371,17 @@ need to start a new admissions session to perform these operations.
 ```javascript
   let session = await ticketing.session.admission("A0F9GG8D", "Name", "Device")
 
-  let ticket = await ticketing.tickets.find("DAWIER-BACK75580348")
-  let patron = await ticketing.accounts.find("AZ-4918SF92")
-  let tier = (await ticketing.events.find(16993717817996)).tiers[0]
+  let host = await ticketing.hosts.find(17327135633743)
+  let customer = await ticketing.accounts.find("AZ-4918SF92")
+  let tier = await host.tiers.find(19240249258262)
 
-  session.admissions(25 //page size) // The admissions() method returns a standard collection
+  session.admissions.list(25)
     // Supported filters with examples
     .filter({
       redeemer: "Billy Butcher", //Only return admissions granted by this redeemer
       device: "Google Pixel Pro 6", //Only return admissions granted from this device
-      ticket: ticket, //Only return the admission granted on this ticket
-      patron: patron, //Only return admissions granted to the specified patron
+      ticket: "DAWIER-BACK75580348", //Only return the admission granted on this ticket
+      customer: customer, //Only return admissions granted to the specified customer
       tier: tier //Only return admissions granted to this event tier
     })
     .then(admissions => {

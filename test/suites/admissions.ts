@@ -3,9 +3,14 @@ import './reporting'
 
 import { 
 	TickeTing, BadDataError, InvalidStateError, ResourceImmutableError,
-	ResourceIndelibleError, UnauthorisedError, ResourceNotFoundError
+	ResourceIndelibleError, UnauthorisedError, ResourceNotFoundError,
+	PageAccessError
 } from '../../src'
-import { AdmissionModel, TicketModel, EventListingModel, TierListingModel, AdmissionTokenModel } from  '../../src/model'
+import { TickeTingError } from '../../src/errors'
+import { 
+	AdmissionModel, TicketModel, EventListingModel, TierListingModel, 
+	AdmissionTokenModel, AccountListingModel
+} from  '../../src/model'
 import { Collection } from  '../../src/util'
 import { expect, ticketing, api } from '../setup'
 
@@ -134,6 +139,11 @@ describe("Event Admissions", function(){
 			"tiers": [this.tier]
 		}
 
+		//Retrieve tickets from wallet
+		let tickets = await this.customer.wallet.list(5)
+		for(let ticket of tickets){
+			testSerials.push(ticket.serial)
+		}
 	})
 
 	after(async function(){
@@ -283,7 +293,7 @@ describe("Event Admissions", function(){
     })
   })
 
-  describe.skip('Start admission session', function () {
+  describe('Start admission session', function () {
 		it('Should return a valid admission session object', function () {
 		  return new Promise((resolve, reject) => {
 				ticketing.session.admission(testToken.code, "Name", "Device").then((session => {
@@ -293,7 +303,7 @@ describe("Event Admissions", function(){
 				  expect(session.name).to.eq("Name")
 				  expect(session.device).to.eq("Device")
 				  expect(session.code).to.eq(testToken.code)
-				  expect(session.event.uri).to.deep.eq(this.event.uri)
+				  expect(session.event.id).to.deep.eq(this.event.id)
 
 				  //Create tier list
 				  let tiers = []
@@ -313,39 +323,31 @@ describe("Event Admissions", function(){
 		})
 
 		it('Should throw a UnauthorisedError if an invalid code is provided', function () {
-		  return expect(ticketing.session.admission("INVALID", "Name", "Device"))
+		  return expect(ticketing.session.admission("INVALID1", "Name", "Device"))
 			  .to.eventually.be.rejectedWith("The provided code does not belong to any event token")
 			  .and.be.an.instanceOf(UnauthorisedError)
 		})
   })
 
-  describe.skip('List valid tickets', function () {
+  describe('List valid tickets', function () {
 		it('Should return a collection of Ticket resources', function () {
-		  return expect(testSession.tickets()).eventually.to.all.be.instanceof(TicketModel)
+		  return expect(testSession.tickets.list()).eventually.to.all.be.instanceof(TicketModel)
 		})
 
 		it('Should contain valid Ticket resources', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.tickets().then(tickets => {
+				testSession.tickets.list().then(tickets => {
 				  let sample = tickets[Math.floor(Math.random()*tickets.length)]
 
-				  let sections = []
-				  for(let section of testSession.sections){
-				  	sections.push(section.uri)
-				  }
-
-				  testTicket = tickets[0]
-				  for(let ticket of tickets){
-				  	testSerials.push(ticket.serial)
-				  }
-
-				  expect(sample).to.be.an.instanceof(TicketModel)
-				  expect(sample.serial).to.match(/[0-9A-Z]{6}\-[0-9A-Z]{12}/)
-				  expect(sample.status).to.eq("Issued")
-				  expect(sections).to.include(sample.section.uri)
-				  expect(sample.owner.uri).to.match(/\/accounts\/[A-Z]{2}\-[A-Z0-9]{8}/)
-				  expect(sample.issued).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+00:00/)
-				  expect(sample.redeemed).to.eq("N/A")
+          expect(sample).to.be.an.instanceof(TicketModel)
+    		  expect(sample.serial).to.match(/[0-9A-Z]{6}\-[0-9A-Z]{12}/)
+    		  expect(sample.status).to.be.oneOf(["Issued", "Unclaimed", "Held", "Redeemed"])
+    		  expect(sample.tier.uri).to.eq(this.tier.uri)
+          expect(sample.customer).to.be.an.instanceOf(AccountListingModel)
+            .and.to.have.property("uri", this.customer.uri)
+    		  expect(sample.issued).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}/)
+    		  expect(sample.redeemed).to.eq("0000-00-00T00:00:00")
+          expect(sample.details).to.be.an("object")
 
 				  resolve(true)
 				}).catch(error => {
@@ -356,7 +358,7 @@ describe("Event Admissions", function(){
 
 		it('Should return a number of records equal to the page size', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.tickets(3).then(tickets => {
+				testSession.tickets.list(3).then(tickets => {
 				  expect(tickets.length).to.be.equal(3)
 
 				  resolve(true)
@@ -367,41 +369,27 @@ describe("Event Admissions", function(){
 		})
 
 		it('Should return an empty collection using the modified_since filter', function () {
-		  return new Promise((resolve, reject) => {
-				testSession.tickets().filter({modified_since: testTimestamp}).then(tickets => {
-				  expect(tickets.length).to.be.at.least(1)
-
-				  for(let ticket of tickets){
-				  	expect(ticket.section.uri).to.eq(this.secondSection.uri)
-				  }
-
-				  resolve(true)
-				}).catch(error => {
-				  reject(error)
-				})
-		  })
+		  return expect(testSession.tickets.list().filter({
+					modified_since: new Date().getTime().toString().slice(0,-3)
+				}))
+		  		.to.eventually.be.rejectedWith("The specified page does not exist for the given records per page.")
+			  	.and.be.an.instanceOf(PageAccessError)
 		})
   })
 
-  describe.skip('Grant admission to event', function () {
+  describe('Grant admission to event', function () {
 		it('Should return a collection of Admission resources', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.admit(testSerials).then((admissions => {
+				testSession.admissions.admit(testSerials).then((admissions => {
 					expect(admissions).to.all.be.instanceof(AdmissionModel)
 
 				  let sample = admissions[Math.floor(Math.random()*admissions.length)]
-
-				  let sections = []
-				  for(let section of testSession.sections){
-				  	sections.push(section.uri)
-				  }
-
 				  expect(sample.redeemer).to.eq(testSession.name)
 				  expect(sample.device).to.eq(testSession.device)
-				  expect(sample.ticket).to.match(/[0-9A-Z]{6}\-[0-9A-Z]{12}/)
-				  expect(sample.patron.uri).to.match(/\/accounts\/[A-Z]{2}\-[A-Z0-9]{8}/)
-				  expect(sections).to.include(sample.section.uri)
-				  expect(sample.admitted).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+00:00/)
+				  expect(sample.serial).to.match(/[0-9A-Z]{6}\-[0-9A-Z]{12}/)
+				  expect(sample.customer.uri).to.match(/\/accounts\/[A-Z]{2}\-[A-Z0-9]{8}/)
+				  expect([this.tier.uri, this.second_tier.uri]).to.include(sample.tier.uri)
+				  expect(sample.admitted).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}/)
 
 				  resolve(true)
 				})).catch(error=>{
@@ -411,33 +399,28 @@ describe("Event Admissions", function(){
 		})
 
 		it('Should throw a BadDataError if no valid serials are provided', function () {
-		  return expect(testSession.admit(testSerials))
-			  .to.eventually.be.rejectedWith("None of the provided ticket serials grants admission to this event")
+		  return expect(testSession.admissions.admit(testSerials))
+			  .to.eventually.be.rejectedWith("None of the provided ticket serials is valid for admission to any of the admission token's tiers.")
 			  .and.be.an.instanceOf(BadDataError)
 		})
   })
 
-  describe.skip('List event admissions', function () {
+  describe('List event admissions', function () {
 		it('Should return a collection of Admission resources', function () {
-		  return expect(testSession.admissions()).eventually.to.all.be.instanceof(AdmissionModel)
+		  return expect(testSession.admissions.list()).eventually.to.all.be.instanceof(AdmissionModel)
 		})
 
 		it('Should contain valid Admission resources', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.admissions().then(admissions => {
+				testSession.admissions.list().then(admissions => {
 				  let sample = admissions[Math.floor(Math.random()*admissions.length)]
-
-				  let sections = []
-				  for(let section of testSession.sections){
-				  	sections.push(section.uri)
-				  }
 
 				  expect(sample.redeemer).to.eq(testSession.name)
 				  expect(sample.device).to.eq(testSession.device)
-				  expect(sample.ticket).to.match(/[0-9A-Z]{6}\-[0-9A-Z]{12}/)
-				  expect(sample.patron.uri).to.match(/\/accounts\/[A-Z]{2}\-[A-Z0-9]{8}/)
-				  expect(sections).to.include(sample.section.uri)
-				  expect(sample.admitted).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+00:00/)
+				  expect(sample.serial).to.match(/[0-9A-Z]{6}\-[0-9A-Z]{12}/)
+				  expect(sample.customer.uri).to.match(/\/accounts\/[A-Z]{2}\-[A-Z0-9]{8}/)
+				  expect([this.tier.uri, this.second_tier.uri]).to.include(sample.tier.uri)
+				  expect(sample.admitted).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}/)
 
 				  resolve(true)
 				}).catch(error => {
@@ -448,7 +431,7 @@ describe("Event Admissions", function(){
 
 		it('Should return a number of records equal to the page size', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.admissions(3).then(admissions => {
+				testSession.admissions.list(3).then(admissions => {
 				  expect(admissions.length).to.be.equal(3)
 
 				  resolve(true)
@@ -460,7 +443,7 @@ describe("Event Admissions", function(){
 
 		it('Should return a collection of admissions matching the redeemer filter', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.admissions().filter({redeemer: testSession.name}).then(admissions => {
+				testSession.admissions.list().filter({redeemer: testSession.name}).then(admissions => {
 				  expect(admissions.length).to.be.at.least(1)
 
 				  for(let admission of admissions){
@@ -476,7 +459,7 @@ describe("Event Admissions", function(){
 
 		it('Should return a collection of admissions matching the device filter', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.admissions().filter({device: testSession.device}).then(admissions => {
+				testSession.admissions.list().filter({device: testSession.device}).then(admissions => {
 				  expect(admissions.length).to.be.at.least(1)
 
 				  for(let admission of admissions){
@@ -490,13 +473,13 @@ describe("Event Admissions", function(){
 		  })
 		})
 
-		it('Should return a collection of admissions matching the ticket filter', function () {
+		it('Should return a collection of admissions matching the serial filter', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.admissions().filter({ticket: testTicket}).then(admissions => {
+				testSession.admissions.list().filter({serial: testSerials[0]}).then(admissions => {
 				  expect(admissions.length).to.be.at.least(1)
 
 				  for(let admission of admissions){
-						expect(admission.ticket).to.equal(testTicket.serial)
+						expect(admission.serial).to.equal(testSerials[0])
 				  }
 
 				  resolve(true)
@@ -506,13 +489,13 @@ describe("Event Admissions", function(){
 		  })
 		})
 
-		it('Should return a collection of admissions matching the patron filter', function () {
+		it('Should return a collection of admissions matching the customer filter', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.admissions().filter({patron: testTicket.owner}).then(admissions => {
+				testSession.admissions.list().filter({customer: this.customer}).then(admissions => {
 				  expect(admissions.length).to.be.at.least(1)
 
 				  for(let admission of admissions){
-						expect(admission.patron.username).to.equal(testTicket.owner.username)
+						expect(admission.customer.username).to.equal(this.customer.username)
 				  }
 
 				  resolve(true)
@@ -522,13 +505,13 @@ describe("Event Admissions", function(){
 		  })
 		})
 
-		it('Should return a collection of admissions matching the section filter', function () {
+		it('Should return a collection of admissions matching the tier filter', function () {
 		  return new Promise((resolve, reject) => {
-				testSession.admissions().filter({section: this.testSection}).then(admissions => {
+				testSession.admissions.list().filter({tier: this.testSection}).then(admissions => {
 				  expect(admissions.length).to.be.at.least(1)
 
 				  for(let admission of admissions){
-						expect(admission.section.uri).to.equal(this.testSection.uri)
+						expect(admission.tier.uri).to.equal(this.tier.uri)
 				  }
 
 				  resolve(true)
@@ -539,7 +522,7 @@ describe("Event Admissions", function(){
 		})
   })
 
-  describe.skip('End admission session', function () {
+  describe('End admission session', function () {
     it('Should return true on success', function () {
       return new Promise((resolve, reject) => {
         testSession.end().then((ended => {
@@ -561,23 +544,23 @@ describe("Event Admissions", function(){
 
 		it('Should throw an InvalidStateError when calling tickets() method after end()', function () {
 		  //Make changes to the global token
-		  return expect(testSession.tickets())
-				.to.eventually.be.rejectedWith("The admission session has ended, you must start a new one.")
-				.and.be.an.instanceOf(InvalidStateError)
+		  return expect(testSession.tickets.list())
+				.to.eventually.be.rejectedWith("You are restricted from accessing this resource.")
+				.and.be.an.instanceOf(TickeTingError)
 		})
 
 		it('Should throw an InvalidStateError when calling admit() method after end()', function () {
 		  //Make changes to the global token
-		  return expect(testSession.admit())
+		  return expect(testSession.admissions.admit(testSerials))
 				.to.eventually.be.rejectedWith("The admission session has ended, you must start a new one.")
 				.and.be.an.instanceOf(InvalidStateError)
 		})
 
 		it('Should throw an InvalidStateError when calling admissions() method after end()', function () {
 		  //Make changes to the global token
-		  return expect(testSession.admissions())
-				.to.eventually.be.rejectedWith("The admission session has ended, you must start a new one.")
-				.and.be.an.instanceOf(InvalidStateError)
+		  return expect(testSession.admissions.list())
+				.to.eventually.be.rejectedWith("You are restricted from accessing this resource.")
+				.and.be.an.instanceOf(TickeTingError)
 		})
   })
 

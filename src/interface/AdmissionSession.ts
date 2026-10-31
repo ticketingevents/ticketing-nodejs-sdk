@@ -1,8 +1,8 @@
-import { Collection } from '../util/Collection'
-import { Admission } from './Admission'
 import { EventListing } from './EventListing'
 import { TierListing } from './TierListing'
-import { Ticket } from './Ticket'
+import {
+  TicketService, AdmissionService
+} from '../model/AdmissionSessionModel'
 
 export interface AdmissionSession{
   started: string
@@ -12,8 +12,7 @@ export interface AdmissionSession{
   event: EventListing
   tiers: Array<TierListing>
 
-  admissions(pageLength: number): Collection<Admission>
-  tickets(pageLength: number): Collection<Ticket>
-  admit(serials: string[]): Promise<Array<Admission>>
+  tickets: TicketService
+  admissions: AdmissionService
   end(): Promise<boolean>
 }

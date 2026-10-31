@@ -1,12 +1,12 @@
 import { Base } from './Base'
-import { Account } from './Account'
+import { AccountListing } from './AccountListing'
 import { TierListing } from './TierListing'
 
 export interface Admission extends Base{
   redeemer: string
   device: string
-  ticket: string
-  patron: Account
+  serial: string
+  customer: AccountListing
   tier: TierListing
   admitted: string
 }

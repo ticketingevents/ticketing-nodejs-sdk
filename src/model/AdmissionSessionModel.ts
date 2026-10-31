@@ -1,13 +1,16 @@
 import { APIAdapter } from '../util/APIAdapter'
-import { Collection } from '../util/Collection'
-import type { Admission } from '../interface/Admission'
-import type { Ticket } from '../interface/Ticket'
 import type { AdmissionSession } from '../interface/AdmissionSession'
-import { AdmissionService } from '../service/AdmissionService'
-import { TicketService } from '../service/TicketService'
-import { InvalidStateError } from '../errors'
+import { InvalidStateError, UnsupportedOperationError } from '../errors'
 import { EventListingModel } from './EventListingModel'
 import { TierListingModel } from './TierListingModel'
+import { BaseService } from '../service/BaseService'
+import type { Ticket } from '../interface/Ticket'
+import type { TicketData } from '../interface/data/TicketData'
+import { TicketModel } from './TicketModel'
+import type { EventListing } from '../interface/EventListing'
+import type { Admission } from '../interface/Admission'
+import type { AdmissionData } from '../interface/data/AdmissionData'
+import { AdmissionModel } from './AdmissionModel'
 
 export class AdmissionSessionModel implements AdmissionSession{
   public started: string
@@ -18,71 +21,33 @@ export class AdmissionSessionModel implements AdmissionSession{
   public tiers: Array<TierListingModel>
 
   private __apiAdapter: APIAdapter
-  private __admissionService: AdmissionService
   private __ticketService: TicketService
+  private __historyService: AdmissionService
 
   constructor(admissionSession: any, adapter: APIAdapter){
-    this.started = admissionSession.started
+    this.started = new Date().toISOString()
     this.name = admissionSession.name
     this.device = admissionSession.device
     this.code = admissionSession.code
-    this.event = admissionSession.event
+    this.event = new EventListingModel(admissionSession.event, adapter)
     this.tiers = []
 
     this.__apiAdapter = adapter
-    this.__admissionService = new AdmissionService(this.__apiAdapter, this.event)
+
+    for(const tier of admissionSession.tiers){
+      this.tiers.push(new TierListingModel(tier, adapter))
+    }
+
     this.__ticketService = new TicketService(this.__apiAdapter, this.event)
-
-    //Index event tiers
-    const tierMap = {}
-
-    this.event.tiers.list().then(tiers => {
-      for(const tier of tiers){
-        tierMap[tier.uri] = tier
-      }
-
-      for(const tier of admissionSession.tiers){
-        this.tiers.push(tierMap[tier])
-      }
-    })
+    this.__historyService = new AdmissionService(this.__apiAdapter, this, this.event)
   }
 
-  admissions(pageLength: number): Collection<Admission>{
-    if(this.started){
-      return this.__admissionService.list(pageLength)
-    }else{
-      return new Collection((_resolve, reject) => {
-        reject(new InvalidStateError(0, "The admission session has ended, you must start a new one."))
-      })
-    }
+  get tickets(): TicketService{
+    return this.__ticketService
   }
 
-  tickets(pageLength: number): Collection<Ticket>{
-    if(this.started){
-      return this.__ticketService.list(pageLength)
-    }else{
-      return new Collection((_resolve, reject) => {
-        reject(new InvalidStateError(0, "The admission session has ended, you must start a new one."))
-      })
-    }
-  }
-
-  admit(serials: string[]): Promise<Array<Admission>>{
-    return new Promise<Array<Admission>>((resolve, reject) => {
-      if(this.started){
-        this.__admissionService.batchCreate({
-          redeemer: this.name,
-          device: this.device,
-          serials: serials
-        }).then(admissions => {
-          resolve(admissions)
-        }).catch(error => {
-          reject(error)
-        })
-      }else{
-        reject(new InvalidStateError(0, "The admission session has ended, you must start a new one."))
-      }
-    })
+  get admissions(): AdmissionService{
+    return this.__historyService
   }
 
   end(): Promise<boolean>{
@@ -101,5 +66,72 @@ export class AdmissionSessionModel implements AdmissionSession{
         reject(new InvalidStateError(0, "The admission session has ended, you must start a new one."))
       }
     })
+  }
+}
+
+export class TicketService extends BaseService<TicketData, Ticket>{
+  private __apiAdapter: APIAdapter
+
+  constructor(apiAdapter: APIAdapter, event: EventListing){
+    super(apiAdapter, `${event.uri}/tickets`, TicketModel,
+      ["modified_since"]
+    )
+
+    this.__apiAdapter = apiAdapter
+  }
+
+  batchCreate(): Promise<Array<Ticket>>{
+    return new Promise<Array<Ticket>>((_resolve, reject) => {
+      reject(new UnsupportedOperationError(0, "Operation not supported"))
+    })
+  }
+}
+
+export class AdmissionService extends BaseService<AdmissionData, Admission>{
+  private __apiAdapter: APIAdapter
+  private __session: AdmissionSession
+
+  constructor(apiAdapter: APIAdapter, session: AdmissionSession, event: EventListing){
+    super(apiAdapter, `${event.uri}/admissions`, AdmissionModel,
+      ["redeemer","device","tier","serial","customer"],
+      [],
+      {"customer": "id"}
+    )
+
+    this.__apiAdapter = apiAdapter
+    this.__session = session
+  }
+
+  admit(serials: string[]): Promise<Admission>{
+    if(this.__session.started){
+      return this.create({
+        redeemer: this.__session.name,
+        device: this.__session.device,
+        serials: serials
+      })
+    }else{
+      return new Promise((_resolve, reject) => {
+        reject(new InvalidStateError(403, "The admission session has ended, you must start a new one."))
+      })
+    }
+  }
+
+  batchCreate(): Promise<Array<Admission>>{
+    return new Promise<Array<Admission>>((_resolve, reject) => {
+      reject(new UnsupportedOperationError(0, "Operation not supported"))
+    })
+  }
+
+  protected _instantiateModel(data: any){
+    if(Array.isArray(data)){
+      const admissions = []
+      for(const admission of data){
+        admissions.push(new AdmissionModel(admission, this.__apiAdapter))
+      }
+
+      return admissions
+    }else{
+      return new AdmissionModel(data, this.__apiAdapter)
+    }
   }
 }
