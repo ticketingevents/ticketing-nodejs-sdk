@@ -121,15 +121,15 @@ describe("Transfers", function(){
 		//Place transfers for testing acceptance and rejection
 		this.firstTransfer = await this.sender.transfers.create({
 			recipient: this.recipient,
-			tickets: await this.sender.wallet.list(5).filter({tier: this.tier})
+			tickets: await this.sender.wallet.list(5).filter({tier: this.tier, status: "issued"})
 		})
 
 		this.secondTransfer = await this.sender.transfers.create({
 			recipient: this.recipient,
-			tickets: await this.sender.wallet.list(5).next().filter({tier: this.tier})
+			tickets: await this.sender.wallet.list(5).filter({tier: this.tier, status: "issued"})
 		})
 
-		transferTickets = await this.sender.wallet.list(5).next().next().filter({tier: this.tier})
+		transferTickets = await this.sender.wallet.list(5).filter({tier: this.tier, status: "issued"})
 	})
 
 	after(async function(){

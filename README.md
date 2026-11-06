@@ -2674,7 +2674,7 @@ SDK functionality for transferring tickets in the customer's wallet to another u
   let tier = await host.tiers.find(19240249258262)
 
   //Retrieve tickets customer has for a specific tier
-  let tickets = await sender.wallet.list(2).filter({tier: tier})
+  let tickets = await sender.wallet.list(2).filter({tier: tier, status: 'issued'})
 
   //Send the tickets
   let recipient = await ticketing.accounts.lookup({identification: "billy.butcher@fbsa.gov"})
