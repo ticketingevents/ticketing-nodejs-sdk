@@ -1,17 +1,15 @@
 import type { Base } from './Base'
 import type { AccountListing } from './AccountListing'
-import type { TierListing } from './TierListing'
+import type { Ticket } from './Ticket'
 
 export interface Transfer extends Base{
   status: string
   initiated: string
   completed: string
-  tickets: Array<{
-    tier: TierListing,
-    quantity: number
-  }>
+  tickets: Array<Ticket>
   sender: AccountListing | string
   recipient: AccountListing | string
+  note: string
 
   cancel(): Promise<boolean>
   accept(): Promise<boolean>

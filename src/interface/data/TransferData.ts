@@ -1,7 +1,8 @@
+import { Account } from '../Account'
+import { Ticket } from '../Ticket'
+
 export interface TransferData{
-  recipient: string
-  tickets: Array<{
-    tier: string,
-    quantity: number
-  }>
+  recipient: Account | string
+  tickets: Array<Ticket | string>
+  note?: string
 }

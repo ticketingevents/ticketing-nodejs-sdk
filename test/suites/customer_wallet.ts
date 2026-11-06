@@ -271,6 +271,7 @@ describe("Customer Wallet", function(){
     		  expect(sample.serial).to.match(/[0-9A-Z]{6}\-[0-9A-Z]{12}/)
     		  expect(sample.status).to.be.oneOf(["Issued", "Unclaimed", "Held", "Redeemed"])
     		  expect(sample.tier.uri).to.oneOf([this.tier.uri, this.secondTier.uri])
+          expect(sample.event.uri).to.oneOf([`/events/${this.event.id}`, `/events/${this.secondEvent.id}`])
           expect(sample.customer).to.be.an.instanceOf(AccountListingModel)
             .and.to.have.property("uri", this.customer.uri)
     		  expect(sample.issued).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}/)

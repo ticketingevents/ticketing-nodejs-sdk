@@ -6,11 +6,14 @@ import type { Ticket } from '../interface/Ticket'
 import type { TicketData } from '../interface/data/TicketData'
 import type { TierListing } from '../interface/TierListing'
 import { TierListingModel } from './TierListingModel'
+import type { EventListing } from '../interface/EventListing'
+import { EventListingModel } from './EventListingModel'
 
 export class TicketModel extends BaseModel implements Ticket{
   public serial: string
   public status: string
   public tier: TierListing
+  public event: EventListing
   public customer: AccountListing
   public issued: string
   public redeemed: string
@@ -23,6 +26,7 @@ export class TicketModel extends BaseModel implements Ticket{
     this.status = ticket.status
     this.customer = new AccountListingModel(ticket.customer, adapter)
     this.tier = new TierListingModel(ticket.tier, adapter)
+    this.event = new EventListingModel(ticket.event, adapter)
     this.issued = ticket.issued
     this.redeemed = ticket.redeemed
     this.details = ticket.details
@@ -34,6 +38,7 @@ export class TicketModel extends BaseModel implements Ticket{
       status: this.status,
       customer: this.customer.uri,
       tier: this.tier.uri,
+      event: this.event.uri,
       issued: this.issued,
       redeemed: this.redeemed,
       details: this.details

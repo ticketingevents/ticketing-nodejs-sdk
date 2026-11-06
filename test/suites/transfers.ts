@@ -5,13 +5,15 @@ import {
 	TickeTing, BadDataError, InvalidStateError, PermissionError,
 	ResourceNotFoundError, UnsupportedOperationError, ResourceIndelibleError
 } from '../../src'
-import { ParcelModel, TransferModel, AccountListingModel, TierListingModel } from  '../../src/model'
+import {
+	TransferModel, TicketModel, AccountListingModel, TierListingModel, EventListingModel
+} from  '../../src/model'
 import { Collection } from  '../../src/util'
 import { expect, ticketing, api, unauthorised_sdk } from '../setup'
 
 //Global token objects
-let testParcel = null
 let testTransfer = null
+let transferTickets = []
 
 describe("Transfers", function(){
   //Set hook timeout
@@ -117,11 +119,17 @@ describe("Transfers", function(){
 		this.activeOrder = await cart.checkout()
 
 		//Place transfers for testing acceptance and rejection
-		let parcel = await this.sender.parcels.create()
-		await parcel.add(this.tier, 5)
+		this.firstTransfer = await this.sender.transfers.create({
+			recipient: this.recipient,
+			tickets: await this.sender.wallet.list(5).filter({tier: this.tier})
+		})
 
-		this.firstTransfer = await parcel.send(this.recipient)
-		this.secondTransfer = await parcel.send(this.recipient)
+		this.secondTransfer = await this.sender.transfers.create({
+			recipient: this.recipient,
+			tickets: await this.sender.wallet.list(5).next().filter({tier: this.tier})
+		})
+
+		transferTickets = await this.sender.wallet.list(5).next().next().filter({tier: this.tier})
 	})
 
 	after(async function(){
@@ -139,142 +147,21 @@ describe("Transfers", function(){
 		await this.sender.delete()
 	})
 
-	describe('Create a ticket parcel', function () {
-		it('Should return a valid parcel object', function () {
-			return new Promise((resolve, reject) => {
-				this.sender.parcels.create().then((parcel => {
-					testParcel = parcel
-
-					expect(parcel).to.be.an.instanceof(ParcelModel)
-					expect(parcel.created).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}/)
-					expect(parcel.tickets).to.be.empty
-
-					resolve(true)
-				})).catch(error=>{
-					reject(error)
-				})
-			})
-		})
-	})
-
-	describe('Add tickets to a parcel', function () {
-		it('Should add tickets to the parcel', function () {
-			return new Promise((resolve, reject) => {
-				let quantity = 5
-				testParcel.add(this.tier, quantity).then(success => {
-		      expect(success).to.be.true
-					
-					expect(testParcel.tickets.length).to.eq(1)
-					if(testParcel.tickets.length > 0){
-						expect(testParcel.tickets[0]).to.include({
-							tier: this.tier,
-							quantity: quantity
-						})
-					}
-
-					resolve(true)
-				}).catch(error=>{
-					reject(error)
-				})
-			})
-		})
-
-		it('Should throw a BadDataError if a non-positive integer quantity of tickets is added', function () {
-			return expect(testParcel.add(this.tier, -5))
-			  .to.eventually.be.rejectedWith("The number of tickets to be added to the parcel must be a positive integer.")
-			  .and.be.an.instanceOf(BadDataError)
-		})
-
-		it('Should throw an UnsupportedOperationError if adding more tickets than the customer has available', function () {
-			return expect(testParcel.add(this.tier, 101))
-			  .to.eventually.be.rejectedWith("The customer does not own sufficient tickets in this tier to add to the parcel.")
-			  .and.be.an.instanceOf(UnsupportedOperationError)
-		})
-	})
-
-	describe('Remove tickets from a parcel', function () {
-		it('Should remove tickets from the parcel', function () {
-			return new Promise((resolve, reject) => {
-				let originalQuantity = testParcel.tickets[0].quantity
-				let quantity = 2
-
-				testParcel.remove(this.tier, quantity).then((success => {
-		         expect(success).to.be.true
-
-					expect(testParcel.tickets.length).to.eq(1)
-					if(testParcel.tickets.length > 0){
-						expect(testParcel.tickets[0]).to.include({
-							tier: this.tier,
-							quantity: (originalQuantity - quantity)
-						})
-					}
-
-					resolve(true)
-				})).catch(error=>{
-					reject(error)
-				})
-			})
-		})
-
-		it('Should throw a BadDataError if a non-positive integer quantity of tickets is removed', function () {
-			return expect(testParcel.remove(this.tier, 0))
-			  .to.eventually.be.rejectedWith("The number of tickets to be removed from the parcel must be a positive integer.")
-			  .and.be.an.instanceOf(BadDataError)
-		})
-
-		it('Should throw an UnsupportedOperationError if removing more tickets than are present in the parcel', function () {
-			return expect(testParcel.remove(this.tier, 51))
-			  .to.eventually.be.rejectedWith("The parcel contains fewer tickets than the quantity to be removed.")
-			  .and.be.an.instanceOf(UnsupportedOperationError)
-		})
-	})
-
-	describe('Set number of tickets in a parcel', function () {
-		it('Should set the ticket quantity in the parcel', function () {
-			return new Promise((resolve, reject) => {
-				let quantity = 5
-
-				testParcel.set(this.tier, quantity).then((success => {
-		    	expect(success).to.be.true
-					
-					expect(testParcel.tickets.length).to.eq(1)
-					if(testParcel.tickets.length > 0){
-						expect(testParcel.tickets[0]).to.include({
-							tier: this.tier,
-							quantity: quantity
-						})
-					}
-
-					resolve(true)
-				})).catch(error=>{
-					reject(error)
-				})
-			})
-		})
-
-		it('Should throw a BadDataError if a non-positive integer quantity of tickets is set', function () {
-			return expect(testParcel.set(this.tier, -10))
-			  .to.eventually.be.rejectedWith("The target ticket quantity must be a positive integer.")
-			  .and.be.an.instanceOf(BadDataError)
-		})
-
-		it('Should throw an UnsupportedOperationError if the specified quantity would exceed the number of tickets owned', function () {
-			return expect(testParcel.set(this.tier, 100))
-			  .to.eventually.be.rejectedWith("The customer does not own sufficient tickets to set the quantity to the specified value.")
-			  .and.be.an.instanceOf(UnsupportedOperationError)
-		})
-	})
-
 	describe('Initiate a transfer', function () {
 		it('Should return a valid transfer object', function () {
 			return new Promise((resolve, reject) => {
-				testParcel.send(this.recipient).then((transfer => {
+				this.sender.transfers.create({
+					recipient: this.recipient,
+					tickets: transferTickets,
+					note: "I can't use these anymore, so please enjoy!"
+				}).then((transfer => {
 					testTransfer = transfer
 
 					expect(transfer).to.be.an.instanceof(TransferModel)
 					expect(transfer.status).to.eq("pending")
 					expect(transfer.initiated).to.match(/[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}/)
 					expect(transfer.completed).to.eq("0000-00-00T00:00:00")
+					expect(transfer.note).to.eq("I can't use these anymore, so please enjoy!")
 
           expect(transfer.sender).to.be.an.instanceof(AccountListingModel)
           expect(transfer.sender.username).to.equal(this.sender.username)
@@ -288,18 +175,21 @@ describe("Transfers", function(){
           expect(transfer.recipient.lastName).to.equal(this.recipient.lastName)
           expect(transfer.recipient.title).to.equal(this.recipient.title)
 
-					expect(transfer.tickets.length).to.eq(1)
-          expect(transfer.tickets[0].quantity).to.eq(testParcel.tickets[0].quantity)
-          expect(transfer.tickets[0].tier).to.be.an.instanceof(TierListingModel)
-          expect(transfer.tickets[0].tier.name).to.eq(testParcel.tickets[0].tier.name)
-          expect(transfer.tickets[0].tier.description).to.eq(testParcel.tickets[0].tier.description)
-          expect(transfer.tickets[0].tier.price).to.eq(testParcel.tickets[0].tier.price)
-          expect(transfer.tickets[0].tier.available_from).to.eq(testParcel.tickets[0].tier.available_from)
-          expect(transfer.tickets[0].tier.available_to).to.eq(testParcel.tickets[0].tier.available_to)
-          expect(transfer.tickets[0].tier.artwork).to.eq("")
-          expect(transfer.tickets[0].tier.unit_size).to.eq(testParcel.tickets[0].tier.unit_size)
-          expect(transfer.tickets[0].tier.purchase_limit).to.eq(testParcel.tickets[0].tier.purchase_limit)
-          expect(transfer.tickets[0].tier.transferrable).to.eq(testParcel.tickets[0].tier.transferrable)
+					expect(transfer.tickets.length).to.eq(5)
+					for(let i=0; i < transfer.tickets.length; i++){
+	          expect(transfer.tickets[i]).to.be.an.instanceof(TicketModel)
+	    		  expect(transfer.tickets[i].serial).to.eq(transferTickets[i].serial)
+	    		  expect(transfer.tickets[i].status).to.eq("Unclaimed")
+	    		  expect(transfer.tickets[i].tier).to.be.an.instanceOf(TierListingModel)
+	    		  	.and.to.have.property('uri', this.tier.uri)
+	    		  expect(transfer.tickets[i].event).to.be.an.instanceOf(EventListingModel)
+	    		  	.and.to.have.property('uri', `/events/${this.event.id}`)
+	          expect(transfer.tickets[i].customer).to.be.an.instanceOf(AccountListingModel)
+	            .and.to.have.property("uri", this.sender.uri)
+	    		  expect(transfer.tickets[i].issued).to.eq(transferTickets[i].issued)
+	    		  expect(transfer.tickets[i].redeemed).to.eq("0000-00-00T00:00:00")
+	          expect(transfer.tickets[i].details).to.be.an("object")
+					}
 
 					resolve(true)
 				})).catch(error=>{
@@ -308,10 +198,32 @@ describe("Transfers", function(){
 			})
 		})
 
-		it('Should throw a BadDataError if the customer holds insufficient tickets to complete the transfer', function () {
-			return expect(testParcel.send(this.recipient))
-			  .to.eventually.be.rejectedWith("The sender does not hold sufficient itckets in their wallet to complete this transfer.")
-			  .and.be.an.instanceOf(BadDataError)
+    it('Should throw a BadDataError if a non-account is passed in', function () {
+      return expect(this.sender.transfers.create({
+				recipient: this.event,
+        tickets: transferTickets
+      }))
+      .to.eventually.be.rejectedWith("Please provide a valid recipient for the transfer")
+      .and.be.an.instanceOf(BadDataError)
+    })
+
+    it('Should throw a BadDataError if a non-ticket is passed in', function () {
+      return expect(this.sender.transfers.create({
+				recipient: this.recipient,
+        tickets: [this.tier]
+      }))
+      .to.eventually.be.rejectedWith("One or more of the specified tickets is not a valid Ticket object.")
+      .and.be.an.instanceOf(BadDataError)
+    })
+
+		it('Should throw a BadDataError if the customer sends non-transferrable tickets', function () {
+			return expect(this.sender.transfers.create({
+					recipient: this.recipient,
+					tickets: transferTickets,
+					note: "I can't use these anymore, so please enjoy!"
+			}))
+			 .to.eventually.be.rejectedWith("One or more of the specified tickets is in a non-transferrable state.")
+			 .and.be.an.instanceOf(BadDataError)
 		})
 	})
 
@@ -342,18 +254,21 @@ describe("Transfers", function(){
           expect(transfer.recipient.lastName).to.equal(this.recipient.lastName)
           expect(transfer.recipient.title).to.equal(this.recipient.title)
 
-					expect(transfer.tickets.length).to.eq(1)
-          expect(transfer.tickets[0].quantity).to.eq(testParcel.tickets[0].quantity)
-          expect(transfer.tickets[0].tier).to.be.an.instanceof(TierListingModel)
-          expect(transfer.tickets[0].tier.name).to.eq(testParcel.tickets[0].tier.name)
-          expect(transfer.tickets[0].tier.description).to.eq(testParcel.tickets[0].tier.description)
-          expect(transfer.tickets[0].tier.price).to.eq(testParcel.tickets[0].tier.price)
-          expect(transfer.tickets[0].tier.available_from).to.eq(testParcel.tickets[0].tier.available_from)
-          expect(transfer.tickets[0].tier.available_to).to.eq(testParcel.tickets[0].tier.available_to)
-          expect(transfer.tickets[0].tier.artwork).to.eq("")
-          expect(transfer.tickets[0].tier.unit_size).to.eq(testParcel.tickets[0].tier.unit_size)
-          expect(transfer.tickets[0].tier.purchase_limit).to.eq(testParcel.tickets[0].tier.purchase_limit)
-          expect(transfer.tickets[0].tier.transferrable).to.eq(testParcel.tickets[0].tier.transferrable)
+					expect(transfer.tickets.length).to.eq(5)
+					for(let i=0; i < transfer.tickets.length; i++){
+	          expect(transfer.tickets[i]).to.be.an.instanceof(TicketModel)
+	    		  expect(transfer.tickets[i].serial).to.eq(transferTickets[i].serial)
+	    		  expect(transfer.tickets[i].status).to.eq("Unclaimed")
+	    		  expect(transfer.tickets[i].tier).to.be.an.instanceOf(TierListingModel)
+	    		  	.and.to.have.property('uri', this.tier.uri)
+	    		  expect(transfer.tickets[i].event).to.be.an.instanceOf(EventListingModel)
+	    		  	.and.to.have.property('uri', `/events/${this.event.id}`)
+	          expect(transfer.tickets[i].customer).to.be.an.instanceOf(AccountListingModel)
+	            .and.to.have.property("uri", this.sender.uri)
+	    		  expect(transfer.tickets[i].issued).to.eq(transferTickets[i].issued)
+	    		  expect(transfer.tickets[i].redeemed).to.eq("0000-00-00T00:00:00")
+	          expect(transfer.tickets[i].details).to.be.an("object")
+					}
 
 					resolve(true)
 				}).catch(error => {
@@ -406,18 +321,21 @@ describe("Transfers", function(){
           expect(transfer.recipient.lastName).to.equal(this.recipient.lastName)
           expect(transfer.recipient.title).to.equal(this.recipient.title)
 
-					expect(transfer.tickets.length).to.eq(1)
-          expect(transfer.tickets[0].quantity).to.eq(testParcel.tickets[0].quantity)
-          expect(transfer.tickets[0].tier).to.be.an.instanceof(TierListingModel)
-          expect(transfer.tickets[0].tier.name).to.eq(testParcel.tickets[0].tier.name)
-          expect(transfer.tickets[0].tier.description).to.eq(testParcel.tickets[0].tier.description)
-          expect(transfer.tickets[0].tier.price).to.eq(testParcel.tickets[0].tier.price)
-          expect(transfer.tickets[0].tier.available_from).to.eq(testParcel.tickets[0].tier.available_from)
-          expect(transfer.tickets[0].tier.available_to).to.eq(testParcel.tickets[0].tier.available_to)
-          expect(transfer.tickets[0].tier.artwork).to.eq("")
-          expect(transfer.tickets[0].tier.unit_size).to.eq(testParcel.tickets[0].tier.unit_size)
-          expect(transfer.tickets[0].tier.purchase_limit).to.eq(testParcel.tickets[0].tier.purchase_limit)
-          expect(transfer.tickets[0].tier.transferrable).to.eq(testParcel.tickets[0].tier.transferrable)
+					expect(transfer.tickets.length).to.eq(5)
+					for(let i=0; i < transfer.tickets.length; i++){
+	          expect(transfer.tickets[i]).to.be.an.instanceof(TicketModel)
+	    		  expect(transfer.tickets[i].serial).to.eq(transferTickets[i].serial)
+	    		  expect(transfer.tickets[i].status).to.eq("Unclaimed")
+	    		  expect(transfer.tickets[i].tier).to.be.an.instanceOf(TierListingModel)
+	    		  	.and.to.have.property('uri', this.tier.uri)
+	    		  expect(transfer.tickets[i].event).to.be.an.instanceOf(EventListingModel)
+	    		  	.and.to.have.property('uri', `/events/${this.event.id}`)
+	          expect(transfer.tickets[i].customer).to.be.an.instanceOf(AccountListingModel)
+	            .and.to.have.property("uri", this.sender.uri)
+	    		  expect(transfer.tickets[i].issued).to.eq(transferTickets[i].issued)
+	    		  expect(transfer.tickets[i].redeemed).to.eq("0000-00-00T00:00:00")
+	          expect(transfer.tickets[i].details).to.be.an("object")
+					}
 
 					resolve(true)
 				}).catch(error => {
@@ -464,18 +382,21 @@ describe("Transfers", function(){
           expect(transfer.recipient.lastName).to.equal(this.recipient.lastName)
           expect(transfer.recipient.title).to.equal(this.recipient.title)
 
-					expect(transfer.tickets.length).to.eq(1)
-          expect(transfer.tickets[0].quantity).to.eq(testParcel.tickets[0].quantity)
-          expect(transfer.tickets[0].tier).to.be.an.instanceof(TierListingModel)
-          expect(transfer.tickets[0].tier.name).to.eq(testParcel.tickets[0].tier.name)
-          expect(transfer.tickets[0].tier.description).to.eq(testParcel.tickets[0].tier.description)
-          expect(transfer.tickets[0].tier.price).to.eq(testParcel.tickets[0].tier.price)
-          expect(transfer.tickets[0].tier.available_from).to.eq(testParcel.tickets[0].tier.available_from)
-          expect(transfer.tickets[0].tier.available_to).to.eq(testParcel.tickets[0].tier.available_to)
-          expect(transfer.tickets[0].tier.artwork).to.eq("")
-          expect(transfer.tickets[0].tier.unit_size).to.eq(testParcel.tickets[0].tier.unit_size)
-          expect(transfer.tickets[0].tier.purchase_limit).to.eq(testParcel.tickets[0].tier.purchase_limit)
-          expect(transfer.tickets[0].tier.transferrable).to.eq(testParcel.tickets[0].tier.transferrable)
+					expect(transfer.tickets.length).to.eq(5)
+					for(let i=0; i < transfer.tickets.length; i++){
+	          expect(transfer.tickets[i]).to.be.an.instanceof(TicketModel)
+	    		  expect(transfer.tickets[i].serial).to.eq(transferTickets[i].serial)
+	    		  expect(transfer.tickets[i].status).to.eq("Unclaimed")
+	    		  expect(transfer.tickets[i].tier).to.be.an.instanceOf(TierListingModel)
+	    		  	.and.to.have.property('uri', this.tier.uri)
+	    		  expect(transfer.tickets[i].event).to.be.an.instanceOf(EventListingModel)
+	    		  	.and.to.have.property('uri', `/events/${this.event.id}`)
+	          expect(transfer.tickets[i].customer).to.be.an.instanceOf(AccountListingModel)
+	            .and.to.have.property("uri", this.sender.uri)
+	    		  expect(transfer.tickets[i].issued).to.eq(transferTickets[i].issued)
+	    		  expect(transfer.tickets[i].redeemed).to.eq("0000-00-00T00:00:00")
+	          expect(transfer.tickets[i].details).to.be.an("object")
+					}
 
 					resolve(true)
 				}).catch(error => {

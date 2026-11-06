@@ -1,8 +1,8 @@
 import { APIAdapter } from '../util/APIAdapter'
 import { BaseModel } from './BaseModel'
 import type { Transfer } from '../interface/Transfer'
-import type { TierListing } from '../interface/TierListing'
-import { TierListingModel } from '../model/TierListingModel'
+import type { Ticket } from '../interface/Ticket'
+import { TicketModel } from '../model/TicketModel'
 import type { AccountListing } from '../interface/AccountListing'
 import { AccountListingModel } from '../model/AccountListingModel'
 import { InvalidStateError, PermissionError } from '../errors'
@@ -13,10 +13,8 @@ export class TransferModel extends BaseModel implements Transfer{
   public completed: string
   public sender: AccountListing
   public recipient: AccountListing
-  public tickets: Array<{
-    tier: TierListing,
-    quantity: number
-  }>
+  public tickets: Array<Ticket>
+  public note: string
 
   constructor(transfer: any, adapter: APIAdapter){
     super(transfer.self, adapter)
@@ -26,13 +24,11 @@ export class TransferModel extends BaseModel implements Transfer{
     this.completed = transfer.completed
     this.sender = new AccountListingModel(transfer.sender, adapter)
     this.recipient = new AccountListingModel(transfer.recipient, adapter)
+    this.note = transfer.note
 
     this.tickets = []
     for(const ticket of transfer.tickets){
-      this.tickets.push({
-        tier: new TierListingModel(ticket.tier, adapter),
-        quantity: ticket.quantity
-      })
+      this.tickets.push(new TicketModel(ticket, adapter))
     }
   }
 

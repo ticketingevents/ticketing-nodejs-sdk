@@ -181,10 +181,6 @@ export class TickeTingService extends TickeTing{
     * [Retrieve event itinerary](#retrieve-event-itinerary)
     * [Retrieve customer tickets](#retrieve-ticket-wallet)
 - [Transferring Tickets](#transferring-tickets)
-    * [Create a ticket parcel](#create-a-ticket-parcel)
-    * [Add tickets to a parcel](#add-tickets-to-a-parcel)
-    * [Remove tickets from a parcel](#remove-tickets-from-a-parcel)
-    * [Set number of tickets in a parcel](#set-number-of-tickets-in-a-parcel)
     * [Initiate a transfer](#initiate-a-transfer)
     * [List customer transfers](#list-customer-transfers)
     * [Fetch a transfer](#fetch-a-transfer)
@@ -2663,123 +2659,6 @@ Operations for accessing and viewing tickets in a customer's wallet
 
 SDK functionality for transferring tickets in the customer's wallet to another user.
 
-### Create a ticket parcel
-
-```javascript
-  //An account is required to create parcels
-  let sender = (await ticketing.session.info()).account
-
-  sender.parcels.create().then(parcel => {
-    //Retrieve parcel information.
-    let created = parcel.created //Date and time that the parcel was created
-    let tickets = parcel.tickets //Array of tickets in the parcel including the tier and quantity of each.
-  }).catch(error => {
-    console.log(`${typeof error} (${error.code}): ${error.message}`)
-  })
-```
-
-### Add tickets to a parcel
-
-```javascript
-  //An account is required to create parcels
-  let sender = (await ticketing.session.info()).account
-
-  //Create a new ticket parcel
-  let parcel = await sender.parcels.create()
-
-  //Retrieve a specific event using its ID
-  let event = await ticketing.events.find(16993717817996)
-
-  //Pack the parcel with tickets to be transferred
-  parcel.add(
-    event.tiers[0], //Add tickets for this tier to the parcel
-    2 //Quantity to add. Defaults to 1 if omitted
-  ).then(success => {
-    if(success){
-      //Do something on success
-    }else{
-      //Do something on failure
-    }
-  })
-  .catch(error => {
-    //Handle errors
-    if(error instanceof BadDataError){
-      console.log("The number of tickets to be added to the parcel must be a positive integer.")
-    }else if(error instanceof UnsupportedOperationError){
-      console.log("The custoemr does not own sufficient tickets in this tier to be transferred.")
-    }else{
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
-    }
-  })
-```
-
-### Remove tickets from a parcel
-
-```javascript
-  //An account is required to create parcels
-  let sender = (await ticketing.session.info()).account
-
-  //Create a new ticket parcel
-  let parcel = await sender.parcels.create()
-
-  //Retrieve a specific event using its ID
-  let event = await ticketing.events.find(16993717817996)
-
-  //Remove tickets from the parcel
-  parcel.remove(
-    event.tiers[0], //Remove tickets for this tier from the parcel
-    3 //Quantity to remove. Defaults to 1 if omitted
-  ).then(success => {
-    if(success){
-      //Do something on success
-    }else{
-      //Do something on failure
-    }
-  })
-  .catch(error => {
-    //Handle errors
-    if(error instanceof BadDataError){
-      console.log("The number of tickets to be removed from the parcel must be a positive integer.")
-    }else if(error instanceof UnsupportedOperationError){
-      console.log("The parcel contains fewer tickets than the quantity to be removed.")
-    }else{
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
-    }
-  })
-```
-
-### Set number of tickets in a parcel
-
-```javascript
-  //An account is required to create parcels
-  let sender = (await ticketing.session.info()).account
-  
-  //Create a new ticket parcel
-  let parcel = await sender.parcels.create()
-
-  //Set the number of tickets in the parcel to a particular quantity
-  parcel.set(
-    event.tiers[2], //Set the number of tickets for this tier in the parcel
-    5 //Quantity to set. Defaults to 1 if omitted
-  ).then(success => {
-    if(success){
-      //Do something on success
-    }else{
-      //Do something on failure
-    }
-  })
-  .catch(error => {
-    //Handle errors
-    if(error instanceof BadDataError){
-      console.log("The ticket quantity must be a positive integer.")
-    }else if(error instanceof UnsupportedOperationError){
-      console.log("The customer does not own sufficient tickets to set the quantity to the specified value.")
-    }else{
-      console.log(`${typeof error} (${error.code}): ${error.message}`)
-    }
-  })
-```
-
 ### Initiate a transfer
 
 [API Reference](https://docs.ticketingevents.com/openapi/ticket-transfers/initiate_ticket_transfer)
@@ -2787,24 +2666,30 @@ SDK functionality for transferring tickets in the customer's wallet to another u
 ```javascript
   //An account is required to create parcels
   let sender = (await ticketing.session.info()).account
-  
-  //Create a new ticket parcel
-  let parcel = await sender.parcels.create()
 
-  //Retrieve a specific event using its ID
-  let event = await ticketing.events.find(16993717817996)
-  await parcel.add(event.tiers[0], 2)
+  //Retrieve a specific host using its ID
+  let host = await ticketing.hosts.find(17327135633743)
 
-  //Send the parcel
+  //Retrieve a specific tier using its ID
+  let tier = await host.tiers.find(19240249258262)
+
+  //Retrieve tickets customer has for a specific tier
+  let tickets = await sender.wallet.list(2).filter({tier: tier})
+
+  //Send the tickets
   let recipient = await ticketing.accounts.lookup({identification: "billy.butcher@fbsa.gov"})
   
-  parcel.send(recipient).then(transfer => {
+  sender.transfers.create({
+    recipient: recipient,
+    tickets: tickets,
+    note: "I can't use these anymore, so please enjoy!" //Optional
+  }).then(transfer => {
     //Claim or cancel the transfer (see below)
   }).catch(error => {
     if(error instanceof PermissionError){
       console.log("The authenticated user is not permitted to initiate transfers on behalf of the sender.")
     }else if(error instanceof BadDataError){
-      console.log("The sender does not own sufficient tickets of the indicated types to complete this transfer.")
+      console.log("One or more of the specified tickets does not belong to the sender, or cannot be transferred.")
     }else if(error instanceof InvalidStateError){
       console.log("The sender cannot transfer tickets to themselves.")
     }else{

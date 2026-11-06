@@ -14,8 +14,6 @@ import { HostModel } from './HostModel'
 import type { Order } from '../interface/Order'
 import type { OrderData } from '../interface/data/OrderData'
 import { OrderModel } from './OrderModel'
-import type { Parcel } from '../interface/Parcel'
-import { ParcelModel } from './ParcelModel'
 import type { Privilege } from '../interface/Privilege'
 import type { PrivilegeData } from '../interface/data/PrivilegeData'
 import { PrivilegeModel } from './PrivilegeModel'
@@ -27,7 +25,7 @@ import { TicketModel } from './TicketModel'
 import type { Transfer } from '../interface/Transfer'
 import type { TransferData } from '../interface/data/TransferData'
 import { TransferModel } from './TransferModel'
-import { PermissionError, UnsupportedOperationError } from '../errors'
+import { PermissionError, UnsupportedOperationError, BadDataError } from '../errors'
 
 export class AccountModel extends BaseModel implements Account{
   public number: string
@@ -54,7 +52,6 @@ export class AccountModel extends BaseModel implements Account{
   private __customerOrderService: CustomerOrderService
   private __customerItineraryService: CustomerItineraryService
   private __customerWalletService: CustomerWalletService
-  private __parcelService: ParcelService
   private __customerTransferService: CustomerTransferService
 
   constructor(account: any, adapter: APIAdapter){
@@ -84,7 +81,6 @@ export class AccountModel extends BaseModel implements Account{
     this.__customerOrderService = new CustomerOrderService(this._apiAdapter, this)
     this.__customerItineraryService = new CustomerItineraryService(this._apiAdapter, this)
     this.__customerWalletService = new CustomerWalletService(this._apiAdapter, this)
-    this.__parcelService = new ParcelService(this._apiAdapter, this)
     this.__customerTransferService = new CustomerTransferService(this._apiAdapter, this)
   }
 
@@ -120,10 +116,6 @@ export class AccountModel extends BaseModel implements Account{
 
   get wallet(): CustomerWalletService{
     return this.__customerWalletService
-  }
-
-  get parcels(): ParcelService{
-    return this.__parcelService
   }
 
   get transfers(): CustomerTransferService{
@@ -278,34 +270,6 @@ export class CustomerWalletService extends BaseService<TicketData, Ticket>{
   }
 }
 
-export class ParcelService{
-  private __apiAdapter: APIAdapter
-  private __sender: Account
-
-  constructor(apiAdapter: APIAdapter, sender: Account){
-    this.__apiAdapter = apiAdapter
-    this.__sender = sender
-  }
-
-  create(): Promise<Parcel>{
-    return new Promise<Parcel>((resolve) => {
-      resolve(new ParcelModel(this.__apiAdapter, this.__sender))
-    })
-  }
-
-  batchCreate(): Promise<Array<Parcel>>{
-    return new Promise<Array<Parcel>>((_resolve, reject) => {
-      reject(new UnsupportedOperationError(0, "Operation not supported"))
-    })
-  }
-
-  list(): Collection<Parcel>{
-    return new Collection<Parcel>((_resolve, reject) => {
-      reject(new UnsupportedOperationError(0, "Operation not supported"))
-    })
-  }
-}
-
 export class CustomerTransferService extends BaseService<TransferData, Transfer>{
   private __apiAdapter: APIAdapter
 
@@ -320,9 +284,37 @@ export class CustomerTransferService extends BaseService<TransferData, Transfer>
     this.__apiAdapter = apiAdapter
   }
 
-  create(): Promise<Transfer>{
-    return new Promise<Transfer>((_resolve, reject) => {
-      reject(new UnsupportedOperationError(0, "Operation not supported"))
+  create(data: TransferData): Promise<Transfer>{
+    return new Promise<Transfer>((resolve, reject) => {
+      if(!(data.recipient instanceof AccountModel)){
+        reject(new BadDataError(400, "Please provide a valid recipient for the transfer"))
+      }
+
+      const tickets = []
+      for(const ticket of data.tickets){
+        if(!(ticket instanceof TicketModel)){
+          reject(new BadDataError(
+            400,
+            "One or more of the specified tickets is not a valid Ticket object."
+          ))
+        }else{
+          tickets.push(ticket.serial)
+        }
+      }
+
+      super.create({
+        recipient: (data.recipient as AccountModel).number,
+        tickets: tickets,
+        note: data.note
+      }).then(response => {
+        resolve(response)
+      }).catch(error => {
+        if(error.code == 400){
+          error = new BadDataError(error.code, error.message)
+        }
+
+        reject(error)
+      })
     })
   }
 
