@@ -11,6 +11,7 @@ import { CartModel } from './CartModel'
 import type { Host } from '../interface/Host'
 import type { HostData } from '../interface/data/HostData'
 import { HostModel } from './HostModel'
+import type { Lookup } from '../interface/Lookup'
 import type { Order } from '../interface/Order'
 import type { OrderData } from '../interface/data/OrderData'
 import { OrderModel } from './OrderModel'
@@ -286,8 +287,9 @@ export class CustomerTransferService extends BaseService<TransferData, Transfer>
 
   create(data: TransferData): Promise<Transfer>{
     return new Promise<Transfer>((resolve, reject) => {
-      if(!(data.recipient instanceof AccountModel)){
+      if(!((data.recipient as Lookup).number)){
         reject(new BadDataError(400, "Please provide a valid recipient for the transfer"))
+        return
       }
 
       const tickets = []
@@ -297,13 +299,15 @@ export class CustomerTransferService extends BaseService<TransferData, Transfer>
             400,
             "One or more of the specified tickets is not a valid Ticket object."
           ))
+          
+          return
         }else{
           tickets.push(ticket.serial)
         }
       }
 
       super.create({
-        recipient: (data.recipient as AccountModel).number,
+        recipient: (data.recipient as Lookup).number,
         tickets: tickets,
         note: data.note
       }).then(response => {

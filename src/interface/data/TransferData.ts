@@ -1,8 +1,8 @@
-import { Account } from '../Account'
+import { Lookup } from '../Lookup'
 import { Ticket } from '../Ticket'
 
 export interface TransferData{
-  recipient: Account | string
+  recipient: Lookup | string
   tickets: Array<Ticket | string>
   note?: string
 }

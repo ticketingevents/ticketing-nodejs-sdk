@@ -137,14 +137,17 @@ export class EventRevisionService extends BaseService<EventRevisionData, EventRe
     return new Promise<EventRevision>((resolve, reject) => {
       if(!(data.category instanceof CategoryModel)){
         reject(new BadDataError(400, "Please provide a valid category for the event"))
+        return
       }
 
       if(!(data.subcategory instanceof CategoryModel)){
         reject(new BadDataError(400, "Please provide a valid subcategory for the event"))
+        return
       }
 
       if(!(data.venue instanceof VenueModel)){
         reject(new BadDataError(400, "Please provide a valid venue for the event"))
+        return
       }
 
       const payload: EventRevisionData = JSON.parse(JSON.stringify(data))
@@ -188,6 +191,7 @@ export class TierService extends BaseService<TierData, Tier>{
     return new Promise<Tier>((resolve, reject) => {
       if(data.form && !(data.form instanceof FormModel)){
         reject(new BadDataError(400, "Please provide a valid form for the tier"))
+        return
       }
 
       const payload: TierData = {
@@ -214,6 +218,7 @@ export class TierService extends BaseService<TierData, Tier>{
       for(const entry of ('events' in data?data.events:[])){
         if(!(entry.event instanceof EventRevisionModel)){
           reject(new BadDataError(400, "One or more of the specified events is not a valid EventRevision."))
+          return
         }
 
         payload.events.push({
@@ -225,6 +230,7 @@ export class TierService extends BaseService<TierData, Tier>{
       for(const upgrade of ('upgrades' in data?data.upgrades:[])){
         if(!(upgrade instanceof TierModel)){
           reject(new BadDataError(400, "One or more of the specified tiers is not a valid Tier."))
+          return
         }
 
         payload.upgrades.push((upgrade as TierModel).id)

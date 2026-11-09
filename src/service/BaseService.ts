@@ -202,6 +202,8 @@ export class BaseService<RequestType, ResponseType>{
         400,
         `The collection cannot be sorted by ${this.__listCriteria.sort}.`
       ))
+
+      return
     }
 
    if(criteriaError){
@@ -209,6 +211,7 @@ export class BaseService<RequestType, ResponseType>{
       this.__listCriteria = {records: this.__listCriteria.records}
 
       reject(criteriaError)
+      return
     }
 
     this.__adapter.get(

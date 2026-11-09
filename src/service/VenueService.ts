@@ -24,6 +24,7 @@ export class VenueService extends BaseService<VenueData, Venue>{
     return new Promise<Venue>((resolve, reject) => {
       if(!(data.region instanceof RegionModel)){
         reject(new BadDataError(400, "Please provide a valid region for the venue"))
+        return
       }
 
       const payload: VenueData = JSON.parse(JSON.stringify(data))

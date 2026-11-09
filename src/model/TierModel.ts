@@ -106,6 +106,7 @@ export class TierModel extends BaseModel implements Tier{
 						if(!isNaN(index)){
 			        if(!(value.event instanceof EventRevisionModel)){
 			          reject(new BadDataError(400, "One or more of the specified events is not a valid EventRevision."))
+			          return
 			        }
 
 			        target[index] = value
