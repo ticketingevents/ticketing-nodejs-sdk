@@ -14,6 +14,7 @@ export interface EventListing extends Base{
   category: Category
   subcategory: Category
   disclaimer: string
+  popularity: number
   tags: Array<string>
   published: string
   banner: string

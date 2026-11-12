@@ -34,6 +34,7 @@ export class AdmissionTokenModel extends BaseModel implements AdmissionToken{
       disclaimer: token.event.disclaimer,
       tags: token.event.tags,
       published: token.event.published,
+      popularity: token.event.popularity,
       banner: token.event.banner,
       thumbnail: token.event.thumbnail,
       save: (() => new Promise<boolean>((resolve) => {resolve(false)})),

@@ -21,6 +21,7 @@ export class EventListingModel extends BaseModel implements EventListing{
   public disclaimer: string
   public tags: Array<string>
   public published: string
+  public popularity: number
 
   private __bannerUrl: string
   private __bannerData: string
@@ -39,6 +40,7 @@ export class EventListingModel extends BaseModel implements EventListing{
     this.disclaimer = listing.disclaimer
     this.tags = listing.tags
     this.published = listing.published
+    this.popularity = listing.popularity
 
     if(listing.category){
       this.category = new CategoryModel(listing.category, adapter)

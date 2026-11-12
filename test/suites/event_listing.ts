@@ -263,6 +263,38 @@ describe("Event Listing", function(){
       })
     })
 
+    it('Should return a collection of events matching the before filter', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.events.list(5).filter({before: "2050-01-01T00:00:00"}).then(events => {
+          expect(events.length).to.be.at.least(1)
+          
+          for(let event of events){
+            expect(new Date(event.start)).to.be.at.most(new Date("2050-01-01T00:00:00"))
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
+    it('Should return a collection of events matching the after filter', function () {
+      return new Promise((resolve, reject) => {
+        ticketing.events.list(5).filter({after: "2050-01-01T00:00:00"}).then(events => {
+          expect(events.length).to.be.at.least(1)
+          
+          for(let event of events){
+            expect(new Date(event.start)).to.be.at.least(new Date("2050-01-01T00:00:00"))
+          }
+
+          resolve(true)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    })
+
     it('Should return a collection of events matching the featured filter', function () {
       return new Promise((resolve, reject) => {
         ticketing.events.list(5).filter({featured: true}).then(events => {
@@ -311,10 +343,10 @@ describe("Event Listing", function(){
       })
     })
 
-    it.skip('Should return events sorted by popularity in ascending order', function () {
+    it('Should return events sorted by popularity in ascending order', function () {
       return new Promise((resolve, reject) => {
         ticketing.events.list(5).sort("popularity", true).then(events => {
-          expect(events).to.be.descendingBy("popularity")
+          expect(events).to.be.ascendingBy("popularity")
 
           resolve(true)
         }).catch(error => {

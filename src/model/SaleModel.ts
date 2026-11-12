@@ -37,6 +37,7 @@ export class SaleModel extends BaseModel implements Sale{
       disclaimer: sale.event.disclaimer,
       tags: sale.event.tags,
       published: sale.event.published,
+      popularity: sale.event.popularity,
       banner: sale.event.banner,
       thumbnail: sale.event.thumbnail,
       save: (() => new Promise<boolean>((resolve) => {resolve(false)})),

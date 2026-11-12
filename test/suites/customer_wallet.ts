@@ -231,7 +231,7 @@ describe("Customer Wallet", function(){
       })
     })
 
-    it.skip('Should return events sorted by popularity in ascending order', function () {
+    it('Should return events sorted by popularity in ascending order', function () {
       return new Promise((resolve, reject) => {
         this.customer.itinerary.list(25).sort("popularity").then(events => {
           expect(events).to.have.lengthOf.at.least(1)
