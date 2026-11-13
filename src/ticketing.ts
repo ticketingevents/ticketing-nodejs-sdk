@@ -1,4 +1,4 @@
-import { APIAdapter, RequestCacheOptions, SessionManager } from './util'
+import { APIAdapter, RequestCacheOptions, SessionManager, TickeTingInterceptor } from './util'
 import {
   AccountService,
   CategoryService,
@@ -38,6 +38,23 @@ export class TickeTing{
 
   get cacheControls(){
     return this.__apiAdapter.cacheControls
+  }
+
+  /**
+   * The underlying axios interceptors, for adding your own request / response handlers.
+   * @example ticketing.interceptors.request.use(config => config)
+   */
+  get interceptors(){
+    return this.__apiAdapter.interceptors
+  }
+
+  /**
+   * Add an Angular-style interceptor that wraps every SDK request.
+   * Interceptors run in the order they were added. Returns a function that removes it.
+   * @example ticketing.addInterceptor((req, next) => next(req.clone({ setHeaders: { 'X-Trace': id } })))
+   */
+  addInterceptor(interceptor: TickeTingInterceptor): () => void {
+    return this.__apiAdapter.addInterceptor(interceptor)
   }
 
   get accounts(): AccountService{

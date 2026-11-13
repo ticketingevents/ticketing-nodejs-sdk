@@ -108,6 +108,7 @@ export class TickeTingService extends TickeTing{
     * [Persistence](#cache-persistence)
     * [Custom persistence adapters](#custom-persistence-adapters)
     * [Manual cache control](#manual-cache-control)
+    * [Interceptors](#interceptors)
 - [Session Management](#sessions)
     * [Start a new session](#start-a-new-session)
     * [Resume an active session](#resume-an-active-session)
@@ -536,6 +537,13 @@ When persistence is enabled, cache entries are written to `localStorage` in brow
 environments (or `sessionStorage` if configured). This lets an app restart and still have
 fallback data while offline.
 
+Only each response's `data`, `status`, `statusText` and `headers` are saved. Writes are
+debounced, so a burst of responses is saved once things go quiet (set `debounce: 0` to write
+on every change). In browsers, a pending write is flushed when the page is hidden or closed;
+call `ticketing.cacheControls.flush()` to write it yourself. If the saved cache would go over
+`maxSize`, the least recently used entries are left out of the saved copy. If storage is full
+and a write fails, the oldest in-memory entries are dropped until the write succeeds.
+
 ```javascript
 const ticketing = new TickeTing({
   apiKey: "API_KEY",
@@ -543,7 +551,9 @@ const ticketing = new TickeTing({
     enabled: true,
     persistence: {
       namespace: '@my-app/ticketing-cache',
-      storage: 'local' // or 'session', or a custom adapter
+      storage: 'local', // or 'session', or a custom adapter
+      maxSize: 1_000_000, // max persisted size in characters (default 1,000,000)
+      debounce: 1000      // ms to wait after the last change before writing (default 1000)
     }
   }
 })
@@ -676,7 +686,8 @@ Notes:
 
 - `read()` is called once when the cache store is constructed; later updates go through `write()`.
 - `remove()` is called when you invoke `ticketing.cacheControls.clear()`.
-- Failed `write` / `remove` calls should not throw if you can avoid it — the in-memory cache continues to serve requests even when persistence fails.
+- `write()` may throw when storage is full. The SDK then drops the oldest half of the cached entries and retries, so later writes don't keep failing. Errors from `write()` never reach your API calls.
+- `write()` is debounced (see `persistence.debounce`), so it is called once after a burst of changes, not once per response.
 
 ### Manual cache control
 
@@ -692,7 +703,171 @@ ticketing.cacheControls.invalidate(key => key.includes('/events/'))
 
 // Invalidate cached GETs related to a URL path
 ticketing.cacheControls.invalidateUrl('/events/42')
+
+// Write pending changes to persistent storage now instead of after the debounce
+ticketing.cacheControls.flush()
 ```
+
+### Interceptors
+
+`addInterceptor()` works like Angular's `HttpInterceptor`. Each interceptor receives the
+request and a `next` handler, and returns the response (or a promise of it). That means one
+function can change the request, change the response, catch errors, retry, or answer without
+sending the request at all.
+
+```javascript
+// Functional interceptor, like Angular's HttpInterceptorFn
+const remove = ticketing.addInterceptor((req, next) => {
+  const started = Date.now()
+  return next(req.clone({ setHeaders: { 'X-Request-Id': crypto.randomUUID() } }))
+    .then(response => {
+      console.log(req.method, req.url, `${Date.now() - started}ms`)
+      return response
+    })
+})
+
+// Class-based interceptor, like Angular's HttpInterceptor
+class RetryInterceptor {
+  intercept(req, next) {
+    return next(req).catch(error => {
+      if (error.response) throw error // only retry network failures
+      return next(req)
+    })
+  }
+}
+ticketing.addInterceptor(new RetryInterceptor())
+
+// Remove an interceptor
+remove()
+```
+
+In TypeScript, import `TickeTingInterceptorFn`, `TickeTingInterceptorClass`, `TickeTingRequest`
+and `TickeTingHandler` from the SDK.
+
+How it compares to Angular:
+
+- **Order:** interceptors run in the order you add them. The first one is outermost, so it sees
+  the request first and the response last.
+- **Immutable requests:** requests are frozen. Change them with `req.clone({ ... })`, which takes
+  `url`, `method`, `params`, `headers`, `data` and `cache`, plus `setHeaders` / `setParams` to
+  add values without replacing the rest.
+- **Promises, not Observables:** `next(req)` returns a promise of the axios response
+  (`data`, `status`, `headers`, ...). There is no RxJS dependency.
+- **Errors:** `next(req)` rejects with the raw axios error, so you can read `error.response`.
+  The SDK turns errors into `TickeTingError` after the whole chain finishes. If you throw a
+  `TickeTingError` (or a subclass such as `UnauthorisedError`) yourself, it is passed through
+  unchanged.
+- **Caching:** interceptors wrap the cache. A cached response still goes through every
+  interceptor, and changing `url` or `params` changes the cache key. Changing headers does not.
+- Interceptors also apply to `ticketing.cache()` / `ticketing.nocache()` calls.
+
+#### React and Next.js
+
+Interceptors work in the browser, in Node.js and on the Next.js Edge runtime. A few setup
+rules keep them working correctly:
+
+**Client side (React, Next.js client components): create one instance and register
+interceptors in an effect.** Creating `TickeTing` inside a component makes a new cache on
+every render. The function returned by `addInterceptor` is the effect's cleanup, so React
+Strict Mode's double mount doesn't register the interceptor twice.
+
+```tsx
+// lib/ticketing.client.ts
+'use client'
+import { TickeTing } from '@ticketing/ticketing-nodejs-sdk'
+
+export const ticketing = new TickeTing({ apiKey: process.env.NEXT_PUBLIC_TICKETING_KEY!, cache: true })
+```
+
+```tsx
+// app/ticketing-provider.tsx
+'use client'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { ticketing } from '@/lib/ticketing.client'
+
+export function TicketingProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+
+  useEffect(() => ticketing.addInterceptor((req, next) =>
+    next(req).catch(error => {
+      if (error.response?.headers['x-reason'] === 'account-suspended') {
+        router.push('/suspended')
+      }
+      throw error
+    })
+  ), [router])
+
+  return children
+}
+```
+
+**Server side (server components, route handlers, server actions): create an instance per
+request.** A module-level instance is shared by every user the server handles, and
+`session.start()` / `session.resume()` change its API key for all of them at once. React's
+`cache()` gives you one instance per request:
+
+```tsx
+// lib/ticketing.server.ts
+import 'server-only'
+import { cache } from 'react'
+import { redirect } from 'next/navigation'
+import { TickeTing } from '@ticketing/ticketing-nodejs-sdk'
+
+export const getTicketing = cache(() => {
+  const ticketing = new TickeTing({ apiKey: process.env.TICKETING_KEY!, cache: false })
+
+  ticketing.addInterceptor((req, next) =>
+    next(req).catch(error => {
+      if (error.response?.status === 401) {
+        redirect('/login')
+      }
+      throw error
+    })
+  )
+
+  return ticketing
+})
+```
+
+Errors you throw from an interceptor reach the caller unchanged, so Next.js `redirect()` and
+`notFound()` work inside interceptors. HTTP errors you rethrow are still converted to
+`TickeTingError`.
+
+Persistence uses `localStorage`, so it only applies in the browser. On the server the cache
+stays in memory.
+
+#### Axios interceptors
+
+For direct access to the underlying axios instance, `interceptors` exposes the SDK's underlying [axios interceptors](https://axios-http.com/docs/interceptors),
+so you can add logging, tracing headers, or error reporting to every request:
+
+```javascript
+const id = ticketing.interceptors.request.use(config => {
+  config.headers['X-Request-Id'] = crypto.randomUUID()
+  return config
+})
+
+ticketing.interceptors.response.use(
+  response => response,
+  error => {
+    reportError(error)
+    return Promise.reject(error)
+  }
+)
+
+// Remove it later
+ticketing.interceptors.request.eject(id)
+```
+
+Notes:
+
+- Your request interceptors run before the cache lookup, and your response interceptors run
+  for both network and cached responses.
+- Changing headers in a request interceptor does not change the cache key. Cache entries are
+  keyed by method, URL, query params and the SDK's API key.
+- Response error interceptors receive the raw axios error. The SDK turns it into a
+  `TickeTingError` afterwards, so return a rejected promise to keep that behaviour.
 
 ## Session Management
 

@@ -8,6 +8,7 @@ import {
   shouldCacheRequest
 } from '../../src/util'
 import { TickeTing } from '../../src'
+import { TickeTingError, UnauthorisedError } from '../../src/errors'
 import { expect } from '../setup'
 
 function createMockAdapter<T>(payload: T, delay = 0) {
@@ -536,8 +537,9 @@ describe('Request cache', function () {
       }
 
       const firstInstance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
-      attachRequestCache(firstInstance, cacheOptions)
+      const firstCache = attachRequestCache(firstInstance, cacheOptions)
       await firstInstance.get('/events/7')
+      firstCache.flush()
 
       const secondInstance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
       attachRequestCache(secondInstance, cacheOptions)
@@ -556,8 +558,9 @@ describe('Request cache', function () {
       }
 
       const firstInstance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
-      attachRequestCache(firstInstance, cacheOptions)
+      const firstCache = attachRequestCache(firstInstance, cacheOptions)
       await firstInstance.get('/events/8')
+      firstCache.flush()
 
       await delay(25)
 
@@ -579,8 +582,9 @@ describe('Request cache', function () {
       }
 
       const firstInstance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
-      attachRequestCache(firstInstance, cacheOptions)
+      const firstCache = attachRequestCache(firstInstance, cacheOptions)
       await firstInstance.get('/events/persisted-stale')
+      firstCache.flush()
 
       await delay(25)
 
@@ -605,6 +609,7 @@ describe('Request cache', function () {
       const firstInstance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
       const cache = attachRequestCache(firstInstance, cacheOptions)
       await firstInstance.get('/events/persist-clear')
+      cache.flush()
       expect(persistence.read()).to.not.equal(null)
 
       cache.clear()
@@ -630,11 +635,12 @@ describe('Request cache', function () {
 
       const mock = createMockAdapter({ id: 'custom-persist' })
       const firstInstance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
-      attachRequestCache(firstInstance, {
+      const firstCache = attachRequestCache(firstInstance, {
         defaultTtl: 60000,
         persistence: { storage: custom }
       })
       await firstInstance.get('/events/custom-persist')
+      firstCache.flush()
       expect(stored).to.be.a('string')
 
       const secondInstance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
@@ -644,6 +650,148 @@ describe('Request cache', function () {
       })
       await secondInstance.get('/events/custom-persist')
       expect(mock.callCount).to.equal(1)
+    })
+
+    it('debounces a burst of responses into a single write', async function () {
+      let writes = 0
+      const persistence = new MemoryCachePersistence()
+      const originalWrite = persistence.write.bind(persistence)
+      persistence.write = (data: string) => {
+        writes += 1
+        originalWrite(data)
+      }
+
+      const mock = createMockAdapter({ id: 'burst' })
+      const instance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
+      attachRequestCache(instance, {
+        defaultTtl: 60000,
+        persistence: { storage: persistence, debounce: 30 }
+      })
+
+      await Promise.all([
+        instance.get('/events/1'),
+        instance.get('/events/2'),
+        instance.get('/events/3')
+      ])
+      expect(writes).to.equal(0)
+
+      await delay(50)
+      expect(writes).to.equal(1)
+      expect(JSON.parse(persistence.read()!).entries).to.have.length(3)
+    })
+
+    it('writes synchronously when debounce is 0', async function () {
+      const persistence = new MemoryCachePersistence()
+      const mock = createMockAdapter({ id: 'sync' })
+      const instance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
+      attachRequestCache(instance, {
+        defaultTtl: 60000,
+        persistence: { storage: persistence, debounce: 0 }
+      })
+
+      await instance.get('/events/sync')
+      expect(persistence.read()).to.be.a('string')
+    })
+
+    it('does not write a pending change after clear()', async function () {
+      const persistence = new MemoryCachePersistence()
+      const mock = createMockAdapter({ id: 'cleared' })
+      const instance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
+      const cache = attachRequestCache(instance, {
+        defaultTtl: 60000,
+        persistence: { storage: persistence, debounce: 20 }
+      })
+
+      await instance.get('/events/cleared')
+      cache.clear()
+      await delay(40)
+      expect(persistence.read()).to.equal(null)
+    })
+
+    it('persists only data, status, statusText and headers', async function () {
+      const persistence = new MemoryCachePersistence()
+      const mock = createMockAdapter({ id: 'slim' })
+      const instance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
+      const cache = attachRequestCache(instance, {
+        defaultTtl: 60000,
+        persistence: { storage: persistence }
+      })
+
+      await instance.get('/events/slim')
+      cache.flush()
+
+      const [, entry] = JSON.parse(persistence.read()!).entries[0]
+      expect(Object.keys(entry.value).sort()).to.deep.equal(['data', 'headers', 'status', 'statusText'])
+    })
+
+    it('attaches the current request config to cached responses', async function () {
+      const mock = createMockAdapter({ id: 'config' })
+      const instance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
+      attachRequestCache(instance, { defaultTtl: 60000, persistence: false })
+
+      await instance.get('/events/config', { headers: { 'X-Call': 'first' } })
+      const second = await instance.get('/events/config', { headers: { 'X-Call': 'second' } })
+
+      expect(mock.callCount).to.equal(1)
+      expect(second.config.headers['X-Call']).to.equal('second')
+    })
+
+    it('keeps the persisted blob under maxSize by dropping the oldest entries', function () {
+      const persistence = new MemoryCachePersistence()
+      const store = new CacheStore({
+        defaultTtl: 60000,
+        persistence,
+        persistenceMaxSize: 400,
+        persistenceDebounce: 0
+      })
+
+      for (let index = 0; index < 10; index += 1) {
+        store.set(`key-${index}`, { data: 'x'.repeat(50) })
+      }
+
+      const raw = persistence.read()!
+      const keys = JSON.parse(raw).entries.map(([key]: [string]) => key)
+      expect(raw.length).to.be.at.most(400)
+      expect(keys).to.include('key-9')
+      expect(keys).to.not.include('key-0')
+      expect(store.peek('key-0')).to.exist
+    })
+
+    it('trims in-memory entries when storage is full so later writes succeed', function () {
+      let stored: string | null = null
+      let attempts = 0
+      const quota = 300
+      const limited = {
+        read: () => stored,
+        write: (data: string) => {
+          attempts += 1
+          if (data.length > quota) {
+            throw new Error('QuotaExceededError')
+          }
+          stored = data
+        },
+        remove: () => {
+          stored = null
+        }
+      }
+
+      const store = new CacheStore({
+        defaultTtl: 60000,
+        persistence: limited,
+        persistenceDebounce: 0
+      })
+
+      for (let index = 0; index < 8; index += 1) {
+        store.set(`key-${index}`, { data: 'x'.repeat(40) })
+      }
+
+      expect(stored).to.be.a('string')
+      expect(store.peek('key-7')).to.exist
+      expect(store.peek('key-0')).to.equal(undefined)
+
+      attempts = 0
+      store.delete('key-7')
+      expect(attempts).to.equal(1)
     })
   })
 
@@ -752,6 +900,221 @@ describe('Request cache', function () {
       adapter.reset()
       await adapter.get('/events/14')
       expect(mock.callCount).to.equal(2)
+    })
+
+    it('rejects with a TickeTingError when there is no HTTP response', async function () {
+      const adapter = new APIAdapter('test-api-key', false)
+      ;(adapter as any).__requester.defaults.adapter = () => Promise.reject(new Error('timeout of 69000ms exceeded'))
+
+      let caught: any = null
+      try {
+        await adapter.get('/events/timeout')
+      } catch (error) {
+        caught = error
+      }
+
+      expect(caught).to.be.instanceOf(TickeTingError)
+      expect(caught.code).to.equal(0)
+      expect(caught.message).to.equal('timeout of 69000ms exceeded')
+    })
+
+    it('does not leave an unhandled rejection when an uncached request fails', async function () {
+      const unhandled: unknown[] = []
+      const listener = (reason: unknown) => unhandled.push(reason)
+      process.on('unhandledRejection', listener)
+
+      try {
+        const mock = createMockAdapter({ id: 'fail' })
+        const instance = axios.create({ baseURL: 'https://api.example.com', adapter: mock.adapter })
+        attachRequestCache(instance, { defaultTtl: 60000, persistence: false })
+
+        mock.failNext(new Error('network down'))
+        await instance.get('/events/fail').catch(() => {})
+        await delay(10)
+      } finally {
+        process.removeListener('unhandledRejection', listener)
+      }
+
+      expect(unhandled).to.have.length(0)
+    })
+
+    it('exposes axios interceptors that run for network and cached responses', async function () {
+      const ticketing = new TickeTing({ apiKey: 'test-api-key', cache: { persistence: false } })
+      const adapter = (ticketing as any).__apiAdapter
+      const mock = createMockAdapter({ id: 'intercepted' })
+      ;(adapter as any).__requester.defaults.adapter = mock.adapter
+      ;(adapter as any).__requester.defaults.baseURL = 'https://api.example.com'
+
+      let requests = 0
+      let responses = 0
+      const requestId = ticketing.interceptors.request.use((config) => {
+        requests += 1
+        config.headers['X-Trace'] = 'abc'
+        return config
+      })
+      const responseId = ticketing.interceptors.response.use((response) => {
+        responses += 1
+        return response
+      })
+
+      const first = await adapter.get('/events/intercepted')
+      await adapter.get('/events/intercepted')
+
+      expect(mock.callCount).to.equal(1)
+      expect(first.config.headers['X-Trace']).to.equal('abc')
+      expect(requests).to.equal(2)
+      expect(responses).to.equal(2)
+
+      ticketing.interceptors.request.eject(requestId)
+      ticketing.interceptors.response.eject(responseId)
+      expect(ticketing.cache().interceptors).to.equal(ticketing.interceptors)
+    })
+
+    describe('Angular-style interceptors', function () {
+      function createTicketing(payload: any = { id: 'ng' }) {
+        const ticketing = new TickeTing({ apiKey: 'test-api-key', cache: { persistence: false } })
+        const adapter = (ticketing as any).__apiAdapter
+        const mock = createMockAdapter(payload)
+        ;(adapter as any).__requester.defaults.adapter = mock.adapter
+        ;(adapter as any).__requester.defaults.baseURL = 'https://api.example.com'
+        return { ticketing, adapter, mock }
+      }
+
+      it('runs interceptors in order, outermost first, and lets them clone the request', async function () {
+        const { ticketing, adapter } = createTicketing()
+        const order: string[] = []
+
+        ticketing.addInterceptor(async (req, next) => {
+          order.push('a:before')
+          const response = await next(req.clone({ setHeaders: { 'X-A': '1' } }))
+          order.push('a:after')
+          return response
+        })
+        ticketing.addInterceptor({
+          intercept(req, next) {
+            order.push('b:before')
+            expect(req.headers['X-A']).to.equal('1')
+            return next(req.clone({ setHeaders: { 'X-B': '2' }, setParams: { page: 3 } })).then((response) => {
+              order.push('b:after')
+              return response
+            })
+          }
+        })
+
+        const response = await adapter.get('/events/ng', { size: 10 })
+
+        expect(order).to.deep.equal(['a:before', 'b:before', 'b:after', 'a:after'])
+        expect(response.config.headers['X-A']).to.equal('1')
+        expect(response.config.headers['X-B']).to.equal('2')
+        expect(response.config.params).to.deep.equal({ size: 10, page: 3 })
+      })
+
+      it('keeps requests immutable and clone() leaves the original unchanged', function () {
+        const { ticketing, adapter } = createTicketing()
+        let original: any = null
+        let cloned: any = null
+
+        ticketing.addInterceptor((req, next) => {
+          original = req
+          cloned = req.clone({ url: '/events/other', setHeaders: { 'X-C': '3' } })
+          return next(cloned)
+        })
+
+        return adapter.get('/events/ng').then(() => {
+          expect(Object.isFrozen(original)).to.equal(true)
+          expect(Object.isFrozen(original.headers)).to.equal(true)
+          expect(original.url).to.equal('/events/ng')
+          expect(original.headers).to.not.have.property('X-C')
+          expect(cloned.url).to.equal('/events/other')
+        })
+      })
+
+      it('can short-circuit without sending the request', async function () {
+        const { ticketing, adapter, mock } = createTicketing()
+        ticketing.addInterceptor((req) => ({
+          data: { mocked: req.url },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {} as any
+        }))
+
+        const response = await adapter.get('/events/ng')
+        expect(response.data).to.deep.equal({ mocked: '/events/ng' })
+        expect(mock.callCount).to.equal(0)
+      })
+
+      it('can catch errors and retry by calling next again', async function () {
+        const { ticketing, adapter, mock } = createTicketing({ id: 'retried' })
+        mock.failNext(new Error('flaky'))
+
+        ticketing.addInterceptor((req, next) => next(req).catch(() => next(req)))
+
+        const response = await adapter.nocache().get('/events/ng')
+        expect(response.data).to.deep.equal({ id: 'retried' })
+        expect(mock.callCount).to.equal(2)
+      })
+
+      it('passes TickeTingErrors thrown by interceptors through unchanged', async function () {
+        const { ticketing, adapter } = createTicketing()
+        const thrown = new UnauthorisedError(401, 'blocked')
+        ticketing.addInterceptor(() => {
+          throw thrown
+        })
+
+        let caught: unknown = null
+        await adapter.get('/events/ng').catch((error: unknown) => {
+          caught = error
+        })
+        expect(caught).to.equal(thrown)
+      })
+
+      it('passes non-SDK errors thrown by interceptors through unchanged', async function () {
+        const { ticketing, adapter } = createTicketing()
+        // Shaped like the error Next.js redirect() throws.
+        const redirect = Object.assign(new Error('NEXT_REDIRECT'), { digest: 'NEXT_REDIRECT;replace;/login;307;' })
+        ticketing.addInterceptor((req, next) => next(req).then(() => {
+          throw redirect
+        }))
+
+        let caught: unknown = null
+        await adapter.get('/events/ng').catch((error: unknown) => {
+          caught = error
+        })
+        expect(caught).to.equal(redirect)
+      })
+
+      it('still converts HTTP errors that an interceptor rethrows', async function () {
+        const { ticketing, adapter, mock } = createTicketing()
+        mock.failNext(new Error('network down'))
+        ticketing.addInterceptor((req, next) => next(req).catch((error) => {
+          throw error
+        }))
+
+        let caught: any = null
+        await adapter.nocache().get('/events/ng').catch((error: unknown) => {
+          caught = error
+        })
+        expect(caught).to.be.instanceOf(TickeTingError)
+        expect(caught.code).to.equal(0)
+      })
+
+      it('applies to cache()/nocache() scoped calls and can be removed', async function () {
+        const { ticketing, adapter } = createTicketing()
+        let calls = 0
+        const remove = ticketing.addInterceptor((req, next) => {
+          calls += 1
+          return next(req)
+        })
+
+        await adapter.cache().get('/events/ng')
+        await adapter.nocache().get('/events/ng')
+        expect(calls).to.equal(2)
+
+        remove()
+        await adapter.get('/events/ng')
+        expect(calls).to.equal(2)
+      })
     })
 
     it('supports TickeTing.cache() / nocache() chaining', async function () {
